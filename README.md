@@ -1,9 +1,15 @@
-# Watch Archive V5
+# Watch Archive V6
+
+## Commit message
+`feat: add daily inspiration from archive photos`
 
 ## Changes
-- Size field accepts numeric input and automatically appends `mm` on blur/save.
-- Movement field is now a dropdown with Manual, Automatic, and Quartz.
-- Existing non-standard movement values remain selectable when editing legacy data.
+- Added a Daily Inspiration section to the main screen.
+- Selects one photo from Archive entries each day.
+- Selection is deterministic for the current date, so the same photo remains during the day.
+- Uses all photos saved under Archive entries, not only cover photos.
+- Tapping the image opens the full-screen photo viewer at that photo.
+- Tapping the metadata opens the corresponding watch detail page.
+- If there are no Archive photos, the section is hidden.
 
-## Git commit
-`feat: add size unit formatting and movement dropdown`
+Local-first · No Supabase required
