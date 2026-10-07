@@ -19,3 +19,7 @@ Local-first · No Supabase required
 - Normalize size to mm on blur/save
 - Swipe left/right between watches in detail view
 - Add Previous/Next buttons
+
+## V8
+- Fix detail-page hero image natural-size overflow on mobile
+- Constrain main photo height and preserve full image with contain
