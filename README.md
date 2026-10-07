@@ -13,3 +13,9 @@
 - If there are no Archive photos, the section is hidden.
 
 Local-first · No Supabase required
+
+## V7
+- Fix multi-digit size input
+- Normalize size to mm on blur/save
+- Swipe left/right between watches in detail view
+- Add Previous/Next buttons
