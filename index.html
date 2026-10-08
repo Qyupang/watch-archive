@@ -218,8 +218,27 @@ function toast(x){let t=$('#toast');t.textContent=x;t.classList.remove('hidden')
 function imgFile(f){return new Promise((ok,no)=>{let r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)})}
 async function addFiles(input){let files=[...input.files];let a=await Promise.all(files.map(imgFile));editPhotos.push(...a.map((src,i)=>({id:uid(),src,file:files[i],cover:false,newPhoto:true,type:'watch',note:''})));input.value='';renderEditor()}
 function cover(w){return w.photos?.find(p=>p.cover)?.src||w.photos?.[0]?.src||''}
-async function load(){let{data,error}=await supabaseClient.from('watches').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});if(error){toast('시계 데이터를 불러오지 못했어요');return}let rows=data||[];let{data:photos}=await supabaseClient.from('watch_photos').select('*').eq('user_id',currentUser.id).order('sort_order');watches=await Promise.all(rows.map(async w=>{let ps=(photos||[]).filter(p=>p.watch_id===w.id);ps=await Promise.all(ps.map(async p=>{let{data:s}=await supabaseClient.storage.from('watch-photos').createSignedUrl(p.storage_path,3600);return{id:p.id,src:s?.signedUrl||'',path:p.storage_path,cover:p.is_cover,sortOrder:p.sort_order,type:p.photo_type||'watch',note:p.note||''}}));return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at}}));preloadWatchImages();renderHome()}
-function preloadWatchImages(){const urls=[...new Set(watches.flatMap(w=>(w.photos||[]).map(p=>p.src).filter(Boolean)))];window._watchImageCache=window._watchImageCache||new Map();urls.forEach(src=>{if(window._watchImageCache.has(src))return;const img=new Image();img.decoding='async';img.src=src;window._watchImageCache.set(src,img)})}
+async function load(){
+let{data,error}=await supabaseClient.from('watches').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
+if(error){toast('시계 데이터를 불러오지 못했어요');return}
+let rows=data||[];
+let{data:photos}=await supabaseClient.from('watch_photos').select('*').eq('user_id',currentUser.id).order('sort_order');
+let photoRows=photos||[];
+let paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
+let signedByPath=new Map();
+if(paths.length){
+  let{data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,3600);
+  if(!signedError)(signed||[]).forEach((s,i)=>{if(s?.signedUrl)signedByPath.set(paths[i],s.signedUrl)});
+}
+watches=rows.map(w=>{
+  let ps=photoRows.filter(p=>p.watch_id===w.id).map(p=>({
+    id:p.id,src:signedByPath.get(p.storage_path)||'',path:p.storage_path,cover:p.is_cover,
+    sortOrder:p.sort_order,type:p.photo_type||'watch',note:p.note||''
+  }));
+  return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at};
+});
+renderHome();
+}
 function nav(){return`<nav class="navbar"><div class="navin"><button class="nav active" onclick="renderHome()"><span>⌚</span>Watches</button><button class="nav" onclick="photosPage()"><span>▧</span>Photos</button><button class="nav" onclick="settings()"><span>⋯</span>Settings</button></div></nav>`}
 function dailyInspiration(){let pool=watches.flatMap(w=>(w.status==='archive'?(w.photos||[]).filter(p=>p?.src).map((p,i)=>({w,p,i})):[]));if(!pool.length)return "";let today=new Date();let key=`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;let hash=0;for(let i=0;i<key.length;i++)hash=(hash*31+key.charCodeAt(i))>>>0;let item=pool[hash%pool.length],ps=orderedPhotos(item.w),idx=ps.findIndex(p=>p.id===item.p.id);if(idx<0)idx=0;let day=today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});return`<section class="inspiration"><div class="inspirationhead"><span class="inspirationeyebrow">DAILY INSPIRATION</span><span class="inspirationdate">${day}</span></div><img class="inspirationimg" src="${item.p.src}" alt="${esc(item.w.brand||'')} ${esc(item.w.model||'Watch')}" onclick="event.stopPropagation();openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationmeta" onclick="openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationbrand">${esc(item.w.brand||'BRAND')}</div><div class="inspirationmodel">${esc(item.w.model||'Untitled')}</div><div class="inspirationhint">Archive · 사진을 눌러 크게 보기</div></div></section>`}
 function getBrandCounts(){let counts={};watches.filter(w=>w.status===filter).forEach(w=>{let b=String(w.brand||'').trim();if(b)counts[b]=(counts[b]||0)+1});return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));}
