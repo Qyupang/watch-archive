@@ -38,8 +38,13 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
 
 /* Editor UI refinement */
 .sheet{
-  padding:24px 20px 42px;
+  padding:24px 20px 30px;
   background:var(--paper);
+  height:fit-content;
+  min-height:0;
+  max-height:calc(100dvh - 24px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
 }
 .sheet .sheettop{
   margin-bottom:18px;
