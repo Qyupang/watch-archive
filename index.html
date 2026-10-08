@@ -36,13 +36,37 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
 .lightboxHint{position:absolute;left:50%;top:calc(50% + 42%);transform:translateX(-50%);color:#fff8;background:#0008;padding:6px 10px;border-radius:999px;font-size:10px;z-index:2;pointer-events:none;transition:opacity .3s}.lightboxClose{position:absolute;right:18px;top:calc(18px + env(safe-area-inset-top));width:42px;height:42px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);font-size:25px;z-index:2}.lightboxCount{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--paper);color:var(--ink);padding:6px 10px;border-radius:999px;font-size:10px;z-index:2}.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:9px 14px;border-radius:999px;font-size:11px;z-index:60}.authbox{max-width:430px;margin:14vh auto 0;padding:28px 20px;background:var(--paper);border:1px solid var(--line)}.authbox h1{font:36px Georgia,serif;margin:0 0 8px}.authbox p{font-size:12px;color:var(--muted);line-height:1.6}.authbox input{width:100%;border:1px solid var(--line);background:#fff;padding:13px;margin:6px 0}.authactions{display:grid;gap:8px;margin-top:12px}.authmsg{font-size:11px;color:var(--muted);margin-top:10px;min-height:16px}.hidden{display:none!important}
 .stats{display:none!important}\n/* Smooth page rendering */
 @keyframes pageEnter{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes sectionEnter{
   from{opacity:0;transform:translateY(8px)}
   to{opacity:1;transform:translateY(0)}
 }
+@keyframes imageReveal{
+  from{opacity:0}
+  to{opacity:1}
+}
 #app > .app,
 #app > .detail{
-  animation:pageEnter .34s cubic-bezier(.22,.61,.36,1) both;
+  animation:pageEnter .48s cubic-bezier(.22,.61,.36,1) both;
   will-change:opacity,transform;
+}
+#app > .app > *{
+  animation:sectionEnter .44s cubic-bezier(.22,.61,.36,1) both;
+  will-change:opacity,transform;
+}
+#app > .app > *:nth-child(1){animation-delay:.02s}
+#app > .app > *:nth-child(2){animation-delay:.06s}
+#app > .app > *:nth-child(3){animation-delay:.10s}
+#app > .app > *:nth-child(4){animation-delay:.14s}
+#app > .app > *:nth-child(5){animation-delay:.18s}
+#app > .app > *:nth-child(6){animation-delay:.22s}
+#app > .app > *:nth-child(7){animation-delay:.26s}
+#app > .app > *:nth-child(8){animation-delay:.30s}
+#app > .app .heroWrap img,
+#app > .app .heroGallery img{
+  animation:imageReveal .55s ease-out .08s both;
 }
 @keyframes sheetEnter{
   from{opacity:0;transform:translateY(14px)}
@@ -54,162 +78,11 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
 @media (prefers-reduced-motion:reduce){
   #app > .app,
   #app > .detail,
+  #app > .app > *,
+  #app > .app .heroWrap img,
+  #app > .app .heroGallery img,
   #app > .overlay .sheet{animation:none!important}
-}
-@media(min-width:650px){.grid{grid-template-columns:repeat(3,1fr)}.overlay{align-items:center}.sheet{max-width:650px;border-radius:24px;max-height:90vh}}
-
-/* Editor UI refinement */
-.sheet{
-  padding:24px 20px 30px;
-  background:var(--paper);
-  height:fit-content;
-  min-height:0;
-  max-height:calc(100dvh - 24px);
-  overflow-y:auto;
-  overscroll-behavior:contain;
-}
-.sheet .sheettop{
-  margin-bottom:18px;
-  padding-bottom:16px;
-  border-bottom:1px solid var(--line);
-}
-.sheet .title{
-  font-size:30px;
-  letter-spacing:-.02em;
-}
-.sheet .close{
-  width:38px;height:38px;
-  border:1px solid var(--line);
-  background:transparent;
-  color:var(--ink);
-}
-.sheet .field{margin-top:17px}
-.sheet .field label{
-  font-size:10px;
-  letter-spacing:.18em;
-  color:var(--muted);
-  margin-bottom:8px;
-}
-.sheet .field input,
-.sheet .field textarea,
-.sheet .field select,
-.sheet #brand,
-.sheet #movement{
-  min-height:52px;
-  border:1px solid var(--line)!important;
-  border-radius:12px!important;
-  background:var(--paper)!important;
-  color:var(--ink)!important;
-  padding:13px 14px!important;
-  outline:none;
-  box-shadow:none;
-  transition:border-color .18s ease,box-shadow .18s ease,background .18s ease;
-}
-.sheet .field textarea{
-  min-height:118px;
-  resize:vertical;
-}
-.sheet .field input::placeholder,
-.sheet .field textarea::placeholder{
-  color:#aaa7a0;
-}
-.sheet .field input:focus,
-.sheet .field textarea:focus,
-.sheet .field select:focus,
-.sheet #brand:focus,
-.sheet #movement:focus{
-  border-color:#aaa59b!important;
-  box-shadow:0 0 0 3px #00000008!important;
-}
-.sheet .formgrid{
-  gap:4px 12px;
-}
-.sheet .status{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
-  padding:4px;
-  border:1px solid var(--line);
-  border-radius:14px;
-  background:var(--soft);
-}
-.sheet .status button{
-  min-height:44px;
-  border:0!important;
-  border-radius:10px!important;
-  background:transparent!important;
-  color:var(--muted)!important;
-  font-size:13px;
-  transition:all .18s ease;
-}
-.sheet .status button.active{
-  background:var(--paper)!important;
-  color:var(--ink)!important;
-  box-shadow:0 1px 4px #00000012;
-}
-.sheet .photoactions{
-  display:grid;
-  grid-template-columns:1fr;
-}
-.sheet .photoactions .action{
-  min-height:48px;
-  border:1px solid var(--line)!important;
-  border-radius:12px!important;
-  background:var(--paper)!important;
-  color:var(--ink)!important;
-  font-size:13px;
-}
-.sheet .photos{
-  gap:8px;
-  margin-top:10px;
-}
-.sheet .photo{
-  border-radius:10px;
-  overflow:hidden;
-  background:var(--soft);
-}
-.sheet .photo img{display:block}
-.sheet .photo button{
-  width:28px;height:28px;
-  border:1px solid #0002;
-  background:#fff;
-  color:#222;
-}
-.sheet .field.full > div > div[style*="border-top"]{
-  border-color:var(--line)!important;
-}
-.sheet .field.full select[onchange]{
-  min-height:44px!important;
-  padding:9px 12px!important;
-}
-.sheet .field.full input[oninput]{
-  min-height:44px!important;
-  margin-top:7px;
-}
-.sheet > .action.primary{
-  width:100%;
-  min-height:54px;
-  border:0!important;
-  border-radius:12px!important;
-  margin-top:22px!important;
-  font-size:14px;
-  letter-spacing:.04em;
-  background:var(--ink)!important;
-  color:var(--bg)!important;
-}
-.sheet > .action.primary:active{opacity:.82}
-html.dark .sheet .status button.active{
-  box-shadow:0 1px 4px #0008;
-}
-html.dark .sheet .field input:focus,
-html.dark .sheet .field textarea:focus,
-html.dark .sheet .field select:focus{
-  box-shadow:0 0 0 3px #ffffff0d!important;
-}
-@media(max-width:649px){
-  .sheet .formgrid{grid-template-columns:1fr 1fr}
-}
-</style></head>
+}</style></head>
 <body><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
