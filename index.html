@@ -157,8 +157,16 @@ let photoRows=photos||[];
 let paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
 let signedByPath=new Map();
 if(paths.length){
-  let{data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,86400);
-  if(!signedError)(signed||[]).forEach((s,i)=>{if(s?.signedUrl)signedByPath.set(paths[i],s.signedUrl)});
+  let{data:signed}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,86400);
+  // Keep successful URLs even if the batch contains an individual failure.
+  (signed||[]).forEach((s,i)=>{if(s?.signedUrl)signedByPath.set(paths[i],s.signedUrl)});
+  // A failed item in createSignedUrls can have no URL without failing the whole request.
+  // Retry missing entries individually so one bad result does not leave a permanently blank card.
+  const missing=paths.filter(path=>!signedByPath.has(path));
+  await Promise.all(missing.map(async path=>{
+    const url=await refreshPhotoUrl(path,true);
+    if(url)signedByPath.set(path,url);
+  }));
 }
 watches=rows.map(w=>{
   let ps=photoRows.filter(p=>p.watch_id===w.id).map(p=>({
@@ -218,7 +226,7 @@ if(preservedInspiration&&renderedInspiration){
 
 updateHomeResults()
 }
-function card(w){let src=cover(w);return`<article class="card" onclick="openDetail('${w.id}')">${src?`<img class="cover" ${photoAttrs(w.photos?.find(p=>p.src===src)||w.photos?.[0]||{},'fetchpriority="low"')}>`:`<div class="cover"></div>`}<div class="cardbody"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
+function card(w){let p=w.photos?.find(p=>p.cover)||w.photos?.[0];return`<article class="card" onclick="openDetail('${w.id}')">${p?`<img class="cover" ${photoAttrs(p,'fetchpriority="low"')}>`:`<div class="cover"></div>`}<div class="cardbody"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
 function openDetail(id){detail=id;renderDetail()}function closeDetail(){detail=null;renderHome()}
 function orderedPhotos(w){let ps=[...(w.photos||[])];if(!ps.length)return[];let i=ps.findIndex(p=>p.cover);if(i>0){let c=ps.splice(i,1)[0];ps.unshift(c)}return ps}
 let zoomState={scale:1,x:0,y:0,pinchStart:0,pinchStartScale:1,pinchBaseX:0,pinchBaseY:0,pinchCenterX:0,pinchCenterY:0,pinchContentX:0,pinchContentY:0,dragStartX:0,dragStartY:0,dragOriginX:0,dragOriginY:0,lastTap:0};
