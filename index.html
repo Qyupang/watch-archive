@@ -114,10 +114,10 @@ function imgFile(f){return new Promise((ok,no)=>{let r=new FileReader();r.onload
 async function addFiles(input){let files=[...input.files];let a=await Promise.all(files.map(imgFile));editPhotos.push(...a.map((src,i)=>({id:uid(),src,file:files[i],cover:false,newPhoto:true,type:'watch',note:''})));input.value='';renderEditor()}
 function cover(w){return w.photos?.find(p=>p.cover)?.src||w.photos?.[0]?.src||''}
 const photoUrlCache=new Map();
-async function refreshPhotoUrl(path){
+async function refreshPhotoUrl(path,force=false){
   if(!path)return '';
   const cached=photoUrlCache.get(path);
-  if(cached?.url&&cached.expiresAt>Date.now()+60000)return cached.url;
+  if(!force&&cached?.url&&cached.expiresAt>Date.now()+60000)return cached.url;
   const{data,error}=await supabaseClient.storage.from('watch-photos').createSignedUrls([path],86400);
   const url=data?.[0]?.signedUrl||'';
   if(!error&&url){
@@ -127,13 +127,23 @@ async function refreshPhotoUrl(path){
   return '';
 }
 async function retryImage(img){
-  if(!img||!img.dataset.photoPath)return;
+  if(!img||!img.dataset.photoPath||img.dataset.retrying==='true')return;
   const tries=Number(img.dataset.imageRetry||0);
-  if(tries>=2)return;
+  if(tries>=3)return;
+  img.dataset.retrying='true';
   img.dataset.imageRetry=String(tries+1);
-  await new Promise(r=>setTimeout(r,tries===0?180:500));
-  const url=await refreshPhotoUrl(img.dataset.photoPath);
-  if(url)img.src=url;
+  await new Promise(r=>setTimeout(r,[250,700,1400][tries]));
+  try{
+    // Force a fresh signed URL rather than retrying the same failed URL.
+    const url=await refreshPhotoUrl(img.dataset.photoPath,true);
+    if(url){
+      img.onload=()=>{img.dataset.imageRetry='0';img.dataset.retrying='false';};
+      img.onerror=()=>{img.dataset.retrying='false';retryImage(img);};
+      img.src=url;
+      return;
+    }
+  }catch(e){}
+  img.dataset.retrying='false';
 }
 function photoAttrs(p,extra=''){
   return 'src="'+esc(p?.src||'')+'" data-photo-path="'+esc(p?.path||'')+'" onerror="retryImage(this)" decoding="async" '+extra;
