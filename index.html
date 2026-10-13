@@ -227,7 +227,7 @@ h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
   }
 });
 }
-const APP_VERSION='v0.1.20';
+const APP_VERSION='v0.1.21';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -376,5 +376,5 @@ function settings(){const email=esc(currentUser?.email||'');const showVersion=is
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
 scheduleTheme();
-async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load();await restoreEditorDraft()}supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){loadBrands().then(load).then(restoreEditorDraft)}else authScreen()});boot();
+async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load()}supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){loadBrands().then(load)}else authScreen()});boot();
 </script></body></html>
