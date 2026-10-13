@@ -21,7 +21,7 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stat{background:var(--paper);border:1px solid var(--line);padding:15px}.stat b{font:30px Georgia,serif}.stat span{display:block;font-size:10px;color:var(--muted);letter-spacing:.15em;margin-top:4px}
 .inspiration{margin:0 0 24px;background:var(--paper);border:1px solid var(--line);overflow:hidden}.inspirationhead{display:flex;justify-content:space-between;align-items:baseline;padding:14px 15px 10px}.inspirationeyebrow{font-size:9px;letter-spacing:.2em;color:var(--muted);font-weight:700}.inspirationdate{font-size:10px;color:var(--muted)}.inspirationimg{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;background:#e5e1d8;cursor:zoom-in;-webkit-tap-highlight-color:transparent}.inspirationmeta{padding:12px 15px 15px}.inspirationbrand{font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;text-transform:uppercase}.inspirationmodel{font:25px Georgia,serif;margin-top:4px}.inspirationhint{font-size:10px;color:var(--muted);margin-top:7px}
 .head{display:flex;justify-content:space-between;align-items:center;margin:27px 0 12px}.head h2{font:25px Georgia,serif;margin:0}.small{font-size:11px;color:var(--muted)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:var(--paper);border:1px solid var(--line);overflow:hidden}.cover{width:100%;aspect-ratio:1;object-fit:cover;background:#e5e1d8;display:block}.cardbody{padding:12px}.cardbrand{font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;text-transform:uppercase}.model{font:23px Georgia,serif;margin:5px 0}.meta{font-size:11px;color:var(--muted)}.badge{display:inline-block;border:1px solid var(--line);padding:4px 6px;font-size:9px;margin-top:8px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.card{background:var(--paper);border:1px solid var(--line);overflow:hidden}.cover-frame{position:relative;aspect-ratio:1;overflow:hidden;background:#e5e1d8}.cover-frame.is-loading::after{content:"";position:absolute;left:calc(50% - 13px);top:calc(50% - 13px);width:26px;height:26px;border:2px solid #8b877f55;border-top-color:var(--muted);border-radius:50%;animation:coverSpin .8s linear infinite;pointer-events:none}.cover-frame.is-error::before{content:"사진을 불러오지 못했어요";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:10px;color:var(--muted);font-size:11px;text-align:center}.cover{width:100%;height:100%;object-fit:cover;background:#e5e1d8;display:block;position:relative;z-index:1}.cover-frame.is-loading .cover{opacity:.28}.cover-frame.is-loaded .cover{animation:imageReveal .35s ease-out both}@keyframes coverSpin{to{transform:rotate(360deg)}}.cardbody{padding:12px}.cardbrand{font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;text-transform:uppercase}.model{font:23px Georgia,serif;margin:5px 0}.meta{font-size:11px;color:var(--muted)}.badge{display:inline-block;border:1px solid var(--line);padding:4px 6px;font-size:9px;margin-top:8px}
 .empty{border:1px dashed var(--line);padding:35px 18px;text-align:center;color:var(--muted);background:#fff8}
 .fab{position:fixed;right:20px;bottom:82px;width:58px;height:58px;border:0;border-radius:50%;background:#111;color:#fff;font-size:29px;z-index:5}
 .navbar{position:fixed;bottom:0;left:0;right:0;background:#f5f3eeed;backdrop-filter:blur(12px);border-top:1px solid var(--line);z-index:4}.navin{max-width:760px;margin:auto;display:grid;grid-template-columns:repeat(3,1fr)}.nav{border:0;background:transparent;padding:10px;color:var(--muted);font-size:10px}.nav.active{color:#111;font-weight:700}.nav span{display:block;font-size:19px;margin-bottom:3px}
@@ -146,9 +146,13 @@ async function refreshPhotoUrl(path,force=false){
   return '';
 }
 async function retryImage(img){
-  if(!img||!img.dataset.photoPath||img.dataset.retrying==='true')return;
+  if(!img)return;
+  if(!img.dataset.photoPath||img.dataset.retrying==='true'){
+    if(!img.dataset.photoPath)finishCoverImage(img,false);
+    return;
+  }
   const tries=Number(img.dataset.imageRetry||0);
-  if(tries>=3)return;
+  if(tries>=3){finishCoverImage(img,false);return;}
   img.dataset.retrying='true';
   img.dataset.imageRetry=String(tries+1);
   await new Promise(r=>setTimeout(r,[250,700,1400][tries]));
@@ -164,8 +168,15 @@ async function retryImage(img){
   }catch(e){}
   img.dataset.retrying='false';
 }
+function finishCoverImage(img,ok){
+  const frame=img?.closest('.cover-frame');
+  if(!frame)return;
+  frame.classList.remove('is-loading');
+  frame.classList.toggle('is-loaded',!!ok);
+  frame.classList.toggle('is-error',!ok);
+}
 function photoAttrs(p,extra=''){
-  return 'src="'+esc(p?.src||'')+'" data-photo-path="'+esc(p?.path||'')+'" onerror="retryImage(this)" decoding="async" '+extra;
+  return 'src="'+esc(p?.src||'')+'" data-photo-path="'+esc(p?.path||'')+'" onload="finishCoverImage(this,true)" onerror="retryImage(this)" decoding="async" '+extra;
 }
 async function load(){
 let{data,error}=await supabaseClient.from('watches').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
@@ -226,8 +237,9 @@ h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
     window._watchDomImageCache.set(src,img);
   }
 });
+h.querySelectorAll('.cover-frame .cover').forEach(img=>{if(img.complete){if(img.naturalWidth)finishCoverImage(img,true);else retryImage(img)}});
 }
-const APP_VERSION='v0.1.21';
+const APP_VERSION='v0.1.22';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -252,7 +264,7 @@ if(preservedInspiration&&renderedInspiration){
 
 updateHomeResults();const vi=document.createElement('div');vi.innerHTML=versionIndicator();const main=document.querySelector('#app main.app');if(main&&vi.firstElementChild)main.appendChild(vi.firstElementChild)
 }
-function card(w){let p=w.photos?.find(p=>p.cover)||w.photos?.[0];return`<article class="card" onclick="openDetail('${w.id}')">${p?`<img class="cover" ${photoAttrs(p,'fetchpriority="low"')}>`:`<div class="cover"></div>`}<div class="cardbody"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
+function card(w){let p=w.photos?.find(p=>p.cover)||w.photos?.[0];return`<article class="card" onclick="openDetail('${w.id}')">${p?`<div class="cover-frame is-loading"><img class="cover" ${photoAttrs(p,'fetchpriority="low"')} alt="${esc(w.brand||'')} ${esc(w.model||'Watch')}"></div>`:`<div class="cover-frame"></div>`}<div class="cardbody"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
 function openDetail(id){detail=id;renderDetail()}function closeDetail(){detail=null;renderHome()}
 function orderedPhotos(w){let ps=[...(w.photos||[])];if(!ps.length)return[];let i=ps.findIndex(p=>p.cover);if(i>0){let c=ps.splice(i,1)[0];ps.unshift(c)}return ps}
 let zoomState={scale:1,x:0,y:0,pinchStart:0,pinchStartScale:1,pinchBaseX:0,pinchBaseY:0,pinchCenterX:0,pinchCenterY:0,pinchContentX:0,pinchContentY:0,dragStartX:0,dragStartY:0,dragOriginX:0,dragOriginY:0,lastTap:0};
