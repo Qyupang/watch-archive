@@ -190,34 +190,42 @@ function photoAttrs(p,extra=''){
   return 'src="'+esc(p?.src||'')+'" data-photo-path="'+esc(p?.path||'')+'" onload="finishCoverImage(this,true)" onerror="retryImage(this)" decoding="async" '+extra;
 }
 async function load(){
+const loadStarted=performance.now();
 let{data,error}=await supabaseClient.from('watches').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
 if(error){toast('시계 데이터를 불러오지 못했어요');return}
 let rows=data||[];
 let{data:photos}=await supabaseClient.from('watch_photos').select('*').eq('user_id',currentUser.id).order('sort_order');
 let photoRows=photos||[];
-let paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
-let signedByPath=new Map();
-if(paths.length){
-  let{data:signed}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,86400);
-  // Keep successful URLs even if the batch contains an individual failure.
-  (signed||[]).forEach((s,i)=>{if(s?.signedUrl)signedByPath.set(paths[i],s.signedUrl)});
-  // A failed item in createSignedUrls can have no URL without failing the whole request.
-  // Retry missing entries individually so one bad result does not leave a permanently blank card.
-  const missing=paths.filter(path=>!signedByPath.has(path));
-  await Promise.all(missing.map(async path=>{
-    const url=await refreshPhotoUrl(path,true);
-    if(url)signedByPath.set(path,url);
-  }));
-}
+const paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
 watches=rows.map(w=>{
   let ps=photoRows.filter(p=>p.watch_id===w.id).map(p=>({
-    id:p.id,src:signedByPath.get(p.storage_path)||'',path:p.storage_path,cover:p.is_cover,
+    id:p.id,src:photoUrlCache.get(p.storage_path)?.url||'',path:p.storage_path,cover:p.is_cover,
     sortOrder:p.sort_order,type:p.photo_type||'watch',note:p.note||''
   }));
   return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',purchase_price:w.purchase_price??null,sale_price:w.sale_price??null,sale_reason:w.sale_reason||'',possession_status:w.possession_status||'held',purchase_date:w.purchase_date||'',purchase_reason:w.purchase_reason||'',tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at};
 });
 watchRandomRank=new Map(watches.map(w=>[w.id,Math.random()]));
+// Render the interface before waiting for Storage signed URLs.
 renderHome();
+window.__watchArchivePerf={dataReadyMs:Math.round(performance.now()-loadStarted),photoCount:paths.length,photoUrlsReadyMs:null};
+if(paths.length){
+  try{
+    const{data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,86400);
+    const signedByPath=new Map();
+    if(!signedError)(signed||[]).forEach((item,i)=>{if(item?.signedUrl){signedByPath.set(paths[i],item.signedUrl);photoUrlCache.set(paths[i],{url:item.signedUrl,expiresAt:Date.now()+23*60*60*1000})}});
+    const missing=paths.filter(path=>!signedByPath.has(path));
+    await Promise.all(missing.map(async path=>{const url=await refreshPhotoUrl(path,true);if(url)signedByPath.set(path,url)}));
+    watches.forEach(w=>(w.photos||[]).forEach(p=>{if(!p.src&&signedByPath.has(p.path))p.src=signedByPath.get(p.path)}));
+    document.querySelectorAll('img[data-photo-path]').forEach(img=>{
+      const path=img.dataset.photoPath,url=signedByPath.get(path)||photoUrlCache.get(path)?.url;
+      if(!url)return;
+      if(img.dataset.lazySrc!==undefined){img.dataset.lazySrc=url;img.dataset.lazyBound='0'}
+      else if(img.getAttribute('src')!==url){img.src=url}
+    });
+    activateLazyImages(document);
+    window.__watchArchivePerf.photoUrlsReadyMs=Math.round(performance.now()-loadStarted);
+  }catch(e){console.warn('Photo URL preparation failed',e)}
+}
 }
 function nav(){return`<nav class="navbar"><div class="navin"><button class="nav active" onclick="renderHome()"><span>⌚</span>Watches</button><button class="nav" onclick="photosPage()"><span>▧</span>Photos</button><button class="nav" onclick="settings()"><span>⋯</span>Settings</button></div></nav>`}
 function dailyInspiration(){let pool=watches.flatMap(w=>(w.status==='archive'?(w.photos||[]).filter(p=>p?.src).map((p,i)=>({w,p,i})):[]));if(!pool.length)return "";let today=new Date();let key=`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;let hash=0;for(let i=0;i<key.length;i++)hash=(hash*31+key.charCodeAt(i))>>>0;let item=pool[hash%pool.length],ps=orderedPhotos(item.w),idx=ps.findIndex(p=>p.id===item.p.id);if(idx<0)idx=0;let day=today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});return`<section class="inspiration"><div class="inspirationhead"><span class="inspirationeyebrow">DAILY INSPIRATION</span><span class="inspirationdate">${day}</span></div><img class="inspirationimg" ${photoAttrs(item.p,'fetchpriority="high"')} alt="${esc(item.w.brand||'')} ${esc(item.w.model||'Watch')}" onclick="event.stopPropagation();openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationmeta" onclick="openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationbrand">${esc(item.w.brand||'BRAND')}</div><div class="inspirationmodel">${esc(item.w.model||'Untitled')}</div><div class="inspirationhint">Archive · 사진을 눌러 크게 보기</div></div></section>`}
@@ -235,7 +243,7 @@ function activateLazyImages(root){
  const imgs=(root||document).querySelectorAll('.cover-frame .cover[data-lazy-src]');
  imgs.forEach(img=>{
   if(img.dataset.lazyBound)return;img.dataset.lazyBound='1';
-  const loadImg=()=>{if(img.dataset.lazyLoaded)return;img.dataset.lazyLoaded='1';const src=img.dataset.lazySrc;if(!src){finishCoverImage(img,false);return}img.onload=()=>{finishCoverImage(img,true);img.dataset.imageSrc=src};img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.src=src;retryImage(img)};img.src=src;watchCoverLoad(img)};
+  const loadImg=()=>{if(img.dataset.lazyLoaded==='1')return;const src=img.dataset.lazySrc;if(!src)return;img.dataset.lazyLoaded='1';img.onload=()=>{finishCoverImage(img,true);img.dataset.imageSrc=src};img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.src=src;retryImage(img)};img.src=src;watchCoverLoad(img)};
   if('IntersectionObserver'in window){const io=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){io.disconnect();loadImg()}},{rootMargin:'250px'});io.observe(img)}else loadImg();
  });
 }
@@ -257,7 +265,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.48';
+const APP_VERSION='v0.1.49';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
