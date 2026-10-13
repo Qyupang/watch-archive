@@ -480,8 +480,8 @@ async function clearWearLog(){
 
 function timelinePage(){
  const owned=watches.filter(w=>w.status==='owned'&&w.possession_status!=='sold');
- const dated=owned.filter(w=>w.purchase_date&&/^\\d{4}-\\d{2}-\\d{2}$/.test(w.purchase_date)).sort((a,b)=>a.purchase_date.localeCompare(b.purchase_date)||(a.brand+' '+a.model).localeCompare(b.brand+' '+b.model));
- const undated=owned.filter(w=>!w.purchase_date||!/^\\d{4}-\\d{2}-\\d{2}$/.test(w.purchase_date)).sort((a,b)=>(a.brand+' '+a.model).localeCompare(b.brand+' '+b.model));
+ const dated=owned.filter(w=>w.purchase_date&&/^\d{4}-\d{2}-\d{2}$/.test(w.purchase_date)).sort((a,b)=>a.purchase_date.localeCompare(b.purchase_date)||(a.brand+' '+a.model).localeCompare(b.brand+' '+b.model));
+ const undated=owned.filter(w=>!w.purchase_date||!/^\d{4}-\d{2}-\d{2}$/.test(w.purchase_date)).sort((a,b)=>(a.brand+' '+a.model).localeCompare(b.brand+' '+b.model));
  const fmt=d=>{const p=d.split('-');return p[0]+'. '+Number(p[1])+'. '+Number(p[2])+'.'};
  const item=w=>{const p=w.photos?.find(x=>x.cover)||w.photos?.[0];return '<div class="timeline-item"><div class="timeline-date">'+(w.purchase_date?fmt(w.purchase_date):'날짜 미등록')+'</div><button type="button" class="timeline-card" onclick="openDetail(\''+w.id+'\')">'+(p?'<img class="timeline-photo" '+photoAttrs(p)+' alt="'+esc(w.brand+' '+w.model)+'">':'<div class="timeline-photo" style="display:grid;place-items:center">⌚</div>')+'<div style="min-width:0"><div class="timeline-brand">'+esc(w.brand||'')+'</div><div class="timeline-model">'+esc(w.model||'Untitled')+'</div>'+(w.reference?'<div class="timeline-ref">Ref. '+esc(w.reference)+'</div>':'')+'</div></button></div>'};
  let html='<main class="app"><div class="top"><div><div class="eyebrow">COLLECTION HISTORY</div><div class="brand">Timeline</div></div></div><p class="small" style="line-height:1.7">구매일을 기준으로 정리한 현재 보유 컬렉션의 기추 순서야. 시계의 구매일을 수정하면 타임라인에도 반영돼.</p><div class="head"><h2>기추 타임라인</h2><span class="small">'+dated.length+'개</span></div>';
