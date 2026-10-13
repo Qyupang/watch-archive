@@ -145,28 +145,34 @@ async function refreshPhotoUrl(path,force=false){
   }
   return '';
 }
-async function retryImage(img){
-  if(!img)return;
-  if(!img.dataset.photoPath||img.dataset.retrying==='true'){
-    if(!img.dataset.photoPath)finishCoverImage(img,false);
-    return;
-  }
+async function retryImage(img,force=false){
+  if(!img||!img.dataset.photoPath||img.dataset.retrying==='true')return;
+  clearTimeout(img._coverLoadTimer);
   const tries=Number(img.dataset.imageRetry||0);
   if(tries>=3){finishCoverImage(img,false);return;}
   img.dataset.retrying='true';
   img.dataset.imageRetry=String(tries+1);
-  await new Promise(r=>setTimeout(r,[250,700,1400][tries]));
+  await new Promise(r=>setTimeout(r,[250,700,1400][tries]||1800));
   try{
-    // Force a fresh signed URL rather than retrying the same failed URL.
+    // Request a fresh signed URL and restart images that have stalled without firing onerror.
     const url=await refreshPhotoUrl(img.dataset.photoPath,true);
     if(url){
-      img.onload=()=>{img.dataset.imageRetry='0';img.dataset.retrying='false';};
+      img.onload=()=>{clearTimeout(img._coverLoadTimer);img.dataset.imageRetry='0';img.dataset.retrying='false';finishCoverImage(img,true);};
       img.onerror=()=>{img.dataset.retrying='false';retryImage(img);};
-      img.src=url;
+      img.src='';img.src=url;
+      watchCoverLoad(img);
       return;
     }
   }catch(e){}
-  img.dataset.retrying='false';
+  img.dataset.retrying='false';watchCoverLoad(img);
+}
+function watchCoverLoad(img){
+  if(!img?.closest('.cover-frame'))return;
+  clearTimeout(img._coverLoadTimer);
+  img._coverLoadTimer=setTimeout(()=>{
+    if(img.naturalWidth>0){finishCoverImage(img,true);return;}
+    retryImage(img,true);
+  },8000);
 }
 function finishCoverImage(img,ok){
   const frame=img?.closest('.cover-frame');
@@ -237,9 +243,9 @@ h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
     window._watchDomImageCache.set(src,img);
   }
 });
-h.querySelectorAll('.cover-frame .cover').forEach(img=>{if(img.complete){if(img.naturalWidth)finishCoverImage(img,true);else retryImage(img)}});
+h.querySelectorAll('.cover-frame .cover').forEach(img=>{if(img.complete&&img.naturalWidth){finishCoverImage(img,true)}else{watchCoverLoad(img);if(img.complete&&!img.naturalWidth)retryImage(img)}});
 }
-const APP_VERSION='v0.1.23';
+const APP_VERSION='v0.1.24';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
