@@ -35,7 +35,7 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
 .lightboxTrack.zoomActive{overflow:hidden;scroll-snap-type:none;touch-action:none}
 .lightboxHint{position:absolute;left:50%;top:calc(50% + 42%);transform:translateX(-50%);color:#fff8;background:#0008;padding:6px 10px;border-radius:999px;font-size:10px;z-index:2;pointer-events:none;transition:opacity .3s}.lightboxClose{position:absolute;right:18px;top:calc(18px + env(safe-area-inset-top));width:42px;height:42px;border:0;border-radius:50%;background:var(--paper);color:var(--ink);font-size:25px;z-index:2}.lightboxCount{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);background:var(--paper);color:var(--ink);padding:6px 10px;border-radius:999px;font-size:10px;z-index:2}.toast{position:fixed;bottom:92px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:9px 14px;border-radius:999px;font-size:11px;z-index:60}.authbox{max-width:430px;margin:14vh auto 0;padding:28px 20px;background:var(--paper);border:1px solid var(--line)}.authbox h1{font:36px Georgia,serif;margin:0 0 8px}.authbox p{font-size:12px;color:var(--muted);line-height:1.6}.authbox input{width:100%;border:1px solid var(--line);background:#fff;padding:13px;margin:6px 0}.authactions{display:grid;gap:8px;margin-top:12px}.authmsg{font-size:11px;color:var(--muted);margin-top:10px;min-height:16px}.hidden{display:none!important}
 .stats{display:none!important}\n/* Swipe-down dismiss for the editor sheet */
-.sheet-drag-handle{position:relative;display:flex;width:100%;min-height:38px;justify-content:center;align-items:center;margin:-8px 0 8px;padding:0;touch-action:none;-webkit-user-select:none;user-select:none;cursor:grab}
+.sheet-drag-handle{position:relative;display:flex;width:100%;min-height:44px;justify-content:center;align-items:center;margin:-8px 0 8px;padding:0;touch-action:pan-x pan-y;-webkit-user-select:none;user-select:none;cursor:grab}
 .sheet-drag-handle::before{content:"";display:block;width:46px;height:5px;flex:0 0 46px;border-radius:999px;background:var(--muted);opacity:.42;margin-inline:auto}
 .sheet{transform:translateY(0);transition:transform .24s cubic-bezier(.22,.61,.36,1);will-change:transform}
 .sheet.is-dragging{transition:none;user-select:none;-webkit-user-select:none}
@@ -227,7 +227,7 @@ h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
   }
 });
 }
-const APP_VERSION='v0.1.18';
+const APP_VERSION='v0.1.19';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -305,21 +305,22 @@ function openEditor(w=null){editorDraftFields=null;editing=w?.id||null;editPhoto
 function setStatus(s){editorDraftFields=captureEditorDraft()?.fields||editorDraftFields;editStatus=s;renderEditor();scheduleDraftSave()}
 function renderEditor(){if(document.querySelector('.overlay')){const current=captureEditorDraft();if(current)editorDraftFields=current.fields}let w=editing?watches.find(x=>x.id===editing):null;let d=editorDraftFields||{};$('#app').innerHTML=`<div class="overlay"><section class="sheet"><div class="sheet-drag-handle" aria-label="아래로 밀어 닫기" role="button" tabindex="0" title="아래로 밀어 닫기"></div><div class="sheettop"><h1 class="title">${w?'Edit Watch':'New Watch'}</h1><button class="close" onclick="renderHome()">×</button></div><div class="field"><label>Photos</label><div class="photoactions"><button class="action" onclick="$('#gallery').click()">＋ 사진 보관함에서 추가</button></div><input id="gallery" class="hidden" type="file" accept="image/*" multiple onchange="addFiles(this)"><div class="photos">${editPhotos.map((p,i)=>`<div class="photo"><img src="${p.src}"><button onclick="editPhotos.splice(${i},1);renderEditor();scheduleDraftSave()">×</button>${p.cover?'<span class="covermark">COVER</span>':''}</div>`).join('')}</div></div><div class="field"><label>Collection</label><div class="status"><button class="${editStatus==='owned'?'active':''}" onclick="setStatus('owned')">My Watch</button><button class="${editStatus==='archive'?'active':''}" onclick="setStatus('archive')">Archive</button></div></div><div class="formgrid"><div class="field"><label>Brand</label>${brandSelect(d.brand??(w?.brand||''))}</div><div class="field"><label>Model</label><input id="model" value="${esc(d.model??(w?.model))}" placeholder="Oyster Perpetual Date"></div><div class="field"><label>Reference</label><input id="reference" value="${esc(d.reference??(w?.reference))}" placeholder="1500"></div><div class="field"><label>Size</label><input id="size" type="text" inputmode="decimal" autocomplete="off" value="${esc(d.size??sizeNumber(w?.size||''))}" placeholder="34 or 34.5"></div><div class="field"><label>Movement</label>${formSelectHtml("movement",[["Manual","Manual"],["Automatic","Automatic"],["Quartz","Quartz"]],d.movement??(w?.movement||""))}</div>${editStatus==='owned'?`<div class="field"><label>Purchase Price</label><input id="purchasePrice" type="text" inputmode="numeric" autocomplete="off" value="${esc((d.purchasePrice??(w?.purchase_price!=null?Number(w.purchase_price).toLocaleString('ko-KR'): '')))}" placeholder="1,500,000" oninput="formatPurchasePriceInput(this)"></div>`:''}<div class="field full"><label>Tags</label><input id="tags" value="${esc(d.tags??(w?.tags?.join(', ')))}" placeholder="vintage, silver dial, 34mm"></div><div class="field full"><label>My Note</label><textarea id="note">${esc(d.note??w?.note)}</textarea></div></div><div class="field full"><label>PHOTO DETAILS</label><div class="small">각 사진의 종류와 메모를 설정할 수 있어.</div><div style="margin-top:10px">${editPhotos.map((p,i)=>`<div style="border-top:1px solid var(--line);padding:10px 0"><div style="display:flex;gap:8px;align-items:center"><img ${photoAttrs(p)} style="width:52px;height:52px;object-fit:cover"><div style="flex:1">${formSelectHtml('photoType'+i,[['watch','Watch'],['wrist','Wrist Shot'],['detail','Detail'],['movement','Movement'],['strap','Strap'],['lifestyle','Lifestyle']],p.type||'watch')}</div></div><input style="margin-top:7px" value="${esc(p.note||'')}" placeholder="이 사진에 대한 메모" oninput="editPhotos[${i}].note=this.value"></div>`).join('')}</div></div><button class="action primary save-watch-button" style="margin-top:16px" onclick="save()">Save Watch</button><div id="saveProgress" class="save-progress" role="status" aria-live="polite" aria-hidden="true" hidden><div class="save-progress-track"><div class="save-progress-bar"></div></div><div class="save-progress-label"><span class="save-spinner" aria-hidden="true"></span><span>시계와 사진을 저장하고 있어요. 잠시만 기다려주세요.</span></div></div></section></div>`;
  const overlay=document.querySelector('.overlay'),sheet=document.querySelector('.sheet'),handle=document.querySelector('.sheet-drag-handle');
- if(overlay&&sheet&&handle){let startY=0,lastY=0,startTime=0,dragging=false,pointerId=null;
- const begin=y=>{startY=y;lastY=y;startTime=performance.now();dragging=true;sheet.classList.add('is-dragging');};
- const move=y=>{if(!dragging)return;lastY=y;const dy=Math.max(0,lastY-startY);sheet.style.transform='translate3d(0,'+dy+'px,0)';overlay.style.background='rgba(0,0,0,'+Math.max(0,.42-dy/900)+')';};
- const finish=()=>{if(!dragging)return;dragging=false;const dy=Math.max(0,lastY-startY),elapsed=Math.max(1,performance.now()-startTime),velocity=dy/elapsed;sheet.classList.remove('is-dragging');if(dy>115||(velocity>.55&&dy>28)){overlay.classList.add('is-dismissing');sheet.style.transform='translate3d(0,100%,0)';setTimeout(()=>renderHome(),230)}else{sheet.style.transform='';overlay.style.background='';}};
- // Pointer events for mouse/modern browsers.
- handle.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;pointerId=e.pointerId;begin(e.clientY);try{handle.setPointerCapture(pointerId)}catch(_){}});
- handle.addEventListener('pointermove',e=>{if(dragging&&pointerId===e.pointerId)move(e.clientY)});
- handle.addEventListener('pointerup',e=>{if(pointerId===e.pointerId){finish();pointerId=null}});
- handle.addEventListener('pointercancel',()=>{finish();pointerId=null});
- // Explicit non-passive touch handlers prevent iOS Safari pull-to-refresh from winning the gesture.
- handle.addEventListener('touchstart',e=>{if(!e.touches.length)return;begin(e.touches[0].clientY);},{passive:true});
- handle.addEventListener('touchmove',e=>{if(!dragging||!e.touches.length)return;e.preventDefault();move(e.touches[0].clientY);},{passive:false});
- handle.addEventListener('touchend',finish,{passive:true});
- handle.addEventListener('touchcancel',finish,{passive:true});
- handle.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Enter'||e.key===' '){e.preventDefault();renderHome()}});
+ if(overlay&&sheet&&handle){
+   let startY=0,lastY=0,startTime=0,dragging=false;
+   const begin=y=>{startY=y;lastY=y;startTime=Date.now();dragging=true;sheet.classList.add('is-dragging');};
+   const move=y=>{if(!dragging)return;lastY=y;const dy=Math.max(0,y-startY);sheet.style.transform='translate3d(0,'+dy+'px,0)';overlay.style.background='rgba(0,0,0,'+Math.max(0,.42-dy/900)+')';};
+   const finish=()=>{if(!dragging)return;dragging=false;const dy=Math.max(0,lastY-startY),elapsed=Math.max(1,Date.now()-startTime),velocity=dy/elapsed;sheet.classList.remove('is-dragging');if(dy>110||(velocity>.5&&dy>25)){overlay.classList.add('is-dismissing');sheet.style.transform='translate3d(0,100%,0)';setTimeout(()=>renderHome(),240);}else{sheet.style.transform='';overlay.style.background='';}};
+   // On iOS, cancel the browser gesture at touchstart on the dedicated handle.
+   handle.addEventListener('touchstart',e=>{if(!e.touches.length)return;e.preventDefault();begin(e.touches[0].clientY);},{passive:false});
+   handle.addEventListener('touchmove',e=>{if(!dragging||!e.touches.length)return;e.preventDefault();move(e.touches[0].clientY);},{passive:false});
+   handle.addEventListener('touchend',e=>{if(e.cancelable)e.preventDefault();finish();},{passive:false});
+   handle.addEventListener('touchcancel',()=>{if(dragging){dragging=false;sheet.classList.remove('is-dragging');sheet.style.transform='';overlay.style.background='';}},{passive:true});
+   // Mouse fallback for desktop testing.
+   let mouseDown=false;
+   handle.addEventListener('mousedown',e=>{if(e.button!==0)return;mouseDown=true;begin(e.clientY);});
+   window.addEventListener('mousemove',e=>{if(mouseDown)move(e.clientY);});
+   window.addEventListener('mouseup',()=>{if(mouseDown){mouseDown=false;finish();}});
+   handle.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Enter'||e.key===' '){e.preventDefault();renderHome();}});
  }
 }
 function normalizeSizeValue(v){
