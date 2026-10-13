@@ -137,6 +137,32 @@ async function setCoverPhoto(index){editPhotos=editPhotos.map((p,i)=>({...p,cove
 async function addFiles(input){let files=[...input.files];let a=await Promise.all(files.map(imgFile));editPhotos.push(...a.map((src,i)=>({id:uid(),src,file:files[i],cover:false,newPhoto:true,type:'watch',note:''})));input.value='';renderEditor();scheduleDraftSave()}
 function cover(w){return w.photos?.find(p=>p.cover)?.src||w.photos?.[0]?.src||''}
 const photoUrlCache=new Map();
+const watchImageObjectUrls=new Map();
+let watchImageDbPromise=null;
+function openWatchImageDb(){
+ if(!('indexedDB'in window))return Promise.resolve(null);
+ if(watchImageDbPromise)return watchImageDbPromise;
+ watchImageDbPromise=new Promise(resolve=>{
+  try{const req=indexedDB.open('watch-archive-image-cache',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('images'))db.createObjectStore('images',{keyPath:'path'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null)}catch(e){resolve(null)}
+ });
+ return watchImageDbPromise;
+}
+async function getCachedWatchImage(path){
+ if(!path)return null;const db=await openWatchImageDb();if(!db)return null;
+ return new Promise(resolve=>{try{const tx=db.transaction('images','readonly'),req=tx.objectStore('images').get(path);req.onsuccess=()=>resolve(req.result?.blob instanceof Blob?req.result.blob:null);req.onerror=()=>resolve(null)}catch(e){resolve(null)}});
+}
+async function cacheWatchImage(path,blob){
+ if(!path||!(blob instanceof Blob)||!blob.size)return;
+ const db=await openWatchImageDb();if(!db)return;
+ try{await new Promise((resolve,reject)=>{const tx=db.transaction('images','readwrite');tx.objectStore('images').put({path,blob,size:blob.size,savedAt:Date.now()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}catch(e){console.warn('Image cache write skipped',e)}
+}
+async function loadWatchImageFromCache(path){
+ const blob=await getCachedWatchImage(path);if(!blob)return '';
+ let url=watchImageObjectUrls.get(path);if(!url){url=URL.createObjectURL(blob);watchImageObjectUrls.set(path,url)}return url;
+}
+async function cacheWatchImageFromUrl(path,url){
+ try{const response=await fetch(url,{mode:'cors',cache:'force-cache'});if(!response.ok)return;const blob=await response.blob();await cacheWatchImage(path,blob)}catch(e){}
+}
 async function refreshPhotoUrl(path,force=false){
   if(!path)return '';
   const cached=photoUrlCache.get(path);
@@ -242,7 +268,7 @@ function activateLazyImages(root){
  const imgs=(root||document).querySelectorAll('.cover-frame .cover[data-lazy-src]');
  imgs.forEach(img=>{
   if(img.dataset.lazyBound)return;img.dataset.lazyBound='1';
-  const loadImg=async()=>{if(img.dataset.lazyLoaded==='1'||img.dataset.lazyLoading==='1')return;const original=img.dataset.lazySrc;if(!original)return;img.dataset.lazyLoading='1';let src=original;const path=img.dataset.photoPath;if(path){try{const{data,error}=await supabaseClient.storage.from('watch-photos').createSignedUrl(path,86400,{transform:{width:480,height:480,resize:'cover',quality:70}});if(!error&&data?.signedUrl)src=data.signedUrl}catch(e){}}if(!img.isConnected){return}img.dataset.lazyLoading='0';img.dataset.lazyLoaded='1';img.onload=()=>{finishCoverImage(img,true);img.dataset.imageSrc=src};img.onerror=()=>{if(src!==original){img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.dataset.lazySrc=original;img.src=original;img.onload=()=>finishCoverImage(img,true);img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};return}img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};img.src=src;watchCoverLoad(img)};
+  const loadImg=async()=>{if(img.dataset.lazyLoaded==='1'||img.dataset.lazyLoading==='1')return;const original=img.dataset.lazySrc;if(!original)return;img.dataset.lazyLoading='1';const path=img.dataset.photoPath;let src='';if(path){try{src=await loadWatchImageFromCache(path)}catch(e){}}if(!src){src=original;if(path){try{const{data,error}=await supabaseClient.storage.from('watch-photos').createSignedUrl(path,86400,{transform:{width:480,height:480,resize:'cover',quality:70}});if(!error&&data?.signedUrl)src=data.signedUrl}catch(e){}}}if(!img.isConnected){return}img.dataset.lazyLoading='0';img.dataset.lazyLoaded='1';img.onload=()=>{finishCoverImage(img,true);img.dataset.imageSrc=src;if(path&&!src.startsWith('blob:'))cacheWatchImageFromUrl(path,src)};img.onerror=()=>{if(src!==original&&!src.startsWith('blob:')){img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.dataset.lazySrc=original;img.src=original;img.onload=()=>{finishCoverImage(img,true);if(path)cacheWatchImageFromUrl(path,original)};img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};return}if(src.startsWith('blob:')){watchImageObjectUrls.delete(path);img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.dataset.lazySrc=original;img.src=original;img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};return}img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};img.src=src;watchCoverLoad(img)};
   if('IntersectionObserver'in window){const io=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){io.disconnect();loadImg()}},{rootMargin:'250px'});io.observe(img)}else loadImg();
  });
 }
@@ -264,7 +290,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.56';
+const APP_VERSION='v0.1.57';
 const APP_BUILD_DATE='2026.10.14';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
