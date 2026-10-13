@@ -290,7 +290,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.64';
+const APP_VERSION='v0.1.65';
 const APP_BUILD_DATE='2026.10.14';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -505,7 +505,7 @@ function timelinePage(){
       const buys=yearEvents.filter(e=>e.type==='purchase'),sales=yearEvents.filter(e=>e.type==='sale');
       const buyTotal=buys.reduce((sum,e)=>sum+e.price,0),saleTotal=sales.reduce((sum,e)=>sum+e.price,0);
       const buyKnown=buys.filter(e=>e.price>0).length,saleKnown=sales.filter(e=>e.price>0).length;
-      html+='<section class="timeline-year-group"><div class="timeline-year" style="margin-top:0">'+y+'</div><div class="timeline-year-total" style="display:flex;flex-direction:column;align-items:stretch;gap:7px"><div style="display:flex;justify-content:space-between;gap:12px"><span>구매 총액</span><strong>'+(buyKnown?buyTotal.toLocaleString('ko-KR')+'원':'금액 미등록')+'</strong></div><span class="timeline-year-count">'+buys.length+'건'+(buyKnown<buys.length?' · 금액 '+buyKnown+'건 등록':'')+'</span><div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:7px"><span>판매 총액</span><strong>'+(saleKnown?saleTotal.toLocaleString('ko-KR')+'원':'금액 미등록')+'</strong></div><span class="timeline-year-count">'+sales.length+'건'+(saleKnown<sales.length?' · 금액 '+saleKnown+'건 등록':'')+'</span></div><div class="timeline-list">'+yearEvents.slice().sort((a,b)=>b.date.localeCompare(a.date)||(a.type==='sale'?-1:1)).map(e=>item(e.watch,e.type==='sale'?'sale_date':'purchase_date',e.type==='sale'?'판매':'구매')).join('')+'</div></section>';
+      html+='<section class="timeline-year-group"><div class="timeline-year" style="margin-top:0">'+y+'</div><div class="timeline-year-total" style="display:flex;flex-direction:column;align-items:stretch;gap:7px"><div style="display:flex;justify-content:space-between;gap:12px"><span>구매 총액</span><strong>'+(buyKnown?buyTotal.toLocaleString('ko-KR')+'원':'금액 미등록')+'</strong></div><span class="timeline-year-count">'+buys.length+'건'+(buyKnown<buys.length?' · 금액 '+buyKnown+'건 등록':'')+'</span>'+(sales.length?'<div style="display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:7px"><span>판매 총액</span><strong>'+(saleKnown?saleTotal.toLocaleString('ko-KR')+'원':'금액 미등록')+'</strong></div><span class="timeline-year-count">'+sales.length+'건'+(saleKnown<sales.length?' · 금액 '+saleKnown+'건 등록':'')+'</span>':'')+'</div><div class="timeline-list">'+yearEvents.slice().sort((a,b)=>b.date.localeCompare(a.date)||(a.type==='sale'?-1:1)).map(e=>item(e.watch,e.type==='sale'?'sale_date':'purchase_date',e.type==='sale'?'판매':'구매')).join('')+'</div></section>';
     });
   }else html+='<div class="empty">구매일 또는 판매일을 입력하면 타임라인에 표시돼.</div>';
   if(undatedPurchases.length)html+='<div class="timeline-undated"><div class="head"><h2>구매일 미등록</h2><span class="small">'+undatedPurchases.length+'개</span></div><div class="timeline-list">'+undatedPurchases.map(w=>item(w,'purchase_date','구매')).join('')+'</div></div>';
