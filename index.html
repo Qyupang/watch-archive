@@ -110,6 +110,8 @@ const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DB='watch-archive-v2',STORE='watches',BRANDS_KEY='watch-archive-brands-v1';
 const DEFAULT_BRANDS=['Rolex','Omega','TAG Heuer','Tudor','Cartier','Jaeger-LeCoultre','Patek Philippe','Audemars Piguet','Vacheron Constantin','Breguet','Breitling','IWC','Zenith','Hublot','Longines','Grand Seiko','Seiko','Citizen','Casio','Timex','Bulgari','Piaget','Panerai','Hamilton','Oris','Nomos','Sinn','Tissot','Rado','Heuer'];
 let watches=[],filter='archive',query='',brandFilter='',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
+let sortMode='random',watchRandomRank=new Map();
+try{sortMode=localStorage.getItem('watchArchiveSortMode')||'random'}catch(e){}
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function authScreen(message=''){ $('#app').innerHTML='<main class="app"><section class="authbox"><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><h1>Watch Archive</h1><p>내 시계와 사진을 여러 기기에서 안전하게 보관하려면 로그인해주세요.</p><input id="authEmail" type="email" autocomplete="email" placeholder="Email"><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"><div class="authactions"><button class="action primary" onclick="signIn()">Sign in</button><button class="action" onclick="signUp()">Create account</button></div><div class="authmsg" id="authmsg">'+esc(message)+'</div></section></main>'}
@@ -211,6 +213,7 @@ watches=rows.map(w=>{
   }));
   return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',purchase_price:w.purchase_price??null,tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at};
 });
+watchRandomRank=new Map(watches.map(w=>[w.id,Math.random()]));
 renderHome();
 }
 function nav(){return`<nav class="navbar"><div class="navin"><button class="nav active" onclick="renderHome()"><span>⌚</span>Watches</button><button class="nav" onclick="photosPage()"><span>▧</span>Photos</button><button class="nav" onclick="settings()"><span>⋯</span>Settings</button></div></nav>`}
@@ -220,7 +223,8 @@ function brandFilterHtml(){let items=getBrandCounts(),selected=brandFilter?items
 function toggleBrandMenu(e){e.stopPropagation();let el=document.getElementById('brandFilter');if(!el)return;el.classList.toggle('open');el.querySelector('.brandFilterButton')?.setAttribute('aria-expanded',el.classList.contains('open'))}
 function setBrandFilter(value){let target=String(value||'').trim();let match=target?getBrandCounts().find(([b])=>b.trim().toLowerCase()===target.toLowerCase()):null;brandFilter=match?match[0]:'';let el=document.getElementById('brandFilter');if(el){el.classList.remove('open');let items=getBrandCounts();let selected=brandFilter?items.find(([b])=>b.trim().toLowerCase()===brandFilter.trim().toLowerCase()):null;el.querySelector('.brandFilterValue').textContent=selected?selected[0]+' ('+selected[1]+')':'All Brands';el.querySelectorAll('.brandFilterOption').forEach(o=>{let b=o.dataset.brand||'';let active=(b.toLowerCase()===String(brandFilter||'').toLowerCase());o.classList.toggle('selected',active);o.setAttribute('aria-selected',active?'true':'false');let check=o.querySelector('.brandFilterCheck');if(check)check.textContent=active?'✓':''})}updateHomeResults()}
 document.addEventListener('click',e=>{let el=document.getElementById('brandFilter');if(el&&!el.contains(e.target))el.classList.remove('open');document.querySelectorAll('.formSelect.open').forEach(x=>{if(!x.contains(e.target))x.classList.remove('open')})});
-function getFilteredWatches(){let selectedBrand=String(brandFilter||'').trim().toLowerCase();let q=String(query||'').trim().toLowerCase();return watches.filter(w=>{let sameStatus=w.status===filter;let sameBrand=!selectedBrand||String(w.brand||'').trim().toLowerCase()===selectedBrand;let matchesQuery=!q||JSON.stringify(w).toLowerCase().includes(q);return sameStatus&&sameBrand&&matchesQuery})}
+function getFilteredWatches(){let selectedBrand=String(brandFilter||'').trim().toLowerCase();let q=String(query||'').trim().toLowerCase();let list=watches.filter(w=>{let sameStatus=w.status===filter;let sameBrand=!selectedBrand||String(w.brand||'').trim().toLowerCase()===selectedBrand;let matchesQuery=!q||JSON.stringify(w).toLowerCase().includes(q);return sameStatus&&sameBrand&&matchesQuery});if(sortMode==='latest')list.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));else if(sortMode==='oldest')list.sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));else list.sort((a,b)=>(watchRandomRank.get(a.id)??0)-(watchRandomRank.get(b.id)??0));return list}
+function setSortMode(value){sortMode=['random','latest','oldest'].includes(value)?value:'random';try{localStorage.setItem('watchArchiveSortMode',sortMode)}catch(e){}updateHomeResults()}
 function updateHomeResults(){
 let list=getFilteredWatches(),h=$('#homeResults');if(!h)return;
 window._watchDomImageCache=window._watchDomImageCache||new Map();
@@ -228,7 +232,7 @@ h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
   const src=img.dataset.imageSrc;
   if(src)window._watchDomImageCache.set(src,img);
 });
-h.innerHTML=list.length?'<div class="head"><h2>'+(filter==='owned'?'My Watches':'Archive')+'</h2><span class="small">'+list.length+' entries</span></div><div class="grid">'+list.map(card).join('')+'</div>':'<div class="head"><h2>'+(filter==='owned'?'My Watches':'Archive')+'</h2><span class="small">0 entries</span></div><div class="empty">검색 결과가 없어.</div>';
+h.innerHTML='<div class="head"><h2>'+(filter==='owned'?'My Watches':'Archive')+'</h2><div style="display:flex;align-items:center;gap:10px"><span class="small">'+list.length+' entries</span><select aria-label="시계 정렬" onchange="setSortMode(this.value)" style="max-width:126px;padding:8px 9px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:12px inherit"><option value="random" '+(sortMode==='random'?'selected':'')+'>랜덤</option><option value="latest" '+(sortMode==='latest'?'selected':'')+'>최신 등록순</option><option value="oldest" '+(sortMode==='oldest'?'selected':'')+'>과거 등록순</option></select></div></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">검색 결과가 없어.</div>');
 h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
   const src=img.dataset.imageSrc;
   const cached=window._watchDomImageCache.get(src);
@@ -245,7 +249,7 @@ h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
 });
 h.querySelectorAll('.cover-frame .cover').forEach(img=>{if(img.complete&&img.naturalWidth){finishCoverImage(img,true)}else{watchCoverLoad(img);if(img.complete&&!img.naturalWidth)retryImage(img)}});
 }
-const APP_VERSION='v0.1.24';
+const APP_VERSION='v0.1.25';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
