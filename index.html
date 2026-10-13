@@ -243,7 +243,7 @@ function activateLazyImages(root){
  const imgs=(root||document).querySelectorAll('.cover-frame .cover[data-lazy-src]');
  imgs.forEach(img=>{
   if(img.dataset.lazyBound)return;img.dataset.lazyBound='1';
-  const loadImg=()=>{if(img.dataset.lazyLoaded==='1')return;const src=img.dataset.lazySrc;if(!src)return;img.dataset.lazyLoaded='1';img.onload=()=>{finishCoverImage(img,true);img.dataset.imageSrc=src};img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.src=src;retryImage(img)};img.src=src;watchCoverLoad(img)};
+  const loadImg=async()=>{if(img.dataset.lazyLoaded==='1'||img.dataset.lazyLoading==='1')return;const original=img.dataset.lazySrc;if(!original)return;img.dataset.lazyLoading='1';let src=original;const path=img.dataset.photoPath;if(path){try{const{data,error}=await supabaseClient.storage.from('watch-photos').createSignedUrl(path,86400,{transform:{width:480,height:480,resize:'cover',quality:70}});if(!error&&data?.signedUrl)src=data.signedUrl}catch(e){}}if(!img.isConnected){return}img.dataset.lazyLoading='0';img.dataset.lazyLoaded='1';img.onload=()=>{finishCoverImage(img,true);img.dataset.imageSrc=src};img.onerror=()=>{if(src!==original){img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';img.dataset.lazySrc=original;img.src=original;img.onload=()=>finishCoverImage(img,true);img.onerror=()=>{img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};return}img.dataset.lazyLoaded='0';img.dataset.lazyBound='0';retryImage(img)};img.src=src;watchCoverLoad(img)};
   if('IntersectionObserver'in window){const io=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){io.disconnect();loadImg()}},{rootMargin:'250px'});io.observe(img)}else loadImg();
  });
 }
@@ -265,7 +265,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.49';
+const APP_VERSION='v0.1.50';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
