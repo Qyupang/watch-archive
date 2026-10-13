@@ -230,29 +230,16 @@ function setSortMode(value){sortMode=['latest','oldest'].includes(value)?value:'
 document.addEventListener('click',e=>{if(sortMenuOpen&&!e.target.closest('.sort-trigger,.sort-menu')){sortMenuOpen=false;document.querySelectorAll('.sort-menu.open').forEach(menu=>menu.classList.remove('open'));document.querySelectorAll('.sort-trigger[aria-expanded="true"]').forEach(btn=>btn.setAttribute('aria-expanded','false'))}});
 function updateHomeResults(){
 let list=getFilteredWatches(),h=$('#homeResults');if(!h)return;
-window._watchDomImageCache=window._watchDomImageCache||new Map();
-h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
-  const src=img.dataset.imageSrc;
-  if(src)window._watchDomImageCache.set(src,img);
-});
-h.innerHTML='<div class="head"><h2>'+(filter==='owned'?'My Watches':'Archive')+'</h2><div style="display:flex;align-items:center;gap:10px"><span class="small">'+list.length+' entries</span><button type="button" class="sort-trigger" aria-label="정렬 변경" title="정렬 변경" aria-expanded="'+(sortMenuOpen?'true':'false')+'" onclick="toggleSortMenu(event)"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button><div class="sort-menu '+(sortMenuOpen?'open':'')+'" role="group" aria-label="시계 정렬"><button type="button" class="sort-option '+(sortMode==='latest'?'selected':'')+'" onclick="setSortMode(\'latest\')">최신순</button><button type="button" class="sort-option '+(sortMode==='oldest'?'selected':'')+'" onclick="setSortMode(\'oldest\')">과거순</button></div></div></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">검색 결과가 없어.</div>');
-h.querySelectorAll('img.cover[data-image-src]').forEach(img=>{
-  const src=img.dataset.imageSrc;
-  const cached=window._watchDomImageCache.get(src);
-  if(cached && cached!==img){
-    cached.className=img.className;
-    cached.alt=img.alt;
-    cached.decoding=img.decoding;
-    cached.fetchPriority=img.fetchPriority;
-    cached.dataset.imageSrc=src;
-    img.replaceWith(cached);
-  }else if(cached!==img){
-    window._watchDomImageCache.set(src,img);
-  }
-});
+// Reuse existing card DOM nodes by watch ID so filtering and sorting never reload loaded photos.
+const existingCards=new Map(Array.from(h.querySelectorAll('.card[data-watch-id]')).map(el=>[el.dataset.watchId,el]));
+const temp=document.createElement('div');
+temp.innerHTML='<div class="head"><h2>'+(filter==='owned'?'My Watches':'Archive')+'</h2><div style="display:flex;align-items:center;gap:10px"><span class="small">'+list.length+' entries</span><button type="button" class="sort-trigger" aria-label="정렬 변경" title="정렬 변경" aria-expanded="'+(sortMenuOpen?'true':'false')+'" onclick="toggleSortMenu(event)"><svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg></button><div class="sort-menu '+(sortMenuOpen?'open':'')+'" role="group" aria-label="시계 정렬"><button type="button" class="sort-option '+(sortMode==='latest'?'selected':'')+'" onclick="setSortMode(\'latest\')">최신순</button><button type="button" class="sort-option '+(sortMode==='oldest'?'selected':'')+'" onclick="setSortMode(\'oldest\')">과거순</button></div></div></div>'+(list.length?'<div class="grid">'+list.map(card).join('')+'</div>':'<div class="empty">검색 결과가 없어.</div>');
+const newGrid=temp.querySelector('.grid');
+if(newGrid)newGrid.querySelectorAll('.card[data-watch-id]').forEach(fresh=>{const cached=existingCards.get(fresh.dataset.watchId);if(cached)fresh.replaceWith(cached)});
+h.replaceChildren(...temp.childNodes);
 h.querySelectorAll('.cover-frame .cover').forEach(img=>{if(img.complete&&img.naturalWidth){finishCoverImage(img,true)}else{watchCoverLoad(img);if(img.complete&&!img.naturalWidth)retryImage(img)}});
 }
-const APP_VERSION='v0.1.27';
+const APP_VERSION='v0.1.28';
 const APP_BUILD_DATE='2026.10.13';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -277,7 +264,7 @@ if(preservedInspiration&&renderedInspiration){
 
 updateHomeResults();const vi=document.createElement('div');vi.innerHTML=versionIndicator();const main=document.querySelector('#app main.app');if(main&&vi.firstElementChild)main.appendChild(vi.firstElementChild)
 }
-function card(w){let p=w.photos?.find(p=>p.cover)||w.photos?.[0];return`<article class="card" onclick="openDetail('${w.id}')">${p?`<div class="cover-frame is-loading"><img class="cover" ${photoAttrs(p,'fetchpriority="low"')} alt="${esc(w.brand||'')} ${esc(w.model||'Watch')}"></div>`:`<div class="cover-frame"></div>`}<div class="cardbody"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
+function card(w){let p=w.photos?.find(p=>p.cover)||w.photos?.[0];return`<article class="card" data-watch-id="${esc(w.id)}" onclick="openDetail('${w.id}')">${p?`<div class="cover-frame is-loading"><img class="cover" ${photoAttrs(p,'fetchpriority="low"')} alt="${esc(w.brand||'')} ${esc(w.model||'Watch')}"></div>`:`<div class="cover-frame"></div>`}<div class="cardbody"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
 function openDetail(id){detail=id;renderDetail()}function closeDetail(){detail=null;renderHome()}
 function orderedPhotos(w){let ps=[...(w.photos||[])];if(!ps.length)return[];let i=ps.findIndex(p=>p.cover);if(i>0){let c=ps.splice(i,1)[0];ps.unshift(c)}return ps}
 let zoomState={scale:1,x:0,y:0,pinchStart:0,pinchStartScale:1,pinchBaseX:0,pinchBaseY:0,pinchCenterX:0,pinchCenterY:0,pinchContentX:0,pinchContentY:0,dragStartX:0,dragStartY:0,dragOriginX:0,dragOriginY:0,lastTap:0};
