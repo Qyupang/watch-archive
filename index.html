@@ -113,7 +113,6 @@ const DB='watch-archive-v2',STORE='watches',BRANDS_KEY='watch-archive-brands-v1'
 const DEFAULT_BRANDS=['Rolex','Omega','TAG Heuer','Tudor','Cartier','Jaeger-LeCoultre','Patek Philippe','Audemars Piguet','Vacheron Constantin','Breguet','Breitling','IWC','Zenith','Hublot','Longines','Grand Seiko','Seiko','Citizen','Casio','Timex','Bulgari','Piaget','Panerai','Hamilton','Oris','Nomos','Sinn','Tissot','Rado','Heuer'];
 let watches=[],filter='archive',query='',brandFilter='',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
 let sortMode='random',watchRandomRank=new Map(),sortMenuOpen=false;
-try{sortMode=localStorage.getItem('watchArchiveSortMode')||'random'}catch(e){}
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function authScreen(message=''){ $('#app').innerHTML='<main class="app"><section class="authbox"><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><h1>Watch Archive</h1><p>내 시계와 사진을 여러 기기에서 안전하게 보관하려면 로그인해주세요.</p><input id="authEmail" type="email" autocomplete="email" placeholder="Email"><input id="authPassword" type="password" autocomplete="current-password" placeholder="Password"><div class="authactions"><button class="action primary" onclick="signIn()">Sign in</button><button class="action" onclick="signUp()">Create account</button></div><div class="authmsg" id="authmsg">'+esc(message)+'</div></section></main>'}
@@ -265,8 +264,8 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.50';
-const APP_BUILD_DATE='2026.10.13';
+const APP_VERSION='v0.1.51';
+const APP_BUILD_DATE='2026.10.14';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
 function setVersionVisibility(checked){try{localStorage.setItem(VERSION_VISIBLE_KEY,checked?'true':'false')}catch(e){}settings()}
