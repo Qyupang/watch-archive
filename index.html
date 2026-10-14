@@ -266,6 +266,17 @@ function brandAnalysisHtml(held){
   else if(hasCost){g.allocationValue+=Number(w.purchase_price);g.allocationCount++;g.costFallbackCount++}
   if(hasValue&&hasCost&&Number(w.purchase_price)>0){g.pnl+=Number(w.current_value)-Number(w.purchase_price);g.pnlBase+=Number(w.purchase_price);g.comparableCount++}
  });
+ const watchRows=held.map(w=>{
+  const hasValue=w.current_value!==null&&w.current_value!==''&&Number.isFinite(Number(w.current_value))&&Number(w.current_value)>=0;
+  const hasCost=w.purchase_price!==null&&w.purchase_price!==''&&Number.isFinite(Number(w.purchase_price))&&Number(w.purchase_price)>=0;
+  return {watch:w,amount:hasValue?Number(w.current_value):(hasCost?Number(w.purchase_price):null),source:hasValue?'평가금액':(hasCost?'구매금액':'미등록')};
+ }).filter(item=>item.amount!==null).sort((a,b)=>b.amount-a.amount);
+ const watchTotal=watchRows.reduce((sum,item)=>sum+item.amount,0);
+ const watchMax=Math.max(1,...watchRows.map(item=>item.amount));
+ const watchAllocationHtml=watchRows.length?'<div class="brand-analysis-list">'+watchRows.map(item=>{
+  const w=item.watch,share=watchTotal?item.amount/watchTotal*100:0;
+  return '<div class="brand-analysis-row"><div class="brand-analysis-main"><div class="brand-analysis-name">'+esc(w.brand||'브랜드 미등록')+' · '+esc(w.model||'모델 미등록')+'</div><div class="brand-analysis-sub">비중 '+share.toFixed(1)+'% · '+item.source+'</div><div class="brand-analysis-bar"><span style="width:'+Math.max(0,Math.min(100,item.amount/watchMax*100))+'%"></span></div></div><div class="brand-analysis-pnl"><strong>'+formatWon(item.amount)+'</strong><span class="small">'+(w.reference?esc(w.reference):'레퍼런스 미등록')+'</span></div></div>';
+ }).join('')+'</div>':'<div class="brand-analysis-empty">구매금액 또는 현재 평가금액을 등록하면 시계별 비중을 확인할 수 있어.</div>';
  const groups=[...grouped.values()];
  const totalValue=groups.reduce((sum,g)=>sum+g.allocationValue,0);
  const allocation=groups.filter(g=>g.allocationCount>0).sort((a,b)=>b.allocationValue-a.allocationValue);
@@ -281,7 +292,7 @@ function brandAnalysisHtml(held){
   const width=Math.abs(g.pnl)/maxPnl*100;
   return '<div class="brand-analysis-row"><div class="brand-analysis-main"><div class="brand-analysis-name">'+esc(g.brand)+'</div><div class="brand-analysis-sub">'+g.comparableCount+'개 기준 · 원가 '+formatWon(g.pnlBase)+'</div><div class="brand-analysis-bar"><span style="width:'+width+'%;background:'+color+'"></span></div></div><div class="brand-analysis-pnl"><strong style="color:'+color+'">'+(positive?'+':'−')+formatWon(Math.abs(g.pnl))+'</strong><span class="small" style="color:'+color+'">'+(positive?'+':'')+pct.toFixed(1)+'%</span></div></div>';
  }).join('')+'</div>':'<div class="brand-analysis-empty">현재 평가금액과 구매가가 모두 등록된 시계가 있어야 브랜드별 평가손익을 계산할 수 있어.</div>';
- return '<section class="brand-analysis"><div class="head"><h2>브랜드 분석</h2><span class="small">'+groups.length+'개 브랜드</span></div><section class="brand-analysis-section"><div class="brand-analysis-heading"><h3>브랜드별 비중</h3><span class="small">평가금액 우선 · 미입력 시 구매가</span></div>'+allocationHtml+'<p class="brand-analysis-note">현재 평가금액이 있으면 해당 금액을 사용하고, 없으면 구매금액으로 대체해. 따라서 일부 시계의 구매가가 포함된 추정 비중일 수 있어. 합산 기준 금액: '+formatWon(totalValue)+'</p></section><section class="brand-analysis-section"><div class="brand-analysis-heading"><h3>브랜드별 평가손익</h3><span class="small">평가금액 − 구매가</span></div>'+pnlHtml+'<p class="brand-analysis-note">구매가와 현재 평가금액이 모두 입력된 시계만 포함해. 수리비, 거래 수수료 등은 반영하지 않은 단순 평가손익이야.</p></section></section>';
+ return '<section class="brand-analysis"><div class="head"><h2>브랜드 분석</h2><span class="small">'+groups.length+'개 브랜드</span></div><section class="brand-analysis-section"><div class="brand-analysis-heading"><h3>브랜드별 비중</h3><span class="small">평가금액 우선 · 미입력 시 구매가</span></div>'+allocationHtml+'<p class="brand-analysis-note">현재 평가금액이 있으면 해당 금액을 사용하고, 없으면 구매금액으로 대체해. 따라서 일부 시계의 구매가가 포함된 추정 비중일 수 있어. 합산 기준 금액: '+formatWon(totalValue)+'</p></section><section class="brand-analysis-section"><div class="brand-analysis-heading"><h3>시계별 비중</h3><span class="small">평가금액 우선 · 미입력 시 구매가</span></div>'+watchAllocationHtml+'<p class="brand-analysis-note">브랜드 구분 없이 각 보유 시계가 전체 합산 기준 금액에서 차지하는 비중이야. 막대 길이는 시계별 금액 비교를 나타내.</p></section><section class="brand-analysis-section"><div class="brand-analysis-heading"><h3>브랜드별 평가손익</h3><span class="small">평가금액 − 구매가</span></div>'+pnlHtml+'<p class="brand-analysis-note">구매가와 현재 평가금액이 모두 입력된 시계만 포함해. 수리비, 거래 수수료 등은 반영하지 않은 단순 평가손익이야.</p></section></section>';
 }
 function portfolioPage(){
  const held=watches.filter(w=>w.status==='owned'&&w.possession_status!=='sold');
@@ -358,7 +369,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.78';
+const APP_VERSION='v0.1.79';
 const APP_BUILD_DATE='2026.10.14';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
