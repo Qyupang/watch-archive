@@ -311,8 +311,9 @@ function brandAnalysisHtml(held){
 function portfolioPage(){
  const held=watches.filter(w=>w.status==='owned'&&w.possession_status!=='sold');
  const priced=held.filter(w=>w.current_value!==null&&w.current_value!==''&&Number(w.current_value)>=0);
+ const fallbackPriced=held.filter(w=>(w.current_value===null||w.current_value==='')&&Number(w.purchase_price)>0);
  const cost=held.reduce((a,w)=>a+(Number(w.purchase_price)||0),0);
- const value=priced.reduce((a,w)=>a+(Number(w.current_value)||0),0);
+ const value=held.reduce((a,w)=>a+((w.current_value!==null&&w.current_value!=='')?Math.max(0,Number(w.current_value)||0):(Number(w.purchase_price)||0)),0);
  const comparable=held.filter(w=>w.current_value!==null&&w.current_value!==''&&Number(w.purchase_price)>0);
  const pnl=comparable.reduce((a,w)=>a+(Number(w.current_value)-Number(w.purchase_price)),0);
  const pnlBase=comparable.reduce((a,w)=>a+Number(w.purchase_price),0);
@@ -321,10 +322,13 @@ function portfolioPage(){
  const cards=held.map(w=>{
   const photo=w.photos?.find(p=>p.cover)||w.photos?.[0];
   const hasValue=w.current_value!==null&&w.current_value!=='';
-  const val=hasValue?formatWon(w.current_value):'평가금액 미등록';
-  return '<button type="button" class="portfolio-row" onclick="openValuation(\''+w.id+'\')">'+(photo&&photo.src?'<img class="portfolio-thumb" src="'+esc(photo.src)+'" alt="">':'<div class="portfolio-thumb"></div>')+'<span class="portfolio-watch-name"><span class="cardbrand">'+esc(w.brand||'BRAND')+'</span><span class="portfolio-model">'+esc(w.model||'Untitled')+'</span><span class="small">'+esc(w.reference||'')+(w.size?' · '+esc(w.size):'')+'</span></span><span class="portfolio-row-value"><strong>'+val+'</strong><span class="small">'+(w.valuation_date?'기준 '+esc(w.valuation_date):'평가 정보 입력')+'</span><span class="portfolio-edit">수정 →</span></span></button>';
+  const hasPurchase=Number(w.purchase_price)>0;
+  const displayValue=hasValue?w.current_value:(hasPurchase?w.purchase_price:null);
+  const val=displayValue!==null?formatWon(displayValue):'금액 미등록';
+  const valueLabel=hasValue?(w.valuation_date?'평가 기준 '+esc(w.valuation_date):'평가금액 기준'):(hasPurchase?'구매가 기준':'평가 정보 입력');
+  return '<button type="button" class="portfolio-row" onclick="openValuation(\''+w.id+'\')">'+(photo&&photo.src?'<img class="portfolio-thumb" src="'+esc(photo.src)+'" alt="">':'<div class="portfolio-thumb"></div>')+'<span class="portfolio-watch-name"><span class="cardbrand">'+esc(w.brand||'BRAND')+'</span><span class="portfolio-model">'+esc(w.model||'Untitled')+'</span><span class="small">'+esc(w.reference||'')+(w.size?' · '+esc(w.size):'')+'</span></span><span class="portfolio-row-value"><strong>'+val+'</strong><span class="small">'+valueLabel+'</span><span class="portfolio-edit">수정 →</span></span></button>';
  }).join('');
- $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">COLLECTION OVERVIEW</div><div class="brand">Portfolio</div></div><span class="small">'+held.length+' watches</span></div><div class="portfolio-stats portfolio-stats-compact"><div class="portfolio-stat"><div class="small">평가금액 합계</div><strong>'+formatWon(value)+'</strong><div class="small">입력 '+priced.length+'/'+held.length+'개 · 구매 원가 '+formatWon(cost)+'</div></div><div class="portfolio-stat"><div class="small">평가손익</div><strong style="color:'+pnlColor+'">'+(comparable.length?(pnl>0?'+':'')+formatWon(pnl):'—')+'</strong><div class="small">'+(pnlBase?(pct>0?'+':'')+pct.toFixed(1)+'%':'평가 가능한 시계 없음')+'</div></div></div>'+brandAnalysisHtml(held)+'<div class="head" style="margin-top:24px"><h2>보유 시계</h2><span class="small">'+held.length+'개 · 눌러서 평가 정보 관리</span></div><div class="portfolio-list">'+(cards||'<div class="empty">My Watches에 보유 중인 시계가 없습니다.</div>')+'</div></main>'+nav('portfolio');
+ $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">COLLECTION OVERVIEW</div><div class="brand">Portfolio</div></div><span class="small">'+held.length+' watches</span></div><div class="portfolio-stats portfolio-stats-compact"><div class="portfolio-stat"><div class="small">평가금액 합계</div><strong>'+formatWon(value)+'</strong><div class="small">평가 입력 '+priced.length+'개 · 구매가 대체 '+fallbackPriced.length+'개</div><div class="small">총 구매 원가 '+formatWon(cost)+'</div></div><div class="portfolio-stat"><div class="small">평가손익</div><strong style="color:'+pnlColor+'">'+(comparable.length?(pnl>0?'+':'')+formatWon(pnl):'—')+'</strong><div class="small">'+(pnlBase?(pct>0?'+':'')+pct.toFixed(1)+'%':'평가 가능한 시계 없음')+'</div></div></div>'+brandAnalysisHtml(held)+'<div class="head" style="margin-top:24px"><h2>보유 시계</h2><span class="small">'+held.length+'개 · 눌러서 평가 정보 관리</span></div><div class="portfolio-list">'+(cards||'<div class="empty">My Watches에 보유 중인 시계가 없습니다.</div>')+'</div></main>'+nav('portfolio');
 }
 function openValuation(id){
  const w=watches.find(x=>x.id===id);if(!w||!currentUser)return;
@@ -387,7 +391,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.82';
+const APP_VERSION='v0.1.83';
 const APP_BUILD_DATE='2026.10.14';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
