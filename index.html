@@ -353,7 +353,50 @@ async function saveValuation(id){
  if(previousValue!==currentValue){const {error:he}=await supabaseClient.from('watch_history').insert({user_id:currentUser.id,watch_id:id,event_type:'valuation',event_date:valuationDate||new Date().toISOString().slice(0,10),previous_value:previousValue,new_value:currentValue,note:valuationSource?'평가 출처: '+valuationSource:null});historyError=he}
  closeValuation();await load();portfolioPage();toast(historyError?'평가 정보는 저장했지만 변경 이력은 저장하지 못했어요':'평가 정보를 저장했어요');
 }
-function nav(active='watches'){return`<nav class="navbar"><div class="navin"><button class="nav ${active==='watches'?'active':''}" onclick="renderHome()"><span>⌚</span>Watches</button><button class="nav ${active==='timeline'?'active':''}" onclick="timelinePage()"><span>↟</span>Timeline</button><button class="nav ${active==='portfolio'?'active':''}" onclick="portfolioPage()"><span>◉</span>Portfolio</button><button class="nav ${active==='wear'?'active':''}" onclick="wearPage()"><span>◷</span>Wear</button><button class="nav ${active==='photos'?'active':''}" onclick="photosPage()"><span>▧</span>Photos</button><button class="nav ${active==='settings'?'active':''}" onclick="settings()"><span>⋯</span>Settings</button></div></nav>`}
+function nav(active='watches'){return`<nav class="navbar"><div class="navin"><button class="nav ${active==='watches'?'active':''}" onclick="renderHome()"><span>⌚</span>Watches</button><button class="nav ${active==='timeline'?'active':''}" onclick="timelinePage()"><span>↟</span>Timeline</button><button class="nav ${active==='portfolio'?'active':''}" onclick="portfolioPage()"><span>◉</span>Portfolio</button><button class="nav ${active==='budget'?'active':''}" onclick="budgetPage()"><span>₩</span>Budget</button><button class="nav ${active==='wear'?'active':''}" onclick="wearPage()"><span>◷</span>Wear</button><button class="nav ${active==='photos'?'active':''}" onclick="photosPage()"><span>▧</span>Photos</button><button class="nav ${active==='settings'?'active':''}" onclick="settings()"><span>⋯</span>Settings</button></div></nav>`}
+
+const BUDGET_KEY='watchArchiveBudget_v1';
+function budgetConfig(){try{return JSON.parse(localStorage.getItem(BUDGET_KEY)||'{}')}catch(e){return {}}}
+function saveBudgetConfig(patch){const next={...budgetConfig(),...patch};localStorage.setItem(BUDGET_KEY,JSON.stringify(next));return next}
+function budgetMoney(v){return formatWon(Math.round(Number(v)||0))}
+function budgetHeld(){return watches.filter(w=>w.status==='owned'&&w.possession_status!=='sold')}
+function budgetSold(){return watches.filter(w=>w.status==='owned'&&w.possession_status==='sold')}
+function budgetPage(){
+ const cfg=budgetConfig(),year=new Date().getFullYear(),held=budgetHeld(),sold=budgetSold();
+ const heldCost=held.reduce((s,w)=>s+Math.max(0,Number(w.purchase_price)||0),0);
+ const soldCost=sold.reduce((s,w)=>s+Math.max(0,Number(w.purchase_price)||0),0);
+ const sales=sold.reduce((s,w)=>s+Math.max(0,Number(w.sale_price)||0),0);
+ const assets=Math.max(0,Number(cfg.otherAssets)||0),debts=Math.max(0,Number(cfg.liabilities)||0);
+ // Net worth includes the acquisition cost of currently held watches, not market valuations.
+ const netWorth=assets+heldCost-debts;
+ const longLimit=Math.max(0,netWorth*.05),longRemaining=longLimit-heldCost;
+ const income=Math.max(0,Number(cfg['income_'+year])||0),annualAllocation=income*.05;
+ const carry=Math.max(0,Number(cfg['carry_'+year])||0);
+ const purchasesThisYear=held.concat(sold).reduce((s,w)=>s+(String(w.purchase_date||'').slice(0,4)===String(year)?Math.max(0,Number(w.purchase_price)||0):0),0);
+ const annualAvailable=carry+annualAllocation,annualRemaining=annualAvailable-purchasesThisYear;
+ const buyable=Math.max(0,Math.min(longRemaining,annualRemaining));
+ const nextCarry=Math.max(0,annualRemaining);
+ const input=(id,label,value,help='')=>'<label class="field"><span>'+label+'</span><input id="'+id+'" type="number" min="0" step="10000" value="'+(Number(value)||0)+'" placeholder="0">'+(help?'<small class="small">'+help+'</small>':'')+'</label>';
+ $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">COLLECTION PLANNING</div><div class="brand">Budget</div><div class="small">'+year+'년 시계 구매 예산</div></div><button class="icon" onclick="settings()">⚙</button></div>'+
+ '<section class="portfolio-stat" style="margin-bottom:12px"><div class="small">현재 구매 가능 금액</div><div class="brand" style="font-size:30px;margin:8px 0">'+budgetMoney(buyable)+'</div><div class="small">장기 잔여 한도와 연간 잔여 예산 중 작은 금액</div></section>'+
+ '<div class="portfolio-stats portfolio-stats-compact"><div class="portfolio-stat"><div class="small">장기 한도 · 순자산의 5%</div><strong>'+budgetMoney(longLimit)+'</strong><div class="small">보유 시계 취득금액 '+budgetMoney(heldCost)+'</div><div class="small">잔여 '+budgetMoney(longRemaining)+'</div></div><div class="portfolio-stat"><div class="small">연간 가용 예산</div><strong>'+budgetMoney(annualAvailable)+'</strong><div class="small">올해 구매 지출 '+budgetMoney(purchasesThisYear)+'</div><div class="small">잔여 '+budgetMoney(annualRemaining)+'</div></div></div>'+
+ (longRemaining<0?'<div class="portfolio-stat" style="margin:12px 0"><strong>장기 한도 초과</strong><div class="small">현재 보유 시계 취득금액이 장기 한도를 초과했어. 추가 구매는 제한돼.</div></div>':'')+
+ '<section class="portfolio-stat" style="margin-top:12px"><div class="section-title">연간 예산 내역</div><div class="history-row"><span>전년도 이월액</span><strong>'+budgetMoney(carry)+'</strong></div><div class="history-row"><span>'+year+'년 현금 수입 × 5%</span><strong>'+budgetMoney(annualAllocation)+'</strong></div><div class="history-row"><span>올해 구매 지출</span><strong>−'+budgetMoney(purchasesThisYear)+'</strong></div><div class="history-row"><span>연말 예상 이월액</span><strong>'+budgetMoney(nextCarry)+'</strong></div><div class="small">판매 대금은 연간 예산을 복원하지 않고, 별도 회수액으로 기록해.</div></section>'+
+ '<section class="portfolio-stat" style="margin-top:12px"><div class="section-title">자산 및 수입 설정</div><div class="small" style="margin-bottom:12px">다른 자산은 시계 취득금액을 제외해 입력해. 아래 순자산 계산에는 현재 보유 시계의 취득금액이 자동 포함돼.</div>'+input('budgetAssets','시계 외 자산 합계 (원)',assets,'예금·주식·기타 자산 등')+input('budgetDebts','총부채 (원)',debts)+input('budgetIncome','올해 현금 수입 (원)',income,'월급·성과급 등 실제 수입 합계')+input('budgetCarry','올해 이월액 (원)',carry,'전년도 잔여 예산')+'<button class="btn primary" style="width:100%;margin-top:12px" onclick="saveBudgetSettings()">설정 저장</button></section>'+
+ '<section class="portfolio-stat" style="margin-top:12px"><div class="section-title">매각 현황</div><div class="history-row"><span>판매한 시계 취득금액 합계</span><strong>'+budgetMoney(soldCost)+'</strong></div><div class="history-row"><span>판매 대금 회수액</span><strong>'+budgetMoney(sales)+'</strong></div><div class="history-row"><span>매각 손익 (단순 차액)</span><strong style="color:'+(sales-soldCost>=0?'#16834a':'#d73535')+'">'+budgetMoney(sales-soldCost)+'</strong></div><div class="small">판매한 시계는 보유 시계 취득금액에서 제외돼. 매각 대금은 시계 외 자산에 포함해 순자산을 갱신해야 정확해.</div></section>'+
+ '<section class="portfolio-stat" style="margin-top:12px"><div class="section-title">계산 기준</div><div class="small">• 순자산 = 시계 외 자산 + 보유 시계 취득금액 − 총부채</div><div class="small">• 장기 한도 = 순자산 × 5%</div><div class="small">• 연간 예산 = 이월액 + 올해 현금 수입 × 5% − 올해 구매 지출</div><div class="small">• 판매 대금은 연간 예산을 복원하지 않으며, 순자산에는 현금 자산으로 반영</div></section></main>'+nav('budget');
+ const vi=document.createElement('div');vi.innerHTML=versionIndicator();const main=document.querySelector('#app main.app');if(main&&vi.firstElementChild)main.appendChild(vi.firstElementChild);
+}
+function saveBudgetSettings(){
+ const year=new Date().getFullYear();
+ const assets=Math.max(0,Number(document.getElementById('budgetAssets')?.value)||0);
+ const liabilities=Math.max(0,Number(document.getElementById('budgetDebts')?.value)||0);
+ const income=Math.max(0,Number(document.getElementById('budgetIncome')?.value)||0);
+ const carry=Math.max(0,Number(document.getElementById('budgetCarry')?.value)||0);
+ saveBudgetConfig({otherAssets:assets,liabilities:liabilities,['income_'+year]:income,['carry_'+year]:carry});
+ toast('예산 설정을 저장했어');budgetPage();
+}
+
 function dailyInspiration(){let pool=watches.flatMap(w=>(w.status==='archive'?(w.photos||[]).filter(p=>p?.src).map((p,i)=>({w,p,i})):[]));if(!pool.length)return "";let today=new Date();let key=`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;let hash=0;for(let i=0;i<key.length;i++)hash=(hash*31+key.charCodeAt(i))>>>0;let item=pool[hash%pool.length],ps=orderedPhotos(item.w),idx=ps.findIndex(p=>p.id===item.p.id);if(idx<0)idx=0;let day=today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});return`<section class="inspiration"><div class="inspirationhead"><span class="inspirationeyebrow">DAILY INSPIRATION</span><span class="inspirationdate">${day}</span></div><img class="inspirationimg" ${photoAttrs(item.p,'fetchpriority="high"')} alt="${esc(item.w.brand||'')} ${esc(item.w.model||'Watch')}" onclick="event.stopPropagation();openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationmeta" onclick="openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationbrand">${esc(item.w.brand||'BRAND')}</div><div class="inspirationmodel">${esc(item.w.model||'Untitled')}</div><div class="inspirationhint">Archive · 사진을 눌러 크게 보기</div></div></section>`}
 function getBrandCounts(){let counts={};watches.filter(w=>w.status===filter).forEach(w=>{let b=String(w.brand||'').trim();if(b)counts[b]=(counts[b]||0)+1});return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));}
 function brandFilterHtml(){let items=getBrandCounts(),selected=brandFilter?items.find(([b])=>b.trim().toLowerCase()===brandFilter.trim().toLowerCase()):null;if(brandFilter&&!selected)brandFilter='';let selectedBrand=selected?selected[0]:'';if(selectedBrand&&selectedBrand!==brandFilter)brandFilter=selectedBrand;let label=selected?selected[0]+' ('+selected[1]+')':'All Brands';return '<div class="brandFilter" id="brandFilter"><div class="brandFilterLabel">BRAND</div><button type="button" class="brandFilterButton" onclick="toggleBrandMenu(event)" aria-haspopup="listbox" aria-expanded="false"><span class="brandFilterValue">'+esc(label)+'</span><svg class="brandFilterChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg></button><div class="brandFilterMenu" role="listbox">'+[['',null,'All Brands'],...items.map(([b,n])=>[b,n,b])].map(([b,n,text])=>'<button type="button" class="brandFilterOption '+((brandFilter||'')===b?'selected':'')+'" data-brand="'+esc(b)+'" onclick="setBrandFilter(this.dataset.brand)" role="option" aria-selected="'+((brandFilter||'')===b)+'"><span class="brandFilterOptionMain"><span class="brandFilterCheck">'+((brandFilter||'')===b?'✓':'')+'</span><span>'+esc(text)+'</span></span>'+(n!==null?'<span class="brandFilterCount">'+n+'</span>':'')+'</button>').join('')+'</div></div>'}
@@ -391,7 +434,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.83';
+const APP_VERSION='v0.1.84';
 const APP_BUILD_DATE='2026.10.14';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
