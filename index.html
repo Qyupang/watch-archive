@@ -131,7 +131,7 @@ function brandMenuHtml(selected=''){let items=[['','브랜드 선택'],...brands
 function sizeNumber(value=''){return String(value||'').replace(/mm/gi,'').trim()}
 function formatSizeInput(value=''){let n=String(value||'').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1');return n?n+'mm':''}
 function movementOptions(selected=''){let options=[['Manual','Manual'],['Automatic','Automatic'],['Quartz','Quartz']];if(selected&&!options.some(x=>x[0].toLowerCase()===selected.toLowerCase()))options.unshift([selected,selected]);return options.map(([v,l])=>'<option value="'+esc(v)+'" '+(v.toLowerCase()===String(selected||'').toLowerCase()?'selected':'')+'>'+esc(l)+'</option>').join('')}
-function toast(x){let t=$('#toast');t.textContent=x;t.classList.remove('hidden');setTimeout(()=>t.classList.add('hidden'),1600)}
+function toast(x){let t=$('#toast');t.textContent=x;t.classList.remove('hidden');clearTimeout(toast._timer);toast._timer=setTimeout(()=>t.classList.add('hidden'),6500)}
 function imgFile(f){return new Promise((ok,no)=>{let r=new FileReader();r.onload=()=>ok(r.result);r.onerror=no;r.readAsDataURL(f)})}
 async function setCoverPhoto(index){editPhotos=editPhotos.map((p,i)=>({...p,cover:i===index}));renderEditor();scheduleDraftSave()}
 async function addFiles(input){let files=[...input.files];let a=await Promise.all(files.map(imgFile));editPhotos.push(...a.map((src,i)=>({id:uid(),src,file:files[i],cover:false,newPhoto:true,type:'watch',note:''})));input.value='';renderEditor();scheduleDraftSave()}
@@ -434,7 +434,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.87';
+const APP_VERSION='v0.1.88';
 const APP_BUILD_DATE='2026.10.15';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
