@@ -547,7 +547,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.99';
+const APP_VERSION='v0.1.100';
 const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -574,7 +574,10 @@ if(preservedInspiration&&renderedInspiration){
 updateHomeResults();const vi=document.createElement('div');vi.innerHTML=versionIndicator();const main=document.querySelector('#app main.app');if(main&&vi.firstElementChild)main.appendChild(vi.firstElementChild)
 }
 function card(w){let p=w.photos?.find(p=>p.cover)||w.photos?.[0];return`<article class="card" data-watch-id="${esc(w.id)}" onclick="openDetail('${w.id}')">${p?`<div class="cover-frame is-loading"><img class="cover" data-lazy-src="${esc(p.src||'')}" data-photo-path="${esc(p.path||'')}" alt="${esc(w.brand||'')} ${esc(w.model||'Watch')}" decoding="async" fetchpriority="low"></div>`:`<div class="cover-frame"></div>`}<div class="cardbody">${w.status==='owned'?`<div class="cardbrand-row"><div class="cardbrand">${esc(w.brand||'BRAND')}</div><span class="ownership-badge ${w.possession_status==='sold'?'sold':'owned'}">${w.possession_status==='sold'?'판매함':'보유 중'}</span></div>`:`<div class="cardbrand">${esc(w.brand||'BRAND')}</div>`}<div class="model">${esc(w.model||'Untitled')}</div>${w.favorite?'<span class="badge">♥ FAVORITE</span>':''}</div></article>`}
-function openDetail(id){detail=id;renderDetail()}function closeDetail(){detail=null;renderHome()}
+let detailReturnTo='home',timelineReturnScrollY=0;
+function openDetail(id){detailReturnTo='home';detail=id;renderDetail()}
+function openTimelineDetail(id){detailReturnTo='timeline';timelineReturnScrollY=window.scrollY||document.documentElement.scrollTop||0;detail=id;renderDetail()}
+function closeDetail(){detail=null;if(detailReturnTo==='timeline'){detailReturnTo='home';timelinePage();requestAnimationFrame(()=>window.scrollTo(0,timelineReturnScrollY));return}detailReturnTo='home';renderHome()}
 function orderedPhotos(w){let ps=[...(w.photos||[])];if(!ps.length)return[];let i=ps.findIndex(p=>p.cover);if(i>0){let c=ps.splice(i,1)[0];ps.unshift(c)}return ps}
 let zoomState={scale:1,x:0,y:0,pinchStart:0,pinchStartScale:1,pinchBaseX:0,pinchBaseY:0,pinchCenterX:0,pinchCenterY:0,pinchContentX:0,pinchContentY:0,dragStartX:0,dragStartY:0,dragOriginX:0,dragOriginY:0,lastTap:0};
 function resetZoom(){zoomState={scale:1,x:0,y:0,pinchStart:0,pinchStartScale:1,pinchBaseX:0,pinchBaseY:0,pinchCenterX:0,pinchCenterY:0,pinchContentX:0,pinchContentY:0,dragStartX:0,dragStartY:0,dragOriginX:0,dragOriginY:0,lastTap:0};let t=$('#lightboxTrack');t?.classList.remove('zoomActive');t?.querySelectorAll('.lightboxSlide').forEach(s=>s.classList.remove('zoomed'));t?.querySelectorAll('img').forEach(img=>img.style.transform='translate3d(0,0,0) scale(1)')}
@@ -788,7 +791,7 @@ function timelinePage(){
   const sortKey='watchArchiveTimelineSort_v1';
   let sortOrder=localStorage.getItem(sortKey)==='oldest'?'oldest':'newest';
   const fmt=d=>{const p=d.split('-');return p[0]+'. '+Number(p[1])+'. '+Number(p[2])+'.'};
-  const item=(w,dateKey,label)=>{const p=w.photos?.find(x=>x.cover)||w.photos?.[0];return '<div class="timeline-item"><div class="timeline-date">'+(w[dateKey]?fmt(w[dateKey]):'날짜 미등록')+'<div class="small" style="margin-top:3px">'+label+'</div></div><button type="button" class="timeline-card" onclick="openDetail(\''+w.id+'\')">'+(p?'<img class="timeline-photo" '+photoAttrs(p)+' alt="'+esc(w.brand+' '+w.model)+'">':'<div class="timeline-photo" style="display:grid;place-items:center">⌚</div>')+'<div style="min-width:0"><div class="timeline-brand">'+esc(w.brand||'')+'</div><div class="timeline-model">'+esc(w.model||'Untitled')+'</div>'+(w.reference?'<div class="timeline-ref">Ref. '+esc(w.reference)+'</div>':'')+'</div></button></div>'};
+  const item=(w,dateKey,label)=>{const p=w.photos?.find(x=>x.cover)||w.photos?.[0];return '<div class="timeline-item"><div class="timeline-date">'+(w[dateKey]?fmt(w[dateKey]):'날짜 미등록')+'<div class="small" style="margin-top:3px">'+label+'</div></div><button type="button" class="timeline-card" onclick="openTimelineDetail(\''+w.id+'\')">'+(p?'<img class="timeline-photo" '+photoAttrs(p)+' alt="'+esc(w.brand+' '+w.model)+'">':'<div class="timeline-photo" style="display:grid;place-items:center">⌚</div>')+'<div style="min-width:0"><div class="timeline-brand">'+esc(w.brand||'')+'</div><div class="timeline-model">'+esc(w.model||'Untitled')+'</div>'+(w.reference?'<div class="timeline-ref">Ref. '+esc(w.reference)+'</div>':'')+'</div></button></div>'};
   const makeEvents=()=>{
     const events=[];
     owned.forEach(w=>{
