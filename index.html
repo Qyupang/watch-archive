@@ -1,9 +1,16 @@
 <!doctype html>
 <html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5f3ee"><meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.webmanifest"><title>Watch Archive</title>
+<meta name="theme-color" content="#f7f4ec"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Watch Archive">
+<link rel="apple-touch-icon" href="icon.svg"><link rel="manifest" href="manifest.webmanifest"><title>Watch Archive</title>
 <style>
+/* Watch Archive 02 Light identity + startup splash */
+#startupSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;background:#f7f4ec;color:#171717;opacity:1;visibility:visible;transition:opacity .42s ease,visibility .42s ease}
+#startupSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
+#startupSplash img{display:block;width:min(76vw,360px);height:auto}
+html.dark #startupSplash{background:#171614;color:#f7f4ec}
+#startupSplash .splash-dark{display:none}html.dark #startupSplash .splash-light{display:none}html.dark #startupSplash .splash-dark{display:block}
+@media(prefers-reduced-motion:reduce){#startupSplash{transition:none}}
 :root{--bg:#f5f3ee;--paper:#fffdf8;--ink:#171717;--muted:#77736b;--line:#d9d5cc;--soft:#ece9e2}
 html.dark{--bg:#171614;--paper:#22201d;--ink:#f1eee7;--muted:#aaa59b;--line:#3b3833;--soft:#302d29}
 html{background:var(--bg);color-scheme:light}html.dark{color-scheme:dark}
@@ -104,7 +111,7 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
   #app > .app .heroGallery img,
   #app > .overlay .sheet{animation:none!important}
 }</style></head>
-<body><div id="app"></div><div id="toast" class="toast hidden"></div>
+<body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co", SUPABASE_KEY="sb_publishable_9VmErfXpK1W4RK1BhGI5vA_3-EY0oKd";
@@ -434,8 +441,8 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.92';
-const APP_BUILD_DATE='2026.10.15';
+const APP_VERSION='v0.1.93';
+const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
 function setVersionVisibility(checked){try{localStorage.setItem(VERSION_VISIBLE_KEY,checked?'true':'false')}catch(e){}settings()}
@@ -713,4 +720,6 @@ function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
 scheduleTheme();
 async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load()}supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){loadBrands().then(load)}else authScreen()});boot();
+
+(function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,650),{once:true});setTimeout(hide,1800)})();
 </script></body></html>
