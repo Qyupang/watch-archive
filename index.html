@@ -441,7 +441,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.94';
+const APP_VERSION='v0.1.95';
 const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -720,19 +720,64 @@ function downloadArchiveFile(filename,content,type='application/json'){const blo
 function archiveDateStamp(){return new Date().toISOString().slice(0,10)}
 async function archiveRows(table){const {data,error}=await supabaseClient.from(table).select('*').eq('user_id',currentUser.id);if(error)throw new Error(table+' 데이터 조회 실패: '+error.message);return data||[]}
 function archiveBlobToDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||new Error('파일 읽기 실패'));reader.readAsDataURL(blob)})}
+
+const ARCHIVE_BACKUP_STATE_KEY='watchArchiveBackupProgress_v1';
+let archiveBackupTimer=null;
+function getArchiveBackupState(){try{return JSON.parse(localStorage.getItem(ARCHIVE_BACKUP_STATE_KEY)||'null')}catch(e){return null}}
+function saveArchiveBackupState(state){localStorage.setItem(ARCHIVE_BACKUP_STATE_KEY,JSON.stringify({...state,updatedAt:Date.now()}));renderArchiveBackupProgress()}
+function formatBackupElapsed(ms){const sec=Math.max(0,Math.floor(ms/1000));return sec<60?sec+'초':Math.floor(sec/60)+'분 '+String(sec%60).padStart(2,'0')+'초'}
+function renderArchiveBackupProgress(){
+ const el=document.getElementById('archiveBackupProgress');if(!el)return;
+ let state=getArchiveBackupState();
+ if(!state){el.innerHTML='<div class="small">아직 백업을 실행하지 않았어요.</div>';return}
+ if(state.status==='running'&&!window.__archiveBackupRunning){state={...state,status:'interrupted',message:'백업이 중단됐거나 앱이 종료됐어요. 새 백업을 다시 실행해 주세요.',updatedAt:Date.now()};localStorage.setItem(ARCHIVE_BACKUP_STATE_KEY,JSON.stringify(state))}
+ const running=state.status==='running',done=state.status==='complete',failed=state.status==='error',pct=Math.max(0,Math.min(100,Number(state.percent)||0));
+ const elapsed=state.startedAt?formatBackupElapsed((done||failed||state.status==='interrupted'?(state.finishedAt||state.updatedAt):Date.now())-state.startedAt):'—';
+ el.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px"><strong>'+({running:'백업 진행 중',complete:'백업 파일 생성 완료',error:'백업 실패',interrupted:'백업 중단',idle:'백업 상태'}[state.status]||'백업 상태')+'</strong><strong style="font-variant-numeric:tabular-nums">'+pct+'%</strong></div><div role="progressbar" aria-label="백업 진행률" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" style="height:8px;border-radius:99px;background:var(--soft);overflow:hidden"><div style="height:100%;width:'+pct+'%;background:var(--ink);border-radius:99px;transition:width .2s ease"></div></div><div style="display:flex;justify-content:space-between;gap:12px;margin-top:9px"><span class="small">'+esc(state.message||'상태 확인 중')+'</span><span class="small" style="white-space:nowrap">경과 '+elapsed+'</span></div>'+(state.totalPhotos>0?'<div class="small" style="margin-top:5px">사진 '+(state.donePhotos||0)+' / '+state.totalPhotos+'개 처리</div>':'')+(state.status==='interrupted'?'<div class="small" style="margin-top:8px">백업 파일이 생성됐는지 확인할 수 없어요. 파일이 없으면 다시 백업해 주세요.</div>':'');
+}
+function setArchiveBackupProgress(patch){const previous=getArchiveBackupState()||{};saveArchiveBackupState({...previous,...patch})}
+function startArchiveBackupTimer(){if(archiveBackupTimer)clearInterval(archiveBackupTimer);archiveBackupTimer=setInterval(()=>{const state=getArchiveBackupState();if(state?.status!=='running'){clearInterval(archiveBackupTimer);archiveBackupTimer=null;return}renderArchiveBackupProgress()},1000)}
 async function exportFullBackup(){
  if(!currentUser)return toast('로그인 후 이용해줘');
- const button=document.getElementById('archiveBackupButton');if(button){button.disabled=true;button.textContent='백업 준비 중…'}
+ if(window.__archiveBackupRunning)return toast('백업이 이미 진행 중이에요');
+ window.__archiveBackupRunning=true;
+ const startedAt=Date.now(),button=document.getElementById('archiveBackupButton');
+ if(button){button.disabled=true;button.textContent='백업 진행 중…'}
+ setArchiveBackupProgress({status:'running',percent:2,message:'데이터 목록을 불러오는 중…',startedAt,finishedAt:null,donePhotos:0,totalPhotos:0});
+ startArchiveBackupTimer();
  try{
   const [watchRows,photoRows,wearRows,brandRows,historyRows]=await Promise.all([archiveRows('watches'),archiveRows('watch_photos'),archiveRows('wear_logs'),archiveRows('brands'),archiveRows('watch_history')]);
   const photoPaths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))],photoFiles={};
-  if(photoPaths.length){const {data:signed,error}=await supabaseClient.storage.from('watch-photos').createSignedUrls(photoPaths,1800);if(error)throw new Error('사진 URL 생성 실패: '+error.message);
-   for(let i=0;i<photoPaths.length;i++){const url=signed?.[i]?.signedUrl;if(!url)throw new Error('사진 백업 URL 생성 실패. 누락 방지를 위해 백업을 중단했어요.');const response=await fetch(url);if(!response.ok)throw new Error('사진 다운로드 실패 ('+(i+1)+'/'+photoPaths.length+')');const blob=await response.blob();photoFiles[photoPaths[i]]={data:await archiveBlobToDataUrl(blob),contentType:blob.type||'image/jpeg'}}
-  }
+  setArchiveBackupProgress({percent:10,message:'시계와 기록을 불러왔어요. 사진 목록을 확인 중…',totalPhotos:photoPaths.length,donePhotos:0});
+  if(photoPaths.length){
+   const {data:signed,error}=await supabaseClient.storage.from('watch-photos').createSignedUrls(photoPaths,1800);
+   if(error)throw new Error('사진 URL 생성 실패: '+error.message);
+   setArchiveBackupProgress({percent:15,message:'사진 원본을 다운로드하는 중…'});
+   for(let i=0;i<photoPaths.length;i++){
+    const url=signed?.[i]?.signedUrl;if(!url)throw new Error('사진 백업 URL 생성 실패. 누락 방지를 위해 백업을 중단했어요.');
+    const response=await fetch(url);if(!response.ok)throw new Error('사진 다운로드 실패 ('+(i+1)+'/'+photoPaths.length+')');
+    const blob=await response.blob();photoFiles[photoPaths[i]]={data:await archiveBlobToDataUrl(blob),contentType:blob.type||'image/jpeg'};
+    setArchiveBackupProgress({percent:15+Math.round((i+1)/photoPaths.length*70),message:'사진 원본을 처리하는 중…',donePhotos:i+1,totalPhotos:photoPaths.length});
+   }
+  }else setArchiveBackupProgress({percent:85,message:'사진이 없어 기록 데이터를 정리 중…',donePhotos:0,totalPhotos:0});
+  setArchiveBackupProgress({percent:88,message:'백업 JSON 파일을 구성하는 중…'});
   const backup={format:'watch-archive-backup',schemaVersion:1,createdAt:new Date().toISOString(),accountEmail:currentUser.email||null,data:{watches:watchRows,watch_photos:photoRows,wear_logs:wearRows,brands:brandRows,watch_history:historyRows,photoFiles,local:{brands:localStorage.getItem(BRANDS_KEY),budget:localStorage.getItem(BUDGET_KEY),showVersion:localStorage.getItem(VERSION_VISIBLE_KEY)}}};
-  downloadArchiveFile('watch-archive-backup-'+archiveDateStamp()+'.json',JSON.stringify(backup),'application/json;charset=utf-8');toast('백업 완료 · 시계 '+watchRows.length+'개, 사진 '+photoRows.length+'개');
- }catch(e){console.error('Archive backup failed',e);alert('백업에 실패했어요.\n'+(e?.message||String(e)))}finally{if(button){button.disabled=false;button.textContent='전체 백업 파일 만들기'}}
+  setArchiveBackupProgress({percent:95,message:'백업 파일을 생성하고 있어요…'});
+  downloadArchiveFile('watch-archive-backup-'+archiveDateStamp()+'.json',JSON.stringify(backup),'application/json;charset=utf-8');
+  setArchiveBackupProgress({status:'complete',percent:100,message:'백업 파일 생성이 완료됐어요.',finishedAt:Date.now(),donePhotos:photoPaths.length,totalPhotos:photoPaths.length});
+  toast('백업 완료 · 시계 '+watchRows.length+'개, 사진 '+photoPaths.length+'개');
+ }catch(e){
+  console.error('Archive backup failed',e);
+  setArchiveBackupProgress({status:'error',message:'백업 실패: '+(e?.message||String(e)),finishedAt:Date.now()});
+  alert('백업에 실패했어요.\n'+(e?.message||String(e)));
+ }finally{
+  window.__archiveBackupRunning=false;
+  if(archiveBackupTimer){clearInterval(archiveBackupTimer);archiveBackupTimer=null}
+  if(button){button.disabled=false;button.textContent='전체 백업 파일 만들기'}
+  renderArchiveBackupProgress();
+ }
 }
+
 function exportWatchesCsv(){
  if(!currentUser)return toast('로그인 후 이용해줘');
  const headers=['구분','보유 상태','브랜드','모델','레퍼런스','사이즈(mm)','무브먼트','구매일','구매금액(관세 포함)','구매경로','관세','평가금액','평가 기준일','판매일','판매금액','판매 사유','오버홀일','메모','태그'];
@@ -766,7 +811,8 @@ async function restoreFullBackup(input){
  }catch(e){console.error('Archive restore failed',e);alert('복원 도중 오류가 발생했어요.\n'+(e?.message||String(e))+'\n\n일부 데이터가 복원됐을 수 있으니 현재 상태를 확인해줘.')}finally{if(button){button.disabled=false;button.textContent='백업 파일에서 복원하기'}}
 }
 
-function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
+function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 진행 상태</strong><div id="archiveBackupProgress" style="margin-top:14px" aria-live="polite"></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
+renderArchiveBackupProgress();
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
 scheduleTheme();
