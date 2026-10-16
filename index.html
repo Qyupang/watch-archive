@@ -242,9 +242,17 @@ function openWatchImageDb(){
  if(!('indexedDB'in window))return Promise.resolve(null);
  if(watchImageDbPromise)return watchImageDbPromise;
  watchImageDbPromise=new Promise(resolve=>{
-  try{const req=indexedDB.open('watch-archive-image-cache',1);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('images'))db.createObjectStore('images',{keyPath:'path'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null)}catch(e){resolve(null)}
+  try{const req=indexedDB.open('watch-archive-image-cache',2);req.onupgradeneeded=()=>{const db=req.result;if(!db.objectStoreNames.contains('images'))db.createObjectStore('images',{keyPath:'path'});if(!db.objectStoreNames.contains('snapshots'))db.createObjectStore('snapshots',{keyPath:'userId'})};req.onsuccess=()=>resolve(req.result);req.onerror=()=>resolve(null)}catch(e){resolve(null)}
  });
  return watchImageDbPromise;
+}
+async function readWatchDataSnapshot(userId){
+ const db=await openWatchImageDb();if(!db||!userId)return null;
+ return new Promise(resolve=>{try{const req=db.transaction('snapshots','readonly').objectStore('snapshots').get(String(userId));req.onsuccess=()=>resolve(req.result||null);req.onerror=()=>resolve(null)}catch(e){resolve(null)}});
+}
+async function writeWatchDataSnapshot(userId,rows,photoRows){
+ const db=await openWatchImageDb();if(!db||!userId)return;
+ try{await new Promise((resolve,reject)=>{const tx=db.transaction('snapshots','readwrite');tx.objectStore('snapshots').put({userId:String(userId),rows,photoRows,savedAt:Date.now()});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error)})}catch(e){console.warn('Watch data cache write skipped',e)}
 }
 async function getCachedWatchImage(path){
  if(!path)return null;const db=await openWatchImageDb();if(!db)return null;
@@ -313,43 +321,63 @@ function finishCoverImage(img,ok){
 function photoAttrs(p,extra=''){
   return 'src="'+esc(p?.src||'')+'" data-photo-path="'+esc(p?.path||'')+'" onload="finishCoverImage(this,true)" onerror="retryImage(this)" decoding="async" '+extra;
 }
-async function load(){
-const loadStarted=performance.now();
-let{data,error}=await supabaseClient.from('watches').select('*').eq('user_id',currentUser.id).order('created_at',{ascending:false});
-if(error){toast('시계 데이터를 불러오지 못했어요');return}
-let rows=data||[];
-let{data:photos}=await supabaseClient.from('watch_photos').select('*').eq('user_id',currentUser.id).order('sort_order');
-let photoRows=photos||[];
-const paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
-watches=rows.map(w=>{
-  let ps=photoRows.filter(p=>p.watch_id===w.id).map(p=>({
-    id:p.id,src:photoUrlCache.get(p.storage_path)?.url||'',path:p.storage_path,cover:p.is_cover,
-    sortOrder:p.sort_order,type:p.photo_type||'watch',note:p.note||''
-  }));
+function applyWatchRows(rows,photoRows){
+ const paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
+ watches=rows.map(w=>{
+  let ps=photoRows.filter(p=>p.watch_id===w.id).map(p=>({id:p.id,src:photoUrlCache.get(p.storage_path)?.url||'',path:p.storage_path,cover:p.is_cover,sortOrder:p.sort_order,type:p.photo_type||'watch',note:p.note||''}));
   return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',current_value:w.current_value??null,valuation_date:w.valuation_date||'',valuation_source:w.valuation_source||'',purchase_price:w.purchase_price??null,purchase_source:w.purchase_source||'domestic',customs_duty:Number(w.customs_duty)||0,sale_price:w.sale_price??null,sale_date:w.sale_date||'',sale_reason:w.sale_reason||'',possession_status:w.possession_status||'held',purchase_date:w.purchase_date||'',purchase_reason:w.purchase_reason||'',overhaul_date:w.overhaul_date||'',repair_history:Array.isArray(w.repair_history)?w.repair_history:[],tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at};
-});
-watchRandomRank=new Map(watches.map(w=>[w.id,Math.random()]));
-// Render the interface before waiting for Storage signed URLs.
-renderHome();
-window.__watchArchivePerf={dataReadyMs:Math.round(performance.now()-loadStarted),photoCount:paths.length,photoUrlsReadyMs:null};
-if(paths.length){
-  try{
-    const{data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,86400);
-    const signedByPath=new Map();
-    if(!signedError)(signed||[]).forEach((item,i)=>{if(item?.signedUrl){signedByPath.set(paths[i],item.signedUrl);photoUrlCache.set(paths[i],{url:item.signedUrl,expiresAt:Date.now()+23*60*60*1000})}});
-    const missing=paths.filter(path=>!signedByPath.has(path));
-    await Promise.all(missing.map(async path=>{const url=await refreshPhotoUrl(path,true);if(url)signedByPath.set(path,url)}));
-    watches.forEach(w=>(w.photos||[]).forEach(p=>{if(!p.src&&signedByPath.has(p.path))p.src=signedByPath.get(p.path)}));
-    document.querySelectorAll('img[data-photo-path]').forEach(img=>{
-      const path=img.dataset.photoPath,url=signedByPath.get(path)||photoUrlCache.get(path)?.url;
-      if(!url)return;
-      if(img.dataset.lazySrc!==undefined){img.dataset.lazySrc=url;img.dataset.lazyBound='0'}
-      else if(img.getAttribute('src')!==url){img.src=url}
-    });
-    activateLazyImages(document);
-    window.__watchArchivePerf.photoUrlsReadyMs=Math.round(performance.now()-loadStarted);
-  }catch(e){console.warn('Photo URL preparation failed',e)}
+ });
+ watchRandomRank=new Map(watches.map(w=>[w.id,Math.random()]));
+ return paths;
 }
+async function hydrateCachedPhotoElements(root=document){
+ const imgs=[...root.querySelectorAll('img[data-photo-path]')];
+ await Promise.all(imgs.map(async img=>{const path=img.dataset.photoPath;if(!path)return;const cached=await loadWatchImageFromCache(path);if(!cached||!img.isConnected)return;
+  if(img.dataset.lazySrc!==undefined){img.dataset.lazySrc=cached;img.dataset.lazyBound='0';img.dataset.lazyLoaded='0';img.dataset.lazyLoading='0';activateLazyImages(img.parentElement||root)}
+  else if(img.getAttribute('src')!==cached){img.src=cached}
+ }));
+}
+async function load(){
+ const loadStarted=performance.now(),userId=currentUser?.id;
+ if(!userId)return;
+ // Paint the last saved snapshot immediately; the server refresh below remains authoritative.
+ const snapshot=await readWatchDataSnapshot(userId);
+ if(currentUser?.id!==userId)return;
+ if(snapshot&&Array.isArray(snapshot.rows)&&Array.isArray(snapshot.photoRows)){
+  applyWatchRows(snapshot.rows,snapshot.photoRows);
+  renderHome();
+  hydrateCachedPhotoElements(document).catch(()=>{});
+  window.__watchArchivePerf={source:'indexedDB-cache',cacheAgeMs:Math.max(0,Date.now()-(snapshot.savedAt||Date.now())),photoCount:snapshot.photoRows.length};
+ }
+ const {data,error}=await supabaseClient.from('watches').select('*').eq('user_id',userId).order('created_at',{ascending:false});
+ if(error){if(!snapshot)toast('시계 데이터를 불러오지 못했어요');else console.warn('Refresh failed; showing cached watches',error);return}
+ const rows=data||[];
+ const {data:photos,error:photoError}=await supabaseClient.from('watch_photos').select('*').eq('user_id',userId).order('sort_order');
+ if(photoError){if(!snapshot)toast('사진 정보를 불러오지 못했어요');return}
+ const photoRows=photos||[];
+ if(currentUser?.id!==userId)return;
+ await writeWatchDataSnapshot(userId,rows,photoRows);
+ const paths=applyWatchRows(rows,photoRows);
+ renderHome();
+ window.__watchArchivePerf={source:'supabase-refreshed',dataReadyMs:Math.round(performance.now()-loadStarted),photoCount:paths.length,photoUrlsReadyMs:null};
+ if(paths.length){
+  try{
+   const {data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrls(paths,86400);
+   const signedByPath=new Map();
+   if(!signedError)(signed||[]).forEach((item,i)=>{if(item?.signedUrl){signedByPath.set(paths[i],item.signedUrl);photoUrlCache.set(paths[i],{url:item.signedUrl,expiresAt:Date.now()+23*60*60*1000})}});
+   const missing=paths.filter(path=>!signedByPath.has(path));
+   await Promise.all(missing.map(async path=>{const url=await refreshPhotoUrl(path,true);if(url)signedByPath.set(path,url)}));
+   watches.forEach(w=>(w.photos||[]).forEach(p=>{if(!p.src&&signedByPath.has(p.path))p.src=signedByPath.get(p.path)}));
+   document.querySelectorAll('img[data-photo-path]').forEach(img=>{
+    const path=img.dataset.photoPath,url=signedByPath.get(path)||photoUrlCache.get(path)?.url;
+    if(!url)return;
+    if(img.dataset.lazySrc!==undefined){if(!img.dataset.lazySrc.startsWith('blob:'))img.dataset.lazySrc=url;img.dataset.lazyBound='0'}
+    else if(!img.getAttribute('src')||img.getAttribute('src')!==url){img.src=url}
+   });
+   activateLazyImages(document);
+   window.__watchArchivePerf.photoUrlsReadyMs=Math.round(performance.now()-loadStarted);
+  }catch(e){console.warn('Photo URL preparation failed',e)}
+ }
 }
 
 function formatWon(v){return Number(v||0).toLocaleString('ko-KR')+'원'}
@@ -547,7 +575,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.105';
+const APP_VERSION='v0.1.106';
 const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
