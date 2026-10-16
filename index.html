@@ -441,7 +441,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.93';
+const APP_VERSION='v0.1.94';
 const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -715,7 +715,58 @@ function appendPhotoBatch(){
  const more=document.getElementById('photoLoadMore');if(more)more.hidden=photoPageCount>=photoPageItems.length;
 }
 function photosPage(){photoPageItems=watches.flatMap(w=>(w.photos||[]).map(p=>({w,p})));photoPageCount=0;$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ALL PHOTOS</div><div class="brand">Photos</div></div></div>'+(photoPageItems.length?'<div class="grid" id="photoResults"></div><div id="photoLoadMore" class="home-load-more"><button type="button" class="action" onclick="appendPhotoBatch()">더 보기</button></div>':'<div class="empty">아직 사진이 없어.</div>')+'</main>'+nav('photos');if(photoPageItems.length){appendPhotoBatch();const more=document.getElementById('photoLoadMore');if(more&&'IntersectionObserver'in window){const io=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting)){appendPhotoBatch();if(photoPageCount>=photoPageItems.length)io.disconnect()}},{rootMargin:'350px'});io.observe(more)}}}
-function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
+
+function downloadArchiveFile(filename,content,type='application/json'){const blob=new Blob([content],{type}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500)}
+function archiveDateStamp(){return new Date().toISOString().slice(0,10)}
+async function archiveRows(table){const {data,error}=await supabaseClient.from(table).select('*').eq('user_id',currentUser.id);if(error)throw new Error(table+' 데이터 조회 실패: '+error.message);return data||[]}
+function archiveBlobToDataUrl(blob){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(reader.result);reader.onerror=()=>reject(reader.error||new Error('파일 읽기 실패'));reader.readAsDataURL(blob)})}
+async function exportFullBackup(){
+ if(!currentUser)return toast('로그인 후 이용해줘');
+ const button=document.getElementById('archiveBackupButton');if(button){button.disabled=true;button.textContent='백업 준비 중…'}
+ try{
+  const [watchRows,photoRows,wearRows,brandRows,historyRows]=await Promise.all([archiveRows('watches'),archiveRows('watch_photos'),archiveRows('wear_logs'),archiveRows('brands'),archiveRows('watch_history')]);
+  const photoPaths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))],photoFiles={};
+  if(photoPaths.length){const {data:signed,error}=await supabaseClient.storage.from('watch-photos').createSignedUrls(photoPaths,1800);if(error)throw new Error('사진 URL 생성 실패: '+error.message);
+   for(let i=0;i<photoPaths.length;i++){const url=signed?.[i]?.signedUrl;if(!url)throw new Error('사진 백업 URL 생성 실패. 누락 방지를 위해 백업을 중단했어요.');const response=await fetch(url);if(!response.ok)throw new Error('사진 다운로드 실패 ('+(i+1)+'/'+photoPaths.length+')');const blob=await response.blob();photoFiles[photoPaths[i]]={data:await archiveBlobToDataUrl(blob),contentType:blob.type||'image/jpeg'}}
+  }
+  const backup={format:'watch-archive-backup',schemaVersion:1,createdAt:new Date().toISOString(),accountEmail:currentUser.email||null,data:{watches:watchRows,watch_photos:photoRows,wear_logs:wearRows,brands:brandRows,watch_history:historyRows,photoFiles,local:{brands:localStorage.getItem(BRANDS_KEY),budget:localStorage.getItem(BUDGET_KEY),showVersion:localStorage.getItem(VERSION_VISIBLE_KEY)}}};
+  downloadArchiveFile('watch-archive-backup-'+archiveDateStamp()+'.json',JSON.stringify(backup),'application/json;charset=utf-8');toast('백업 완료 · 시계 '+watchRows.length+'개, 사진 '+photoRows.length+'개');
+ }catch(e){console.error('Archive backup failed',e);alert('백업에 실패했어요.\n'+(e?.message||String(e)))}finally{if(button){button.disabled=false;button.textContent='전체 백업 파일 만들기'}}
+}
+function exportWatchesCsv(){
+ if(!currentUser)return toast('로그인 후 이용해줘');
+ const headers=['구분','보유 상태','브랜드','모델','레퍼런스','사이즈(mm)','무브먼트','구매일','구매금액(관세 포함)','구매경로','관세','평가금액','평가 기준일','판매일','판매금액','판매 사유','오버홀일','메모','태그'];
+ const cell=v=>'"'+(Array.isArray(v)?v.join(', '):String(v??'')).replace(/"/g,'""')+'"';
+ const rows=watches.map(w=>[w.status,w.possession_status,w.brand,w.model,w.reference,w.size,w.movement,w.purchase_date,w.purchase_price,w.purchase_source,w.customs_duty,w.current_value,w.valuation_date,w.sale_date,w.sale_price,w.sale_reason,w.overhaul_date,w.note,w.tags]);
+ downloadArchiveFile('watch-archive-watches-'+archiveDateStamp()+'.csv','\ufeff'+[headers,...rows].map(row=>row.map(cell).join(',')).join('\r\n'),'text/csv;charset=utf-8');
+}
+async function restoreFullBackup(input){
+ const file=input.files?.[0];input.value='';if(!file)return;if(!currentUser)return toast('로그인 후 이용해줘');
+ let backup;try{backup=JSON.parse(await file.text())}catch(e){return alert('백업 파일을 읽을 수 없어요. 올바른 JSON인지 확인해줘.')}
+ if(backup?.format!=='watch-archive-backup'||!backup.data||!Array.isArray(backup.data.watches)||!Array.isArray(backup.data.watch_photos))return alert('Watch Archive 백업 파일 형식이 아니에요.');
+ const d=backup.data,watchCount=d.watches.length,photoCount=d.watch_photos.length;
+ if(!confirm('백업을 복원할까요?\n\n시계 '+watchCount+'개 · 사진 '+photoCount+'개\n\n같은 ID의 항목은 백업 내용으로 갱신되고, 백업에만 없는 기존 항목은 삭제하지 않아요. 복원 전 현재 상태도 백업하는 것을 권장해요.'))return;
+ const button=document.getElementById('archiveRestoreButton');if(button){button.disabled=true;button.textContent='복원 중…'}
+ try{
+  const watchesToRestore=d.watches.map(row=>({...row,user_id:currentUser.id}));
+  if(watchesToRestore.length){const {error}=await supabaseClient.from('watches').upsert(watchesToRestore,{onConflict:'id'});if(error)throw new Error('시계 복원 실패: '+error.message)}
+  let restoredPhotos=0;
+  for(const photo of d.watch_photos){
+   const embedded=d.photoFiles?.[photo.storage_path];if(!embedded?.data)throw new Error('백업에 사진 파일이 없습니다: '+photo.storage_path);
+   const blob=await(await fetch(embedded.data)).blob(),ext=(photo.storage_path.split('.').pop()||'jpg').replace(/[^a-z0-9]/gi,'').slice(0,8)||'jpg';
+   const path=currentUser.id+'/'+photo.watch_id+'/'+photo.id+'.'+ext;
+   const {error:uploadError}=await supabaseClient.storage.from('watch-photos').upload(path,blob,{contentType:embedded.contentType||blob.type||'image/jpeg',cacheControl:'3600',upsert:true});if(uploadError)throw new Error('사진 업로드 실패: '+uploadError.message);
+   const {error:metaError}=await supabaseClient.from('watch_photos').upsert({...photo,user_id:currentUser.id,storage_path:path},{onConflict:'id'});if(metaError)throw new Error('사진 정보 복원 실패: '+metaError.message);restoredPhotos++;
+  }
+  if(Array.isArray(d.wear_logs)&&d.wear_logs.length){const {error}=await supabaseClient.from('wear_logs').upsert(d.wear_logs.map(x=>({...x,user_id:currentUser.id})),{onConflict:'user_id,wear_date'});if(error)throw new Error('착용 기록 복원 실패: '+error.message)}
+  if(Array.isArray(d.watch_history)&&d.watch_history.length){const {error}=await supabaseClient.from('watch_history').upsert(d.watch_history.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('시계 이력 복원 실패: '+error.message)}
+  if(Array.isArray(d.brands)){for(const b of d.brands){if(!b.name)continue;const {data:existing,error:findError}=await supabaseClient.from('brands').select('id').eq('user_id',currentUser.id).eq('name',b.name).limit(1);if(findError)throw new Error('브랜드 확인 실패: '+findError.message);if(!existing?.length){const {error}=await supabaseClient.from('brands').insert({...b,user_id:currentUser.id});if(error)throw new Error('브랜드 복원 실패: '+error.message)}}}
+  if(d.local?.brands!=null)localStorage.setItem(BRANDS_KEY,d.local.brands);if(d.local?.budget!=null)localStorage.setItem(BUDGET_KEY,d.local.budget);if(d.local?.showVersion!=null)localStorage.setItem(VERSION_VISIBLE_KEY,d.local.showVersion);
+  await loadBrands();await load();toast('복원 완료 · 시계 '+watchCount+'개, 사진 '+restoredPhotos+'개');alert('복원이 완료됐어요.\n시계 '+watchCount+'개\n사진 '+restoredPhotos+'개\n\n백업에 없는 기존 항목은 삭제하지 않았어요.');
+ }catch(e){console.error('Archive restore failed',e);alert('복원 도중 오류가 발생했어요.\n'+(e?.message||String(e))+'\n\n일부 데이터가 복원됐을 수 있으니 현재 상태를 확인해줘.')}finally{if(button){button.disabled=false;button.textContent='백업 파일에서 복원하기'}}
+}
+
+function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
 scheduleTheme();
