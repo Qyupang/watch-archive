@@ -441,7 +441,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.95';
+const APP_VERSION='v0.1.96';
 const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -786,10 +786,72 @@ function exportWatchesCsv(){
  const rows=watches.map(w=>[w.status,w.possession_status,w.brand,w.model,w.reference,w.size,w.movement,w.purchase_date,w.purchase_price,w.purchase_source,w.customs_duty,w.current_value,w.valuation_date,w.sale_date,w.sale_price,w.sale_reason,w.overhaul_date,w.note,w.tags]);
  downloadArchiveFile('watch-archive-watches-'+archiveDateStamp()+'.csv','\ufeff'+[headers,...rows].map(row=>row.map(cell).join(',')).join('\r\n'),'text/csv;charset=utf-8');
 }
+
+function validateBackupObject(backup){
+ const errors=[],warnings=[],d=backup?.data;
+ if(!backup||backup.format!=='watch-archive-backup')errors.push('Watch Archive 백업 파일 형식이 아닙니다.');
+ if(!d||typeof d!=='object'){errors.push('data 항목이 없거나 올바르지 않습니다.');return {valid:false,errors,warnings,summary:null}}
+ for(const key of ['watches','watch_photos','wear_logs','brands','watch_history'])if(!Array.isArray(d[key]))errors.push(key+' 목록이 배열 형식이 아닙니다.');
+ if(!d.photoFiles||typeof d.photoFiles!=='object'||Array.isArray(d.photoFiles))errors.push('사진 파일 목록(photoFiles)이 없습니다.');
+ if(!Array.isArray(d.watches)||!Array.isArray(d.watch_photos)||!d.photoFiles||typeof d.photoFiles!=='object')return {valid:false,errors,warnings,summary:null};
+ const watchIds=new Set(),photoIds=new Set(),paths=new Set();
+ for(const [i,w] of d.watches.entries()){
+  if(!w||!w.id)errors.push('시계 '+(i+1)+'번째 항목에 ID가 없습니다.');
+  else if(watchIds.has(String(w.id)))errors.push('중복된 시계 ID가 있습니다: '+w.id);else watchIds.add(String(w.id));
+ }
+ let missingPhotoData=0,invalidPhotoData=0,orphanPhotos=0;
+ for(const [i,p] of d.watch_photos.entries()){
+  if(!p||!p.id){errors.push('사진 메타데이터 '+(i+1)+'번째 항목에 ID가 없습니다.');continue}
+  if(photoIds.has(String(p.id)))errors.push('중복된 사진 ID가 있습니다: '+p.id);else photoIds.add(String(p.id));
+  if(!p.storage_path){errors.push('사진 '+p.id+'에 저장 경로가 없습니다.');continue}
+  if(paths.has(p.storage_path))errors.push('중복된 사진 경로가 있습니다: '+p.storage_path);else paths.add(p.storage_path);
+  if(p.watch_id&&!watchIds.has(String(p.watch_id)))orphanPhotos++;
+  const f=d.photoFiles[p.storage_path];
+  if(!f||typeof f.data!=='string'){missingPhotoData++;continue}
+  if(!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(f.data)){invalidPhotoData++;continue}
+  const comma=f.data.indexOf(','),payload=comma>=0?f.data.slice(comma+1):'';
+  if(!payload.length||payload.length%4!==0||!/^[A-Za-z0-9+/]*={0,2}$/.test(payload))invalidPhotoData++;
+ }
+ const extraPhotoFiles=Object.keys(d.photoFiles).filter(path=>!paths.has(path)).length;
+ if(missingPhotoData)errors.push('사진 원본 누락: '+missingPhotoData+'개');
+ if(invalidPhotoData)errors.push('사진 데이터 형식 오류: '+invalidPhotoData+'개');
+ if(orphanPhotos)warnings.push('연결된 시계 항목을 찾지 못한 사진: '+orphanPhotos+'개');
+ if(extraPhotoFiles)warnings.push('사진 메타데이터와 연결되지 않은 원본 파일: '+extraPhotoFiles+'개');
+ const collections=['wear_logs','brands','watch_history'];
+ for(const key of collections)if(Array.isArray(d[key])){const seen=new Set();for(const row of d[key]){if(row?.id&&seen.has(String(row.id))){warnings.push(key+'에 중복 ID가 있습니다.');break}if(row?.id)seen.add(String(row.id))}}
+ if(!backup.createdAt)warnings.push('백업 생성 시각이 기록되어 있지 않습니다.');
+ if(!d.local||typeof d.local!=='object')warnings.push('로컬 설정 정보가 없습니다.');
+ return {valid:errors.length===0,errors,warnings,summary:{watches:d.watches.length,photos:d.watch_photos.length,photoFiles:Object.keys(d.photoFiles).length,wearLogs:Array.isArray(d.wear_logs)?d.wear_logs.length:0,brands:Array.isArray(d.brands)?d.brands.length:0,history:Array.isArray(d.watch_history)?d.watch_history.length:0,createdAt:backup.createdAt||null}}
+}
+function renderBackupValidation(result,fileName,fileSize){
+ const el=document.getElementById('archiveValidationResult');if(!el)return;
+ if(!result){el.innerHTML='<div class="small">백업 파일을 선택하면 JSON 구조와 사진 데이터 누락 여부를 검사해요.</div>';return}
+ const ok=result.valid;
+ const size=(fileSize/1024/1024).toFixed(1)+'MB';
+ let html='<div style="padding:12px;border:1px solid var(--line);border-radius:8px;margin-top:12px"><strong>'+(ok?'검증 통과':'검증 실패')+'</strong><div class="small" style="margin-top:5px">'+esc(fileName||'백업 파일')+' · '+size+'</div>';
+ if(result.summary){const q=result.summary;html+='<div class="small" style="line-height:1.8;margin-top:8px">시계 '+q.watches+'개 · 사진 '+q.photos+'개 · 사진 원본 '+q.photoFiles+'개<br>착용 기록 '+q.wearLogs+'개 · 브랜드 '+q.brands+'개 · 시계 이력 '+q.history+'개'+(q.createdAt?'<br>백업 생성: '+esc(new Date(q.createdAt).toLocaleString('ko-KR')):'')+'</div>'}
+ if(result.errors.length)html+='<div style="margin-top:10px;color:var(--danger,#b42318)"><strong>문제</strong><ul style="padding-left:20px;margin:5px 0">'+result.errors.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+ if(result.warnings.length)html+='<div style="margin-top:10px"><strong>확인 사항</strong><ul style="padding-left:20px;margin:5px 0">'+result.warnings.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
+ html+='<div class="small" style="margin-top:8px">'+(ok?'기본 구조와 사진 데이터 형식을 확인했어요. 실제 복원까지 보장하는 검사는 아니에요.':'문제를 해결하거나 정상 백업 파일을 다시 만든 뒤 복원해 주세요.')+'</div></div>';
+ el.innerHTML=html;
+}
+async function validateBackupFile(input){
+ const file=input.files?.[0];input.value='';if(!file)return;
+ const el=document.getElementById('archiveValidationResult');if(el)el.innerHTML='<div class="small">파일 읽기 및 사진 데이터 검사 중… 용량에 따라 시간이 걸릴 수 있어요.</div>';
+ const button=document.getElementById('archiveValidateButton');if(button){button.disabled=true;button.textContent='검증 중…'}
+ try{
+  const text=await file.text();let backup;
+  try{backup=JSON.parse(text)}catch(e){const result={valid:false,errors:['JSON 파싱 실패: 파일이 잘렸거나 올바른 JSON 형식이 아닙니다.'],warnings:[],summary:null};renderBackupValidation(result,file.name,file.size);return}
+  const result=validateBackupObject(backup);renderBackupValidation(result,file.name,file.size);
+  if(result.valid)toast('백업 파일 검증 통과');else toast('백업 파일에서 확인이 필요한 문제가 발견됐어요');
+ }catch(e){console.error('Backup validation failed',e);renderBackupValidation({valid:false,errors:['파일 검사 중 오류: '+(e?.message||String(e))],warnings:[],summary:null},file.name,file.size)}
+ finally{if(button){button.disabled=false;button.textContent='백업 파일 검증하기'}}
+}
+
 async function restoreFullBackup(input){
  const file=input.files?.[0];input.value='';if(!file)return;if(!currentUser)return toast('로그인 후 이용해줘');
  let backup;try{backup=JSON.parse(await file.text())}catch(e){return alert('백업 파일을 읽을 수 없어요. 올바른 JSON인지 확인해줘.')}
- if(backup?.format!=='watch-archive-backup'||!backup.data||!Array.isArray(backup.data.watches)||!Array.isArray(backup.data.watch_photos))return alert('Watch Archive 백업 파일 형식이 아니에요.');
+ const validation=validateBackupObject(backup);renderBackupValidation(validation,file.name,file.size);if(!validation.valid)return alert('백업 파일 검증에 실패했어요.\n\n'+validation.errors.join('\n'));if(validation.warnings.length&&!confirm('백업 파일에 확인할 사항이 있어요.\n\n'+validation.warnings.join('\n')+'\n\n계속 복원할까요?'))return;
  const d=backup.data,watchCount=d.watches.length,photoCount=d.watch_photos.length;
  if(!confirm('백업을 복원할까요?\n\n시계 '+watchCount+'개 · 사진 '+photoCount+'개\n\n같은 ID의 항목은 백업 내용으로 갱신되고, 백업에만 없는 기존 항목은 삭제하지 않아요. 복원 전 현재 상태도 백업하는 것을 권장해요.'))return;
  const button=document.getElementById('archiveRestoreButton');if(button){button.disabled=true;button.textContent='복원 중…'}
@@ -812,7 +874,7 @@ async function restoreFullBackup(input){
  }catch(e){console.error('Archive restore failed',e);alert('복원 도중 오류가 발생했어요.\n'+(e?.message||String(e))+'\n\n일부 데이터가 복원됐을 수 있으니 현재 상태를 확인해줘.')}finally{if(button){button.disabled=false;button.textContent='백업 파일에서 복원하기'}}
 }
 
-function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 진행 상태</strong><div id="archiveBackupProgress" style="margin-top:14px" aria-live="polite"></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
+function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 진행 상태</strong><div id="archiveBackupProgress" style="margin-top:14px" aria-live="polite"></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 파일 무결성 검사</strong><p class="small" style="line-height:1.7">복원하기 전에 JSON 형식, 시계·사진 건수, 사진 원본 누락과 데이터 형식을 확인해. 검사만 하며 실제 데이터는 변경하지 않아.</p><input id="archiveValidateFile" type="file" accept=".json,application/json" style="display:none" onchange="validateBackupFile(this)"><button id="archiveValidateButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveValidateFile\').click()">백업 파일 검증하기</button><div id="archiveValidationResult" aria-live="polite" style="margin-top:10px"><div class="small">백업 파일을 선택하면 JSON 구조와 사진 데이터 누락 여부를 검사해요.</div></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
 renderArchiveBackupProgress();
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
