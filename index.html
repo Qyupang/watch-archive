@@ -243,6 +243,38 @@ html.dark .card{box-shadow:0 2px 12px #00000018}
 html.dark .navbar{background:color-mix(in srgb,var(--paper) 86%,transparent)}
 html.dark .nav.active{background:color-mix(in srgb,var(--ink) 9%,var(--paper));border-color:transparent}
 
+
+/* Unified form controls: consistent geometry across text, date and select fields */
+.field input:not([type="hidden"]),.field textarea,.field select,
+.formgrid input:not([type="hidden"]),.formgrid textarea,.formgrid select{
+  min-height:52px;
+  border:1px solid var(--line);
+  border-radius:14px;
+  background-color:var(--paper);
+  color:var(--ink);
+  box-shadow:0 1px 2px #17171706;
+  transition:border-color .18s ease,box-shadow .18s ease,background-color .18s ease;
+}
+.field input:not([type="hidden"]),.formgrid input:not([type="hidden"]){padding:0 15px}
+.field textarea,.formgrid textarea{padding:13px 15px;min-height:105px}
+.field select,.formgrid select{padding:0 42px 0 15px}
+.formgrid input[type="date"],.field input[type="date"]{
+  min-height:52px!important;height:52px!important;max-height:52px!important;
+  padding:0 12px!important;border-radius:14px!important;line-height:normal!important;
+  text-align:center!important;text-align-last:center!important;
+}
+.field input:not([type="hidden"]):focus,.field textarea:focus,.field select:focus,
+.formgrid input:not([type="hidden"]):focus,.formgrid textarea:focus,.formgrid select:focus{
+  outline:none;border-color:color-mix(in srgb,var(--muted) 68%,var(--line));
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--line) 52%,transparent);
+}
+.field input::placeholder,.field textarea::placeholder,.formgrid input::placeholder,.formgrid textarea::placeholder{color:var(--muted);opacity:.72}
+html.dark .field input:not([type="hidden"]),html.dark .field textarea,html.dark .field select,
+html.dark .formgrid input:not([type="hidden"]),html.dark .formgrid textarea,html.dark .formgrid select{box-shadow:0 1px 2px #00000018}
+@media(prefers-reduced-motion:reduce){
+ .field input,.field textarea,.field select,.formgrid input,.formgrid textarea,.formgrid select{transition:none}
+}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -616,7 +648,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.112';
+const APP_VERSION='v0.1.113';
 const APP_BUILD_DATE='2026.10.18';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
