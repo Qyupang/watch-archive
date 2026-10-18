@@ -575,7 +575,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.108';
+const APP_VERSION='v0.1.109';
 const APP_BUILD_DATE='2026.10.16';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -592,7 +592,7 @@ let o=watches.filter(w=>w.status==='owned').length,a=watches.filter(w=>w.status=
 // which caused a visible reload/flicker even though the same photo was already loaded.
 const preservedInspiration=document.querySelector('.inspiration');
 
-$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><div class="brand">Watch Archive</div></div></div>'+dailyInspiration()+'<div class="tabs"><button class="tab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="tab '+(filter==='owned'?'active':'')+'" onclick="switchCollection(\'owned\')">My Watches</button></div><div class="collection-counts" aria-label="컬렉션별 시계 수"><div class="collection-count"><span>ARCHIVE</span><strong>'+a+'</strong><small>entries</small></div><div class="collection-count"><span>MY WATCHES</span><strong>'+o+'</strong><small>entries</small></div></div><input id="homeSearch" class="search" placeholder="브랜드, 모델, 레퍼런스, 태그 검색" value="'+esc(query)+'" oninput="query=this.value;updateHomeResults()">'+brandFilterHtml()+'<div id="homeResults"></div></main><button class="fab" onclick="openEditor()">＋</button>'+nav();
+$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><div class="brand">Watch Archive</div></div></div>'+dailyInspiration()+'<div class="tabs"><button class="tab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="tab '+(filter==='owned'?'active':'')+'" onclick="switchCollection(\'owned\')">My Watches</button></div><input id="homeSearch" class="search" placeholder="브랜드, 모델, 레퍼런스, 태그 검색" value="'+esc(query)+'" oninput="query=this.value;updateHomeResults()">'+brandFilterHtml()+'<div id="homeResults"></div></main><button class="fab" onclick="openEditor()">＋</button>'+nav();
 
 const renderedInspiration=document.querySelector('.inspiration');
 if(preservedInspiration&&renderedInspiration){
