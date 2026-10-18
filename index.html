@@ -207,6 +207,42 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
 html{-webkit-tap-highlight-color:transparent}
 button,[role="button"]{touch-action:manipulation}
 button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--muted);outline-offset:3px}
+
+/* Apple-inspired visual preview: editorial hierarchy, softer surfaces, consistent motion */
+.app{padding-top:26px}
+.top{margin:8px 0 26px;align-items:center}
+.brand{font-size:clamp(34px,8vw,40px);letter-spacing:-.045em;line-height:1.02}
+.eyebrow{letter-spacing:.16em}
+.card{border-radius:17px;border-color:color-mix(in srgb,var(--line) 72%,transparent);box-shadow:0 2px 10px #17171708;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}
+.cover-frame{background:var(--soft)}
+.cardbody{padding:12px 13px 14px}
+.cardbrand-row{align-items:flex-start}
+.ownership-badge{padding:4px 8px;font-size:10px}
+.tabs{gap:7px;margin-bottom:18px}
+.tab{min-height:38px;padding:9px 15px;border-color:transparent;transition:background .2s ease,color .2s ease,transform .2s ease}
+.tab.active{border-color:transparent;box-shadow:0 1px 2px #0000000a}
+.search{border-radius:16px;box-shadow:0 2px 8px #17171706}
+.icon{transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.navbar{padding:9px 10px calc(9px + env(safe-area-inset-bottom, 0px));background:color-mix(in srgb,var(--paper) 82%,transparent);border-top-color:color-mix(in srgb,var(--line) 58%,transparent)}
+.navin{gap:5px}
+.nav{border-radius:15px;min-height:60px;transition:background .2s ease,color .2s ease,transform .2s ease}
+.nav.active{background:color-mix(in srgb,var(--ink) 7%,var(--paper));border-color:transparent}
+.sheet{border-radius:28px 28px 0 0;box-shadow:0 -12px 40px #00000012}
+.formSelectButton,.brandFilterButton{border-radius:14px}
+.formSelectMenu,.brandFilterMenu{border-radius:17px;box-shadow:0 18px 44px #00000018}
+button:active{transform:scale(.985)}
+.nav:active,.icon:active{transform:scale(.96)}
+@media(hover:hover) and (pointer:fine){
+  .card:hover{transform:translateY(-2px);box-shadow:0 8px 24px #17171710;border-color:color-mix(in srgb,var(--line) 50%,var(--muted))}
+}
+@media(prefers-reduced-motion:reduce){
+  .card,.tab,.icon,.nav,.formSelectButton,.brandFilterButton{transition:none!important}
+  .card:hover,button:active,.nav:active,.icon:active{transform:none!important}
+}
+html.dark .card{box-shadow:0 2px 12px #00000018}
+html.dark .navbar{background:color-mix(in srgb,var(--paper) 86%,transparent)}
+html.dark .nav.active{background:color-mix(in srgb,var(--ink) 9%,var(--paper));border-color:transparent}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -580,7 +616,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.111';
+const APP_VERSION='v0.1.112';
 const APP_BUILD_DATE='2026.10.18';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
