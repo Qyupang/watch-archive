@@ -567,7 +567,43 @@ async function saveValuation(id){
  if(previousValue!==currentValue){const {error:he}=await supabaseClient.from('watch_history').insert({user_id:currentUser.id,watch_id:id,event_type:'valuation',event_date:valuationDate||new Date().toISOString().slice(0,10),previous_value:previousValue,new_value:currentValue,note:valuationSource?'평가 출처: '+valuationSource:null});historyError=he}
  closeValuation();await load();portfolioPage();toast(historyError?'평가 정보는 저장했지만 변경 이력은 저장하지 못했어요':'평가 정보를 저장했어요');
 }
-function nav(active='watches'){return`<nav class="navbar" aria-label="Main navigation"><div class="navin"><button class="nav ${active==='watches'?'active':''}" aria-current="${active==='watches'?'page':'false'}" onclick="renderHome()"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></span>Watches</button><button class="nav ${active==='timeline'?'active':''}" aria-current="${active==='timeline'?'page':'false'}" onclick="timelinePage()"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V5M5 5l-3 3M5 5l3 3M10 7h9M10 12h7M10 17h5"/></svg></span>Timeline</button><button class="nav ${active==='portfolio'?'active':''}" aria-current="${active==='portfolio'?'page':'false'}" onclick="portfolioPage()"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 2 5-6"/><path d="M16 7h3v3"/></svg></span>Portfolio</button><button class="nav ${active==='wear'?'active':''}" aria-current="${active==='wear'?'page':'false'}" onclick="wearPage()"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 2v4M16 2v4M8 10h8M8 14h5"/></svg></span>Wear</button><button class="nav ${active==='photos'?'active':''}" aria-current="${active==='photos'?'page':'false'}" onclick="photosPage()"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m5 18 5-4 3 2 3-3 3.5 4"/></svg></span>Photos</button><button class="nav ${active==='settings'?'active':''}" aria-current="${active==='settings'?'page':'false'}" onclick="settings()"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--bg)"/><circle cx="15" cy="12" r="2" fill="var(--bg)"/><circle cx="10" cy="18" r="2" fill="var(--bg)"/></svg></span>Settings</button></div></nav>`}
+function nav(active='watches'){return`<nav class="navbar" aria-label="Main navigation"><div class="navin"><button class="nav ${active==='watches'?'active':''}" aria-current="${active==='watches'?'page':'false'}" onclick="navigateMainTab('watches')"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/></svg></span>Watches</button><button class="nav ${active==='timeline'?'active':''}" aria-current="${active==='timeline'?'page':'false'}" onclick="navigateMainTab('timeline')"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V5M5 5l-3 3M5 5l3 3M10 7h9M10 12h7M10 17h5"/></svg></span>Timeline</button><button class="nav ${active==='portfolio'?'active':''}" aria-current="${active==='portfolio'?'page':'false'}" onclick="navigateMainTab('portfolio')"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="M7 15l4-4 3 2 5-6"/><path d="M16 7h3v3"/></svg></span>Portfolio</button><button class="nav ${active==='wear'?'active':''}" aria-current="${active==='wear'?'page':'false'}" onclick="navigateMainTab('wear')"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="16" rx="2"/><path d="M8 2v4M16 2v4M8 10h8M8 14h5"/></svg></span>Wear</button><button class="nav ${active==='photos'?'active':''}" aria-current="${active==='photos'?'page':'false'}" onclick="navigateMainTab('photos')"><span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m5 18 5-4 3 2 3-3 3.5 4"/></svg></span>Photos</button><button class="nav ${active==='settings'?'active':''}" aria-current="${active==='settings'?'page':'false'}" onclick="navigateMainTab('settings')"><span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--bg)"/><circle cx="15" cy="12" r="2" fill="var(--bg)"/><circle cx="10" cy="18" r="2" fill="var(--bg)"/></svg></span>Settings</button></div></nav>`}
+
+
+const mainTabScrollPositions={watches:null,timeline:null,portfolio:null,wear:null,photos:null,settings:null};
+let activeMainTab='watches';
+function mainPageScrollY(){
+ const y=window.scrollY;
+ return Number.isFinite(y)?y:(document.documentElement.scrollTop||document.body?.scrollTop||0);
+}
+function restoreMainTabScroll(y){
+ const targetY=Math.max(0,Number(y)||0);
+ window.scrollTo(0,0);
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  window.scrollTo(0,targetY);
+  document.documentElement.scrollTop=targetY;
+  if(document.body)document.body.scrollTop=targetY;
+  requestAnimationFrame(()=>{if(Math.abs(mainPageScrollY()-targetY)>2)window.scrollTo(0,targetY)});
+  setTimeout(()=>{if(Math.abs(mainPageScrollY()-targetY)>2)window.scrollTo(0,targetY)},120);
+ }));
+}
+function navigateMainTab(next){
+ const allowed=['watches','timeline','portfolio','wear','photos','settings'];
+ const target=allowed.includes(next)?next:'watches';
+ if(target===activeMainTab)return;
+ mainTabScrollPositions[activeMainTab]=mainPageScrollY();
+ activeMainTab=target;
+ const restoreY=mainTabScrollPositions[target];
+ // Render the selected page, then start at the top on first visit or restore its prior position.
+ if(target==='watches')renderHome();
+ else if(target==='timeline')timelinePage();
+ else if(target==='portfolio')portfolioPage();
+ else if(target==='wear')wearPage();
+ else if(target==='photos')photosPage();
+ else settings();
+ restoreMainTabScroll(restoreY===null?0:restoreY);
+}
+
 
 const BUDGET_KEY='watchArchiveBudget_v1';
 function budgetConfig(){try{return JSON.parse(localStorage.getItem(BUDGET_KEY)||'{}')}catch(e){return {}}}
@@ -648,7 +684,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.115';
+const APP_VERSION='v0.1.116';
 const APP_BUILD_DATE='2026.10.18';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
