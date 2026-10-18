@@ -202,7 +202,12 @@ html.dark .cover,html.dark .inspirationimg{background:#2b2925}html.dark .search,
   #app > .app .heroWrap img,
   #app > .app .heroGallery img,
   #app > .overlay .sheet{animation:none!important}
-}</style></head>
+}
+/* Design engineering baseline: touch feedback and keyboard accessibility */
+html{-webkit-tap-highlight-color:transparent}
+button,[role="button"]{touch-action:manipulation}
+button:focus-visible,[role="button"]:focus-visible{outline:2px solid var(--muted);outline-offset:3px}
+</style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
