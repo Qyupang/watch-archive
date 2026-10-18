@@ -580,8 +580,8 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.110';
-const APP_BUILD_DATE='2026.10.16';
+const APP_VERSION='v0.1.111';
+const APP_BUILD_DATE='2026.10.18';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
 function setVersionVisibility(checked){try{localStorage.setItem(VERSION_VISIBLE_KEY,checked?'true':'false')}catch(e){}settings()}
