@@ -48,7 +48,7 @@ Deno.serve(async (req: Request) => {
         endpoint: sub.endpoint,
         keys: { p256dh: sub.p256dh, auth: sub.auth },
       }, JSON.stringify({
-        title: "Watch Archive",
+        title: "착용 기록 알림",
         body: "오늘 착용한 시계를 기록해 주세요.",
         url: "./",
         tag: `wear-reminder-${todayKst}`,
