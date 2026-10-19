@@ -275,6 +275,13 @@ html.dark .formgrid input:not([type="hidden"]),html.dark .formgrid textarea,html
  .field input,.field textarea,.field select,.formgrid input,.formgrid textarea,.formgrid select{transition:none}
 }
 
+
+.possessionFilter{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;margin:0 0 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.possessionFilter::-webkit-scrollbar{display:none}
+.possessionFilterOption{flex:0 0 auto;min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font-size:13px;font-weight:600;white-space:nowrap;transition:background .18s ease,color .18s ease,border-color .18s ease}
+.possessionFilterOption.active{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+@media(prefers-reduced-motion:reduce){.possessionFilterOption{transition:none}}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -283,7 +290,7 @@ const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co", SUPABASE_KEY="sb_
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DB='watch-archive-v2',STORE='watches',BRANDS_KEY='watch-archive-brands-v1';
 const DEFAULT_BRANDS=['Rolex','Omega','TAG Heuer','Tudor','Cartier','Jaeger-LeCoultre','Patek Philippe','Audemars Piguet','Vacheron Constantin','Breguet','Breitling','IWC','Zenith','Hublot','Longines','Grand Seiko','Seiko','Citizen','Casio','Timex','Bulgari','Piaget','Panerai','Hamilton','Oris','Nomos','Sinn','Tissot','Rado','Heuer'];
-let watches=[],filter='archive',query='',brandFilter='',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
+let watches=[],filter='archive',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
 let sortMode='random',watchRandomRank=new Map(),sortMenuOpen=false;
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -648,12 +655,29 @@ function saveBudgetSettings(){
 }
 
 function dailyInspiration(){let pool=watches.flatMap(w=>(w.status==='archive'?(w.photos||[]).filter(p=>p?.src).map((p,i)=>({w,p,i})):[]));if(!pool.length)return "";let today=new Date();let key=`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;let hash=0;for(let i=0;i<key.length;i++)hash=(hash*31+key.charCodeAt(i))>>>0;let item=pool[hash%pool.length],ps=orderedPhotos(item.w),idx=ps.findIndex(p=>p.id===item.p.id);if(idx<0)idx=0;let day=today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});return`<section class="inspiration"><div class="inspirationhead"><span class="inspirationeyebrow">DAILY INSPIRATION</span><span class="inspirationdate">${day}</span></div><img class="inspirationimg" ${photoAttrs(item.p,'fetchpriority="high"')} alt="${esc(item.w.brand||'')} ${esc(item.w.model||'Watch')}" onclick="event.stopPropagation();openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationmeta" onclick="openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationbrand">${esc(item.w.brand||'BRAND')}</div><div class="inspirationmodel">${esc(item.w.model||'Untitled')}</div><div class="inspirationhint">Archive · 사진을 눌러 크게 보기</div></div></section>`}
-function getBrandCounts(){let counts={};watches.filter(w=>w.status===filter).forEach(w=>{let b=String(w.brand||'').trim();if(b)counts[b]=(counts[b]||0)+1});return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));}
+function getPossessionFilteredWatches(){return watches.filter(w=>w.status===filter&&(filter!=='owned'||possessionFilter==='all'||(possessionFilter==='held'?(w.possession_status||'held')==='held':w.possession_status===possessionFilter)))}
+
+function possessionFilterHtml(){
+ const options=[['all','전체'],['held','보유 중'],['selling','판매 중'],['sold','판매 완료']];
+ return '<div class="possessionFilter" role="group" aria-label="보유 상태 필터">'+options.map(([value,label])=>'<button type="button" class="possessionFilterOption '+(possessionFilter===value?'active':'')+'" aria-pressed="'+(possessionFilter===value)+'" onclick="setPossessionFilter(\''+value+'\')">'+label+'</button>').join('')+'</div>';
+}
+function setPossessionFilter(value){
+ possessionFilter=['all','held','selling','sold'].includes(value)?value:'all';
+ if(filter!=='owned')return;
+ const root=document.getElementById('possessionFilterRoot');
+ if(root)root.innerHTML=possessionFilterHtml();
+ const validBrands=new Set(getBrandCounts().map(([b])=>b.toLowerCase()));
+ if(brandFilter&&!validBrands.has(brandFilter.toLowerCase()))brandFilter='';
+ const brandRoot=document.getElementById('brandFilterRoot');
+ if(brandRoot)brandRoot.innerHTML=brandFilterHtml();
+ updateHomeResults();
+}
+function getBrandCounts(){let counts={};getPossessionFilteredWatches().forEach(w=>{let b=String(w.brand||'').trim();if(b)counts[b]=(counts[b]||0)+1});return Object.entries(counts).sort((a,b)=>a[0].localeCompare(b[0]));}
 function brandFilterHtml(){let items=getBrandCounts(),selected=brandFilter?items.find(([b])=>b.trim().toLowerCase()===brandFilter.trim().toLowerCase()):null;if(brandFilter&&!selected)brandFilter='';let selectedBrand=selected?selected[0]:'';if(selectedBrand&&selectedBrand!==brandFilter)brandFilter=selectedBrand;let label=selected?selected[0]+' ('+selected[1]+')':'All Brands';return '<div class="brandFilter" id="brandFilter"><div class="brandFilterLabel">BRAND</div><button type="button" class="brandFilterButton" onclick="toggleBrandMenu(event)" aria-haspopup="listbox" aria-expanded="false"><span class="brandFilterValue">'+esc(label)+'</span><svg class="brandFilterChevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m7 9 5 5 5-5"/></svg></button><div class="brandFilterMenu" role="listbox">'+[['',null,'All Brands'],...items.map(([b,n])=>[b,n,b])].map(([b,n,text])=>'<button type="button" class="brandFilterOption '+((brandFilter||'')===b?'selected':'')+'" data-brand="'+esc(b)+'" onclick="setBrandFilter(this.dataset.brand)" role="option" aria-selected="'+((brandFilter||'')===b)+'"><span class="brandFilterOptionMain"><span class="brandFilterCheck">'+((brandFilter||'')===b?'✓':'')+'</span><span>'+esc(text)+'</span></span>'+(n!==null?'<span class="brandFilterCount">'+n+'</span>':'')+'</button>').join('')+'</div></div>'}
 function toggleBrandMenu(e){e.stopPropagation();let el=document.getElementById('brandFilter');if(!el)return;el.classList.toggle('open');el.querySelector('.brandFilterButton')?.setAttribute('aria-expanded',el.classList.contains('open'))}
 function setBrandFilter(value){let target=String(value||'').trim();let match=target?getBrandCounts().find(([b])=>b.trim().toLowerCase()===target.toLowerCase()):null;brandFilter=match?match[0]:'';let el=document.getElementById('brandFilter');if(el){el.classList.remove('open');let items=getBrandCounts();let selected=brandFilter?items.find(([b])=>b.trim().toLowerCase()===brandFilter.trim().toLowerCase()):null;el.querySelector('.brandFilterValue').textContent=selected?selected[0]+' ('+selected[1]+')':'All Brands';el.querySelectorAll('.brandFilterOption').forEach(o=>{let b=o.dataset.brand||'';let active=(b.toLowerCase()===String(brandFilter||'').toLowerCase());o.classList.toggle('selected',active);o.setAttribute('aria-selected',active?'true':'false');let check=o.querySelector('.brandFilterCheck');if(check)check.textContent=active?'✓':''})}updateHomeResults()}
 document.addEventListener('click',e=>{let el=document.getElementById('brandFilter');if(el&&!el.contains(e.target))el.classList.remove('open');document.querySelectorAll('.formSelect.open').forEach(x=>{if(!x.contains(e.target))x.classList.remove('open')})});
-function getFilteredWatches(){let selectedBrand=String(brandFilter||'').trim().toLowerCase();let q=String(query||'').trim().toLowerCase();let list=watches.filter(w=>{let sameStatus=w.status===filter;let sameBrand=!selectedBrand||String(w.brand||'').trim().toLowerCase()===selectedBrand;let matchesQuery=!q||JSON.stringify(w).toLowerCase().includes(q);return sameStatus&&sameBrand&&matchesQuery});if(sortMode==='latest')list.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));else if(sortMode==='oldest')list.sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));else list.sort((a,b)=>(watchRandomRank.get(a.id)??0)-(watchRandomRank.get(b.id)??0));return list}
+function getFilteredWatches(){let selectedBrand=String(brandFilter||'').trim().toLowerCase();let q=String(query||'').trim().toLowerCase();let list=getPossessionFilteredWatches().filter(w=>{let sameBrand=!selectedBrand||String(w.brand||'').trim().toLowerCase()===selectedBrand;let matchesQuery=!q||JSON.stringify(w).toLowerCase().includes(q);return sameBrand&&matchesQuery});if(sortMode==='latest')list.sort((a,b)=>new Date(b.createdAt||0)-new Date(a.createdAt||0));else if(sortMode==='oldest')list.sort((a,b)=>new Date(a.createdAt||0)-new Date(b.createdAt||0));else list.sort((a,b)=>(watchRandomRank.get(a.id)??0)-(watchRandomRank.get(b.id)??0));return list}
 function toggleSortMenu(event){event?.stopPropagation();const trigger=event?.currentTarget;const menu=trigger?.parentElement?.querySelector('.sort-menu');if(!menu)return;sortMenuOpen=!menu.classList.contains('open');menu.classList.toggle('open',sortMenuOpen);trigger.setAttribute('aria-expanded',String(sortMenuOpen))}
 function setSortMode(value){sortMode=['latest','oldest'].includes(value)?value:'random';sortMenuOpen=false;try{localStorage.setItem('watchArchiveSortMode',sortMode)}catch(e){}updateHomeResults()}
 document.addEventListener('click',e=>{if(sortMenuOpen&&!e.target.closest('.sort-trigger,.sort-menu')){sortMenuOpen=false;document.querySelectorAll('.sort-menu.open').forEach(menu=>menu.classList.remove('open'));document.querySelectorAll('.sort-trigger[aria-expanded="true"]').forEach(btn=>btn.setAttribute('aria-expanded','false'))}});
@@ -684,7 +708,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.116';
+const APP_VERSION='v0.1.117';
 const APP_BUILD_DATE='2026.10.18';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -735,7 +759,7 @@ let o=watches.filter(w=>w.status==='owned').length,a=watches.filter(w=>w.status=
 // which caused a visible reload/flicker even though the same photo was already loaded.
 const preservedInspiration=document.querySelector('.inspiration');
 
-$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><div class="brand">Watch Archive</div></div></div>'+dailyInspiration()+'<div class="tabs"><button class="tab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="tab '+(filter==='owned'?'active':'')+'" onclick="switchCollection(\'owned\')">My Watches</button></div><input id="homeSearch" class="search" placeholder="브랜드, 모델, 레퍼런스, 태그 검색" value="'+esc(query)+'" oninput="query=this.value;updateHomeResults()">'+brandFilterHtml()+'<div id="homeResults"></div></main><button class="fab" onclick="openEditor()">＋</button>'+nav();
+$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><div class="brand">Watch Archive</div></div></div>'+dailyInspiration()+'<div class="tabs"><button class="tab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="tab '+(filter==='owned'?'active':'')+'" onclick="switchCollection(\'owned\')">My Watches</button></div><input id="homeSearch" class="search" placeholder="브랜드, 모델, 레퍼런스, 태그 검색" value="'+esc(query)+'" oninput="query=this.value;updateHomeResults()"'+(filter==='owned'?'<div id="possessionFilterRoot">'+possessionFilterHtml()+'</div>':'')+'<div id="brandFilterRoot">'+brandFilterHtml()+'</div><div id="homeResults"></div></main><button class="fab" onclick="openEditor()">＋</button>'+nav();
 
 const renderedInspiration=document.querySelector('.inspiration');
 if(preservedInspiration&&renderedInspiration){
