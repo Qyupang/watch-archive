@@ -307,7 +307,7 @@ const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co", SUPABASE_KEY="sb_
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DB='watch-archive-v2',STORE='watches',BRANDS_KEY='watch-archive-brands-v1';
 const DEFAULT_BRANDS=['Rolex','Omega','TAG Heuer','Tudor','Cartier','Jaeger-LeCoultre','Patek Philippe','Audemars Piguet','Vacheron Constantin','Breguet','Breitling','IWC','Zenith','Hublot','Longines','Grand Seiko','Seiko','Citizen','Casio','Timex','Bulgari','Piaget','Panerai','Hamilton','Oris','Nomos','Sinn','Tissot','Rado','Heuer'];
-let watches=[],filter='archive',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;try{const savedPossessionFilter=localStorage.getItem('watchArchivePossessionFilter');if(['all','held','selling','sold'].includes(savedPossessionFilter))possessionFilter=savedPossessionFilter}catch(e){}
+let watches=[],filter='archive',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
 let sortMode='random',watchRandomRank=new Map(),sortMenuOpen=false;
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -680,12 +680,11 @@ function possessionFilterHtml(){
 }
 function setPossessionFilter(value){
  possessionFilter=['all','held','selling','sold'].includes(value)?value:'all';
- try{localStorage.setItem('watchArchivePossessionFilter',possessionFilter)}catch(e){}
- if(filter!=='owned')return;
+  if(filter!=='owned')return;
  const root=document.getElementById('possessionFilterRoot');
  if(root){
   root.querySelectorAll('.possessionFilterOption').forEach(button=>{
-   const active=button.getAttribute('onclick')?.includes("'"+possessionFilter+"'");
+   const active=button.dataset.filter===possessionFilter;
    button.classList.toggle('active',!!active);
    button.setAttribute('aria-pressed',active?'true':'false');
   });
@@ -767,6 +766,7 @@ function switchCollection(next){
  if(target===filter)return;
  collectionScrollPositions[filter]=getPageScrollY();
  filter=target;
+ if(target==='owned')possessionFilter='all';
  query='';
  brandFilter='';
  sortMenuOpen=false;
