@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
       }, JSON.stringify({
         title: "착용 기록 알림",
         body: "오늘 착용한 시계를 기록해 주세요.",
-        url: "./",
+        url: "./?tab=wear",
         tag: `wear-reminder-${todayKst}`,
       }));
       sent++;
