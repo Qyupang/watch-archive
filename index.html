@@ -1099,6 +1099,7 @@ async function exportFullBackup(){
   if(archiveBackupTimer){clearInterval(archiveBackupTimer);archiveBackupTimer=null}
   if(button){button.disabled=false;button.textContent='전체 백업 파일 만들기'}
   renderArchiveBackupProgress();
+if(document.getElementById('wearPushToggle'))refreshWearPushButton();
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(e=>console.error('Service worker registration failed',e));
  }
 }
@@ -1200,6 +1201,7 @@ async function restoreFullBackup(input){
 
 const WEAR_PUSH_VAPID_PUBLIC_KEY='BNzcCgm9fx3JvIc7lEXCi6KUO7-VUxOELFNCDWOYBEb-CVQkIynR695HCl_d-nvK2iZG4YBoII7n1ivp_hvE8u0';
 function urlBase64ToUint8Array(v){const p='='.repeat((4-v.length%4)%4);const b=(v+p).replace(/-/g,'+').replace(/_/g,'/');return Uint8Array.from(atob(b),c=>c.charCodeAt(0))}
+async function refreshWearPushButton(){const b=document.getElementById('wearPushToggle');if(!b)return;try{const reg=await navigator.serviceWorker.getRegistration('./');const sub=await reg?.pushManager?.getSubscription();b.dataset.enabled=sub?'true':'false';b.textContent=sub?'착용 기록 알림 끄기':'착용 기록 알림 켜기'}catch(e){b.dataset.enabled='false';b.textContent='착용 기록 알림 켜기'}}
 async function setWearReminderPush(enable){
  if(!currentUser)return toast('로그인 후 이용해줘');
  if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)){alert('이 브라우저는 푸시 알림을 지원하지 않아요. iPhone에서는 홈 화면에 추가한 Watch Archive를 실행해줘.');return}
