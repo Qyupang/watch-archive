@@ -261,7 +261,19 @@ html.dark .nav.active{background:color-mix(in srgb,var(--ink) 9%,var(--paper));b
 .formgrid input[type="date"],.field input[type="date"]{
   min-height:52px!important;height:52px!important;max-height:52px!important;
   padding:0 12px!important;border-radius:14px!important;line-height:normal!important;
-  text-align:center!important;text-align-last:center!important;
+  text-align:left!important;text-align-last:left!important;
+}
+.formgrid input[type="date"]::-webkit-date-and-time-value,
+.field input[type="date"]::-webkit-date-and-time-value{
+  display:block;width:100%;min-width:0;text-align:left!important;margin:0;padding:0;line-height:normal;
+}
+.formgrid input[type="date"]::-webkit-datetime-edit,
+.field input[type="date"]::-webkit-datetime-edit{
+  text-align:left!important;padding:0;
+}
+.formgrid input[type="date"]::-webkit-calendar-picker-indicator,
+.field input[type="date"]::-webkit-calendar-picker-indicator{
+  margin-left:6px;flex:0 0 auto;
 }
 .field input:not([type="hidden"]):focus,.field textarea:focus,.field select:focus,
 .formgrid input:not([type="hidden"]):focus,.formgrid textarea:focus,.formgrid select:focus{
