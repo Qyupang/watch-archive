@@ -1231,7 +1231,7 @@ renderArchiveBackupProgress();
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
 scheduleTheme();
-async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load()}supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){loadBrands().then(load)}else authScreen()});boot();
+async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load();const requestedTab=new URLSearchParams(location.search).get('tab');if(requestedTab==='wear')navigateMainTab('wear')}supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){loadBrands().then(load)}else authScreen()});boot();
 
 (function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,650),{once:true});setTimeout(hide,1800)})();
 </script></body></html>
