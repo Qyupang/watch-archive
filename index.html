@@ -296,7 +296,7 @@ html.dark .formgrid input:not([type="hidden"]),html.dark .formgrid textarea,html
 .possessionFilter{display:flex;gap:7px;overflow-x:auto;padding:2px 0 4px;margin:0 0 14px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .possessionFilter::-webkit-scrollbar{display:none}
 .possessionFilterOption{flex:0 0 auto;min-height:38px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--muted);font-size:13px;font-weight:600;white-space:nowrap;transition:background .18s ease,color .18s ease,border-color .18s ease}
-.possessionFilterOption.active{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.possessionFilterOption.active,.possessionFilterOption[aria-pressed="true"]{background:var(--ink)!important;border-color:var(--ink)!important;color:var(--bg)!important;box-shadow:inset 0 0 0 1px var(--ink)}
 @media(prefers-reduced-motion:reduce){.possessionFilterOption{transition:none}}
 
 </style></head>
@@ -307,7 +307,7 @@ const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co", SUPABASE_KEY="sb_
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DB='watch-archive-v2',STORE='watches',BRANDS_KEY='watch-archive-brands-v1';
 const DEFAULT_BRANDS=['Rolex','Omega','TAG Heuer','Tudor','Cartier','Jaeger-LeCoultre','Patek Philippe','Audemars Piguet','Vacheron Constantin','Breguet','Breitling','IWC','Zenith','Hublot','Longines','Grand Seiko','Seiko','Citizen','Casio','Timex','Bulgari','Piaget','Panerai','Hamilton','Oris','Nomos','Sinn','Tissot','Rado','Heuer'];
-let watches=[],filter='archive',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
+let watches=[],filter='archive',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;try{const savedPossessionFilter=localStorage.getItem('watchArchivePossessionFilter');if(['all','held','selling','sold'].includes(savedPossessionFilter))possessionFilter=savedPossessionFilter}catch(e){}
 let sortMode='random',watchRandomRank=new Map(),sortMenuOpen=false;
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -680,9 +680,16 @@ function possessionFilterHtml(){
 }
 function setPossessionFilter(value){
  possessionFilter=['all','held','selling','sold'].includes(value)?value:'all';
+ try{localStorage.setItem('watchArchivePossessionFilter',possessionFilter)}catch(e){}
  if(filter!=='owned')return;
  const root=document.getElementById('possessionFilterRoot');
- if(root)root.innerHTML=possessionFilterHtml();
+ if(root){
+  root.querySelectorAll('.possessionFilterOption').forEach(button=>{
+   const active=button.getAttribute('onclick')?.includes("'"+possessionFilter+"'");
+   button.classList.toggle('active',!!active);
+   button.setAttribute('aria-pressed',active?'true':'false');
+  });
+ }
  const validBrands=new Set(getBrandCounts().map(([b])=>b.toLowerCase()));
  if(brandFilter&&!validBrands.has(brandFilter.toLowerCase()))brandFilter='';
  const brandRoot=document.getElementById('brandFilterRoot');
