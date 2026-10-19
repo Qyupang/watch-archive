@@ -676,7 +676,7 @@ function getPossessionFilteredWatches(){return watches.filter(w=>w.status===filt
 
 function possessionFilterHtml(){
  const options=[['all','전체'],['held','보유 중'],['selling','판매 중'],['sold','판매 완료']];
- return '<div class="possessionFilter" role="group" aria-label="보유 상태 필터">'+options.map(([value,label])=>'<button type="button" class="possessionFilterOption '+(possessionFilter===value?'active':'')+'" aria-pressed="'+(possessionFilter===value)+'" onclick="setPossessionFilter(\''+value+'\')">'+label+'</button>').join('')+'</div>';
+ return '<div class="possessionFilter" role="group" aria-label="보유 상태 필터">'+options.map(([value,label])=>'<button type="button" class="possessionFilterOption '+(possessionFilter===value?'active':'')+'" data-filter="'+value+'" aria-pressed="'+(possessionFilter===value)+'" onclick="setPossessionFilter(\''+value+'\')">'+label+'</button>').join('')+'</div>';
 }
 function setPossessionFilter(value){
  possessionFilter=['all','held','selling','sold'].includes(value)?value:'all';
