@@ -685,8 +685,11 @@ function setPossessionFilter(value){
  if(root){
   root.querySelectorAll('.possessionFilterOption').forEach(button=>{
    const active=button.dataset.filter===possessionFilter;
-   button.classList.toggle('active',!!active);
+   button.classList.toggle('active',active);
    button.setAttribute('aria-pressed',active?'true':'false');
+   button.style.setProperty('background',active?'var(--ink)':'var(--paper)','important');
+   button.style.setProperty('border-color',active?'var(--ink)':'var(--line)','important');
+   button.style.setProperty('color',active?'var(--bg)':'var(--muted)','important');
   });
  }
  const validBrands=new Set(getBrandCounts().map(([b])=>b.toLowerCase()));
