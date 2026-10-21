@@ -1367,8 +1367,32 @@ function restoreAppViewState(){
  if(target!=='watches')navigateMainTab(target);else renderHome();
  if(s&&target===(s.tab||'watches'))restoreMainTabScroll(s.scrollY||0);
 }
-async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load();restoreAppViewState()}
-supabaseClient.auth.onAuthStateChange((_event,session)=>{currentUser=session?.user||null;if(currentUser){loadBrands().then(load)}else authScreen()});boot();
+async function boot(){
+ const bootStarted=Date.now();
+ const watchdog=setTimeout(()=>{
+  if(!document.querySelector('#app')?.innerHTML.trim()){
+   authScreen('초기화가 지연되고 있어요. 다시 시도하거나 로그인 화면에서 계속 진행해주세요.');
+  }
+ },7000);
+ try{
+  const {data,error}=await supabaseClient.auth.getSession();
+  if(error)throw error;
+  currentUser=data.session?.user||null;
+  if(!currentUser){authScreen();return}
+  await loadBrands();
+  await load();
+  restoreAppViewState();
+ }catch(error){
+  console.error('[Watch Archive] App startup failed',error);
+  authScreen('앱을 불러오지 못했어요. 네트워크 연결을 확인한 뒤 다시 로그인해주세요. ('+(error?.message||'초기화 오류')+')');
+ }finally{clearTimeout(watchdog)}
+}
+supabaseClient.auth.onAuthStateChange((_event,session)=>{
+ currentUser=session?.user||null;
+ if(currentUser){loadBrands().then(load).catch(error=>{console.error('[Watch Archive] Auth refresh failed',error);authScreen('데이터를 불러오지 못했어요. 페이지를 새로고침해주세요.')})}
+ else authScreen()
+});
+boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해주세요.')});
 
 (function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,650),{once:true});setTimeout(hide,1800)})();
 </script></body></html>
