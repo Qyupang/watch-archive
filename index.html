@@ -1228,6 +1228,65 @@ async function validateBackupFile(input){
  finally{if(button){button.disabled=false;button.textContent='백업 파일 검증하기'}}
 }
 
+async function optimizeExistingPhotos(){
+ if(!currentUser)return toast('로그인 후 이용해줘');
+ const button=document.getElementById('photoOptimizeButton'),progress=document.getElementById('photoOptimizeProgress');
+ if(!button||button.disabled)return;
+ if(!confirm('기존 사진을 최적화할까요?\\n\\n현재 저장된 사진 원본을 순차적으로 다운로드하므로 최대 약 85MB의 트래픽이 발생할 수 있어요. 최적화 결과가 작아지는 사진만 새 파일로 저장하고, 연결 정보가 갱신된 뒤에만 이전 파일을 삭제해요.\\n\\n전체 백업과 검증을 완료했는지 확인해줘.'))return;
+ button.disabled=true;button.textContent='최적화 중…';
+ const report={total:0,done:0,optimized:0,skipped:0,failed:0,originalBytes:0,newBytes:0};
+ const show=(message)=>{if(progress)progress.textContent=message};
+ try{
+  const {data:photos,error}=await supabaseClient.from('watch_photos').select('id,watch_id,storage_path,user_id').eq('user_id',currentUser.id).not('storage_path','is',null).order('watch_id',{ascending:true});
+  if(error)throw error;
+  report.total=(photos||[]).length;
+  if(!report.total){show('최적화할 사진이 없어요.');return}
+  if(!confirm('총 '+report.total+'장의 사진을 확인할 예정이에요. 원본을 다시 다운로드하므로 네트워크 사용량이 발생합니다. 계속할까요?'))return;
+  for(let i=0;i<photos.length;i++){
+   const photo=photos[i],oldPath=photo.storage_path;
+   show('처리 중 '+(i+1)+' / '+photos.length+' · 최적화 '+report.optimized+'장 · 건너뜀 '+report.skipped+'장 · 실패 '+report.failed+'장');
+   try{
+    const {data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrl(oldPath,300);
+    if(signedError||!signed?.signedUrl)throw signedError||new Error('사진 다운로드 주소를 만들지 못했어요.');
+    const response=await fetch(signed.signedUrl,{cache:'no-store'});
+    if(!response.ok)throw new Error('원본 다운로드 실패 ('+response.status+')');
+    const original=await response.blob();report.originalBytes+=original.size;
+    if(!original.type.startsWith('image/'))throw new Error('이미지 형식이 아니에요.');
+    const compressed=await compressWatchPhoto(original,{maxDimension:1600,quality:0.82});
+    if(!(compressed instanceof Blob)||compressed.size>=original.size||compressed.type!=='image/jpeg'){
+     report.skipped++;report.newBytes+=original.size;continue;
+    }
+    const newPath=oldPath.replace(/\.[^/.]+$/,'')+'.optimized.jpg';
+    const {error:uploadError}=await supabaseClient.storage.from('watch-photos').upload(newPath,compressed,{contentType:'image/jpeg',cacheControl:'3600',upsert:true});
+    if(uploadError)throw uploadError;
+    const {error:updateError}=await supabaseClient.from('watch_photos').update({storage_path:newPath}).eq('id',photo.id).eq('user_id',currentUser.id);
+    if(updateError){
+     const {error:cleanupError}=await supabaseClient.storage.from('watch-photos').remove([newPath]);
+     if(cleanupError)console.warn('Could not clean up unlinked optimized image',cleanupError);
+     throw updateError;
+    }
+    report.newBytes+=compressed.size;report.optimized++;
+    const {error:removeError}=await supabaseClient.storage.from('watch-photos').remove([oldPath]);
+    if(removeError)console.warn('Optimized photo is active but old file cleanup failed',oldPath,removeError);
+    photoUrlCache.delete(oldPath);photoUrlCache.delete(newPath);
+    const cached=await getCachedWatchImage(oldPath);if(cached)await cacheWatchImage(newPath,compressed);
+   }catch(photoError){
+    console.error('Photo optimization failed:',oldPath,photoError);report.failed++;
+   }
+   show('처리 중 '+(i+1)+' / '+photos.length+' · 최적화 '+report.optimized+'장 · 건너뜀 '+report.skipped+'장 · 실패 '+report.failed+'장');
+  }
+  const saved=Math.max(0,report.originalBytes-report.newBytes);
+  show('완료 · 전체 '+report.total+'장 · 최적화 '+report.optimized+'장 · 건너뜀 '+report.skipped+'장 · 실패 '+report.failed+'장 · 다운로드 '+(report.originalBytes/1024/1024).toFixed(1)+'MB · 추정 용량 절감 '+(saved/1024/1024).toFixed(1)+'MB'+(report.failed?' · 실패한 사진은 원본을 유지했어요.':''));
+  if(report.optimized)toast('기존 사진 '+report.optimized+'장을 최적화했어요');
+ }catch(error){
+  console.error('Existing photo optimization failed',error);
+  show('최적화 중 오류가 발생했어요: '+(error?.message||String(error))+' · 이미 처리된 사진은 앱에서 연결 정보를 확인해줘.');
+  alert('기존 사진 최적화를 완료하지 못했어요.\\n'+(error?.message||String(error))+'\\n\\n진행 상황을 확인하고, 이미 처리된 사진은 앱에서 확인해줘.');
+ }finally{
+  button.disabled=false;button.textContent='기존 사진 최적화 시작';
+ }
+}
+
 async function restoreFullBackup(input){
  const file=input.files?.[0];input.value='';if(!file)return;if(!currentUser)return toast('로그인 후 이용해줘');
  let backup;try{backup=JSON.parse(await file.text())}catch(e){return alert('백업 파일을 읽을 수 없어요. 올바른 JSON인지 확인해줘.')}
@@ -1281,7 +1340,7 @@ async function setWearReminderPush(enable){
  }catch(e){console.error('Wear reminder push setup failed',e);alert('알림 설정을 완료하지 못했어요. '+(e?.message||String(e)))}
  finally{const b=document.getElementById('wearPushToggle');if(b)b.disabled=false}
 }
-function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 진행 상태</strong><div id="archiveBackupProgress" style="margin-top:14px" aria-live="polite"></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 파일 무결성 검사</strong><p class="small" style="line-height:1.7">복원하기 전에 JSON 형식, 시계·사진 건수, 사진 원본 누락과 데이터 형식을 확인해. 검사만 하며 실제 데이터는 변경하지 않아.</p><input id="archiveValidateFile" type="file" accept=".json,application/json" style="display:none" onchange="validateBackupFile(this)"><button id="archiveValidateButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveValidateFile\').click()">백업 파일 검증하기</button><div id="archiveValidationResult" aria-live="polite" style="margin-top:10px"><div class="small">백업 파일을 선택하면 JSON 구조와 사진 데이터 누락 여부를 검사해요.</div></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Notifications</h2></div><section class="empty" style="text-align:left;margin-bottom:20px"><strong>Daily Wear Reminder</strong><p class="small" style="line-height:1.7">매일 오전 9시(KST)에 오늘 착용 기록이 없으면 알림을 보내는 기능이에요. iPhone에서는 Watch Archive를 홈 화면에 추가하고 알림을 허용해야 해요.</p><button id="wearPushToggle" type="button" class="action" style="width:100%;margin-top:8px" onclick="setWearReminderPush(this.dataset.enabled !== &quot;true&quot;)">착용 기록 알림 켜기</button><div class="small" style="margin-top:8px">서버의 정기 실행과 푸시 발송 키 설정이 완료되어야 실제 알림이 발송돼요.</div></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
+function settings(){const email=esc(currentUser?.email||'');const showVersion=isVersionVisible();$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">ARCHIVE TOOLS</div><div class="brand">Settings</div></div></div><div class="head"><h2>Data & Backup</h2></div><section class="empty" style="text-align:left;margin-bottom:12px"><strong>전체 백업</strong><p class="small" style="line-height:1.7">시계 정보, 사진 원본, 착용 기록, 시계 이력, 브랜드와 예산 설정을 JSON 파일 하나로 저장해. 사진이 많으면 시간이 걸릴 수 있어.</p><button id="archiveBackupButton" type="button" class="action primary" style="width:100%;margin-top:8px" onclick="exportFullBackup()">전체 백업 파일 만들기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 진행 상태</strong><div id="archiveBackupProgress" style="margin-top:14px" aria-live="polite"></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 파일 무결성 검사</strong><p class="small" style="line-height:1.7">복원하기 전에 JSON 형식, 시계·사진 건수, 사진 원본 누락과 데이터 형식을 확인해. 검사만 하며 실제 데이터는 변경하지 않아.</p><input id="archiveValidateFile" type="file" accept=".json,application/json" style="display:none" onchange="validateBackupFile(this)"><button id="archiveValidateButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveValidateFile\').click()">백업 파일 검증하기</button><div id="archiveValidationResult" aria-live="polite" style="margin-top:10px"><div class="small">백업 파일을 선택하면 JSON 구조와 사진 데이터 누락 여부를 검사해요.</div></div></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>백업 복원</strong><p class="small" style="line-height:1.7">백업 파일의 데이터를 현재 계정에 병합해. 같은 ID의 항목은 갱신되지만, 백업에만 없는 기존 항목은 삭제하지 않아.</p><input id="archiveRestoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restoreFullBackup(this)"><button id="archiveRestoreButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="document.getElementById(\'archiveRestoreFile\').click()">백업 파일에서 복원하기</button></section><section class="empty" style="text-align:left;margin-bottom:12px"><strong>기존 사진 용량 최적화</strong><p class="small" style="line-height:1.7">기존 사진을 한 장씩 내려받아 브라우저에서 압축하고, 새 파일 업로드와 연결 정보 갱신이 성공한 경우에만 이전 파일을 정리해. 사진 원본 다운로드로 최대 약 85MB의 트래픽이 발생할 수 있어. 실행 전 전체 백업을 완료하고 검증해줘.</p><button id="photoOptimizeButton" type="button" class="action" style="width:100%;margin-top:8px" onclick="optimizeExistingPhotos()">기존 사진 최적화 시작</button><div id="photoOptimizeProgress" class="small" style="margin-top:10px;line-height:1.7" aria-live="polite">아직 실행하지 않았어요. 실행하면 진행 상황과 절감 용량을 표시해요.</div></section><section class="empty" style="text-align:left;margin-bottom:20px"><strong>시계 목록 CSV</strong><p class="small" style="line-height:1.7">시계 정보와 구매·판매 데이터를 엑셀에서 확인할 수 있도록 내보내.</p><button type="button" class="action" style="width:100%;margin-top:8px" onclick="exportWatchesCsv()">CSV 내보내기</button></section><div class="head"><h2>Notifications</h2></div><section class="empty" style="text-align:left;margin-bottom:20px"><strong>Daily Wear Reminder</strong><p class="small" style="line-height:1.7">매일 오전 9시(KST)에 오늘 착용 기록이 없으면 알림을 보내는 기능이에요. iPhone에서는 Watch Archive를 홈 화면에 추가하고 알림을 허용해야 해요.</p><button id="wearPushToggle" type="button" class="action" style="width:100%;margin-top:8px" onclick="setWearReminderPush(this.dataset.enabled !== &quot;true&quot;)">착용 기록 알림 켜기</button><div class="small" style="margin-top:8px">서버의 정기 실행과 푸시 발송 키 설정이 완료되어야 실제 알림이 발송돼요.</div></section><div class="head"><h2>Tools</h2></div><button type="button" class="action" style="width:100%;display:flex;align-items:center;justify-content:space-between;text-align:left;margin-bottom:20px" onclick="budgetPage()"><span><strong>Budget</strong><br><span class="small">시계 예산 및 취득금액 관리</span></span><span aria-hidden="true">›</span></button><div class="head"><h2>Display</h2></div><div class="empty" style="text-align:left"><label style="display:flex;align-items:center;justify-content:space-between;gap:16px;cursor:pointer"><span><strong>Version information</strong><br><span class="small">메인 화면에 테스트 버전 표시</span></span><input type="checkbox" '+(showVersion?'checked':'')+' onchange="setVersionVisibility(this.checked)" style="width:22px;height:22px;accent-color:var(--text)"></label><div class="small" style="margin-top:12px">현재 버전: '+APP_VERSION+' · '+APP_BUILD_DATE+'</div></div><div class="head"><h2>Account</h2></div><div class="empty">Supabase Cloud Archive<br><span class="small">'+email+'</span><br><br><button class="action" onclick="signOut()">Sign out</button></div></main>'+nav('settings')}
 renderArchiveBackupProgress();
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
