@@ -1346,7 +1346,7 @@ renderArchiveBackupProgress();
 function updateTheme(){let h=new Date().getHours();let dark=h>=21||h<8;document.documentElement.classList.toggle('dark',dark);document.querySelector('meta[name="theme-color"]')?.setAttribute('content',dark?'#171614':'#f5f3ee')}
 function scheduleTheme(){updateTheme();let now=new Date(),next=new Date(now);next.setMinutes(0,0,0);next.setHours(now.getHours()+1);let ms=next-now;setTimeout(()=>{updateTheme();scheduleTheme()},Math.max(ms,1000))}
 scheduleTheme();
-async const APP_VIEW_STATE_KEY='watch-archive-view-state-v1';
+const APP_VIEW_STATE_KEY='watch-archive-view-state-v1';
 function saveAppViewState(){
  if(!currentUser)return;
  try{sessionStorage.setItem(APP_VIEW_STATE_KEY,JSON.stringify({userId:currentUser.id,tab:activeMainTab||'watches',scrollY:mainPageScrollY(),filter,query,brandFilter,possessionFilter,sortMode,wearSelectedDate,mainTabScrollPositions,updatedAt:Date.now()}))}catch(e){}
