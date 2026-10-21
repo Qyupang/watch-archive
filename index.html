@@ -1363,7 +1363,7 @@ function restoreAppViewState(){
  const requestedTab=new URLSearchParams(location.search).get('tab');
  const target=requestedTab==='wear'?'wear':(s?.tab||'watches');
  if(s){filter=s.filter||filter;query=s.query||'';brandFilter=s.brandFilter||'';possessionFilter=s.possessionFilter||'all';sortMode=s.sortMode||sortMode;if(s.wearSelectedDate)wearSelectedDate=s.wearSelectedDate;mainTabScrollPositions={...mainTabScrollPositions,...(s.mainTabScrollPositions||{})}}
- if(target!=='watches')navigateMainTab(target);
+ if(target!=='watches')navigateMainTab(target);else renderHome();
  if(s&&target===(s.tab||'watches'))restoreMainTabScroll(s.scrollY||0);
 }
 async function boot(){let{data}=await supabaseClient.auth.getSession();currentUser=data.session?.user||null;if(!currentUser){authScreen();return}await loadBrands();await load();restoreAppViewState()}
