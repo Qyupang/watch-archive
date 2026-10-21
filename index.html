@@ -5,7 +5,7 @@
 <link rel="apple-touch-icon" href="icon.svg"><link rel="manifest" href="manifest.webmanifest"><title>Watch Archive</title>
 <style>
 /* Watch Archive 02 Light identity + startup splash */
-#startupSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;background:#f7f4ec;color:#171717;opacity:1;visibility:visible;transition:opacity .42s ease,visibility .42s ease}
+#startupSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;background:#f7f4ec;color:#171717;opacity:1;visibility:visible;transition:opacity .42s ease,visibility .42s ease;animation:splashFailsafe 0s linear 2.5s forwards}@keyframes splashFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
 #startupSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
 #startupSplash img{display:block;width:min(76vw,360px);height:auto}
 html.dark #startupSplash{background:#171614;color:#f7f4ec}
