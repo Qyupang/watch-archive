@@ -851,13 +851,13 @@ async function saveWatchHistory(watchId){
  const btn=document.getElementById('history-save');if(btn){btn.disabled=true;btn.textContent='저장 중…'}
  const {error}=await supabaseClient.from('watch_history').insert({user_id:currentUser.id,watch_id:watchId,event_type:type,event_date:date,cost,note});
  if(error){console.error(error);toast('기록 저장에 실패했어');if(btn){btn.disabled=false;btn.textContent='기록 저장'}return}
- closeWatchHistory();await loadWatchHistory(watchId);toast('시계 기록을 저장했어');
+ closeWatchHistory();await loadWatchHistoryEditor(watchId);toast('시계 기록을 저장했어');
 }
 async function deleteWatchHistory(id,watchId){
  if(!confirm('이 기록을 삭제할까?'))return;
  const {error}=await supabaseClient.from('watch_history').delete().eq('id',id).eq('user_id',currentUser.id);
  if(error)return toast('기록 삭제에 실패했어');
- await loadWatchHistory(watchId);toast('기록을 삭제했어');
+ await loadWatchHistoryEditor(watchId);toast('기록을 삭제했어');
 }
 
 function renderDetail(){
