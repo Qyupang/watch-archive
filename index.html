@@ -1500,10 +1500,27 @@ async function boot(){
   authScreen('앱을 불러오지 못했어요. 네트워크 연결을 확인한 뒤 다시 로그인해주세요. ('+(error?.message||'초기화 오류')+')');
  }finally{clearTimeout(watchdog)}
 }
-supabaseClient.auth.onAuthStateChange((_event,session)=>{
- currentUser=session?.user||null;
- if(currentUser){loadBrands().then(load).catch(error=>{console.error('[Watch Archive] Auth refresh failed',error);authScreen('데이터를 불러오지 못했어요. 페이지를 새로고침해주세요.')})}
- else authScreen()
+let lastAuthUserId=currentUser?.id||null;
+supabaseClient.auth.onAuthStateChange((event,session)=>{
+ const nextUser=session?.user||null;
+ const previousUserId=lastAuthUserId;
+ currentUser=nextUser;
+ lastAuthUserId=nextUser?.id||null;
+
+ // Initial session is handled by boot(); token refresh must not reload the app.
+ if(event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED')return;
+
+ // Only load data when a genuinely different user signs in.
+ if(event==='SIGNED_IN'){
+  if(nextUser&&previousUserId!==nextUser.id){
+   loadBrands().then(load).catch(error=>{
+    console.error('[Watch Archive] Auth refresh failed',error);
+    authScreen('데이터를 불러오지 못했어요. 페이지를 새로고침해주세요.')
+   });
+  }
+  return;
+ }
+ if(event==='SIGNED_OUT'||!nextUser)authScreen();
 });
 boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해주세요.')});
 
