@@ -244,6 +244,13 @@ html.dark .navbar{background:color-mix(in srgb,var(--paper) 86%,transparent)}
 html.dark .nav.active{background:color-mix(in srgb,var(--ink) 9%,var(--paper));border-color:transparent}
 
 
+
+/* Keep the open brand menu above the archive cards on mobile Safari. */
+#brandFilterRoot{position:relative;z-index:30;isolation:isolate}
+#brandFilter{z-index:31}
+#brandFilter.open{z-index:9990}
+#brandFilter.open .brandFilterMenu{z-index:9991}
+#homeResults{position:relative;z-index:1}
 /* Unified form controls: consistent geometry across text, date and select fields */
 .field input:not([type="hidden"]),.field textarea,.field select,
 .formgrid input:not([type="hidden"]),.formgrid textarea,.formgrid select{
