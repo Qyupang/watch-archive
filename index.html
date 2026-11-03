@@ -482,6 +482,29 @@ html.box-confirm-open,body.box-confirm-open{overflow:hidden!important;overscroll
 .box-confirm-actions{display:flex;justify-content:flex-end;gap:8px}
 .box-confirm-actions button{min-width:88px;padding:10px 14px;font-size:12px}
 .box-confirm-actions .primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
+/* Prevent horizontal overflow in the watch editor on narrow iPhone viewports */
+html,body,#app{max-width:100%;overflow-x:clip}
+#app>.overlay{width:100%;max-width:100%;overflow-x:clip}
+#app>.overlay>.sheet{width:100%;max-width:100%;min-width:0;overflow-x:clip;contain:paint}
+#app>.overlay>.sheet *{min-width:0;max-width:100%}
+#app>.overlay>.sheet .formgrid{width:100%;max-width:100%;min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(8px,2.5vw,11px)}
+#app>.overlay>.sheet .formgrid>.field,
+#app>.overlay>.sheet .formgrid>.editor-section-title{min-width:0;max-width:100%}
+#app>.overlay>.sheet .formgrid>.field>*,
+#app>.overlay>.sheet .formgrid .field input,
+#app>.overlay>.sheet .formgrid .field textarea,
+#app>.overlay>.sheet .formgrid .field select,
+#app>.overlay>.sheet .formgrid .formSelect,
+#app>.overlay>.sheet .formgrid .formSelectButton{width:100%;min-width:0;max-width:100%;box-sizing:border-box}
+#app>.overlay>.sheet .formgrid .field:has(#brandSelect)>div{width:100%;min-width:0;max-width:100%;grid-template-columns:minmax(0,1fr) 44px!important}
+#app>.overlay>.sheet .formgrid .field:has(#brandSelect) .formSelect{min-width:0;max-width:100%}
+#app>.overlay>.sheet .formgrid .field:has(#brandSelect) .formSelectButton{overflow:hidden}
+#app>.overlay>.sheet .formgrid .field:has(#brandSelect) .formSelectValue{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:380px){
+ #app>.overlay>.sheet{padding-left:14px;padding-right:14px}
+ #app>.overlay>.sheet .formgrid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px}
+}
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,650)},{once:true});setTimeout(hide,1800)})();</script>
@@ -1172,7 +1195,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.123';
+const APP_VERSION='v0.1.124';
 const APP_BUILD_DATE='2026.11.03';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
