@@ -1584,7 +1584,7 @@ function validateBackupObject(backup){
   const comma=f.data.indexOf(','),payload=comma>=0?f.data.slice(comma+1):'';
   if(!payload.length||payload.length%4!==0||!/^[A-Za-z0-9+/]*={0,2}$/.test(payload))invalidPhotoData++;
  }
- for(const box of (Array.isArray(d.collection_boxes)?d.collection_boxes:[])){if(box?.cover_image_path){paths.add(box.cover_image_path);const file=d.photoFiles[box.cover_image_path];if(!file||typeof file.data!=='string'||!/^data:image\\/[a-zA-Z0-9.+-]+;base64,/.test(file.data))errors.push('보관함 대표 사진 데이터가 없거나 올바르지 않습니다: '+box.cover_image_path)}}
+ for(const box of (Array.isArray(d.collection_boxes)?d.collection_boxes:[])){if(box?.cover_image_path){paths.add(box.cover_image_path);const file=d.photoFiles[box.cover_image_path];if(!file||typeof file.data!=='string'||!/^data:image\/[a-zA-Z0-9.+-]+;base64,/.test(file.data))errors.push('보관함 대표 사진 데이터가 없거나 올바르지 않습니다: '+box.cover_image_path)}}
  const extraPhotoFiles=Object.keys(d.photoFiles).filter(path=>!paths.has(path)).length;
  if(missingPhotoData)errors.push('사진 원본 누락: '+missingPhotoData+'개');
  if(invalidPhotoData)errors.push('사진 데이터 형식 오류: '+invalidPhotoData+'개');
