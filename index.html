@@ -449,6 +449,16 @@ html.dark .formgrid input:not([type="hidden"]),html.dark .formgrid textarea,html
 .box-picker-meta{font-size:10px;color:var(--muted);margin-top:3px}
 .box-modal-note{font-size:11px;color:var(--muted);line-height:1.6;margin-top:8px}
 @media(max-width:380px){.box-grid{gap:9px}.box-card-title{font-size:18px}.box-watch-row{grid-template-columns:70px minmax(0,1fr);gap:9px;padding:8px}.box-watch-photo,.box-watch-photo-empty{width:70px;height:70px}.box-watch-model{font-size:17px}}
+
+.box-detail-cover-wrap{position:relative;margin-top:2px}
+.box-detail-cover-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+.box-detail-cover-tools input{display:none}
+.box-role{font-size:11px;line-height:1.6;color:var(--muted);margin-top:7px;white-space:pre-wrap;overflow-wrap:anywhere}
+.box-watch-row{transition:opacity .15s ease,transform .15s ease}
+.box-watch-row.is-dragging{opacity:.38;transform:scale(.985)}
+.box-watch-row.is-drop-target{outline:2px dashed var(--muted);outline-offset:2px}
+.box-drag-handle{border:0!important;background:transparent!important;padding:4px 7px!important;font-size:19px!important;line-height:1;color:var(--muted);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.box-drag-handle:active{cursor:grabbing}
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,650)},{once:true});setTimeout(hide,1800)})();</script>
@@ -796,12 +806,13 @@ async function loadCollectionBoxes(){
  if(currentUser?.id!==userId)return;
  collectionBoxes=boxResult.data||[];
  collectionBoxItems=itemResult.data||[];
+ await Promise.all(collectionBoxes.filter(b=>b.cover_image_path).map(async b=>{b.cover_image_url=await refreshPhotoUrl(b.cover_image_path)}));
 }
 function boxItems(boxId){return collectionBoxItems.filter(x=>x.box_id===boxId).sort((a,b)=>(a.sort_order||0)-(b.sort_order||0))}
 function boxWatch(watchId){return watches.find(w=>w.id===watchId)}
 function boxImage(box){
  const items=boxItems(box.id),selected=box.cover_watch_id?boxWatch(box.cover_watch_id):null;
- return cover(selected||boxWatch(items[0]?.watch_id)||{});
+ return box.cover_image_url||cover(selected||boxWatch(items[0]?.watch_id)||{});
 }
 function boxesPage(){
  activeBoxId=null;
@@ -828,10 +839,12 @@ function renderCollectionBoxDetail(){
  const items=boxItems(box.id),img=boxImage(box);
  const rows=items.map((item,index)=>{
   const w=boxWatch(item.watch_id);if(!w)return '';
-  const photo=cover(w);
-  return '<article class="box-watch-row"><div>'+(photo?'<img class="box-watch-photo" src="'+esc(photo)+'" alt="'+esc(w.brand||'')+' '+esc(w.model||'')+'" loading="lazy">':'<div class="box-watch-photo-empty">WATCH</div>')+'</div><div class="box-watch-info"><div class="box-watch-brand">'+esc(w.brand||'')+'</div><div class="box-watch-model">'+esc(w.model||'Untitled')+'</div><div class="box-watch-ref">'+esc(w.reference||'')+(w.size?' · '+esc(w.size)+' mm':'')+'</div><div class="box-watch-actions"><button type="button" onclick="openBoxWatchDetail(\''+esc(w.id)+'\')">시계 상세</button><button type="button" onclick="setBoxCover(\''+esc(box.id)+'\',\''+esc(w.id)+'\')">'+(box.cover_watch_id===w.id?'대표 이미지':'대표로 설정')+'</button><button type="button" onclick="moveBoxWatch(\''+esc(item.id)+'\',-1)" '+(index===0?'disabled':'')+'>위로</button><button type="button" onclick="moveBoxWatch(\''+esc(item.id)+'\',1)" '+(index===items.length-1?'disabled':'')+'>아래로</button><button type="button" onclick="removeBoxWatch(\''+esc(item.id)+'\')">빼기</button></div></div></article>';
+  const photo=cover(w),role=String(item.role_note||'').trim();
+  return '<article class="box-watch-row" data-box-item="'+esc(item.id)+'"><div>'+(photo?'<img class="box-watch-photo" src="'+esc(photo)+'" alt="'+esc(w.brand||'')+' '+esc(w.model||'')+'" loading="lazy">':'<div class="box-watch-photo-empty">WATCH</div>')+'</div><div class="box-watch-info"><div class="box-watch-brand">'+esc(w.brand||'')+'</div><div class="box-watch-model">'+esc(w.model||'Untitled')+'</div><div class="box-watch-ref">'+esc(w.reference||'')+(w.size?' · '+esc(w.size)+' mm':'')+'</div>'+(role?'<div class="box-role"><strong>ROLE</strong> · '+esc(role)+'</div>':'<div class="box-role">아직 이 시계의 역할이 정해지지 않았어요.</div>')+'<div class="box-watch-actions"><button type="button" class="box-drag-handle" aria-label="길게 눌러 순서 이동" title="길게 눌러 순서 이동" data-box-drag="'+esc(item.id)+'">⠿</button><button type="button" onclick="openBoxWatchDetail(\''+esc(w.id)+'\')">시계 상세</button><button type="button" onclick="editBoxWatchRole(\''+esc(item.id)+'\')">역할 '+(role?'수정':'작성')+'</button><button type="button" onclick="removeBoxWatch(\''+esc(item.id)+'\')">빼기</button></div></div></article>';
  }).join('');
- $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">MY COLLECTION BOX</div><div class="brand" style="font-size:30px">My Boxes</div></div><button class="icon" onclick="boxesPage()" aria-label="보관함 목록으로">←</button></div>'+(img?'<img class="box-detail-cover" src="'+esc(img)+'" alt="'+esc(box.name)+'" loading="lazy">':'<div class="box-detail-cover" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font:italic 22px Georgia,serif">WATCH ARCHIVE</div>')+'<h1 class="box-detail-title">'+esc(box.name)+'</h1>'+(box.description?'<div class="box-detail-description">'+esc(box.description)+'</div>':'<div class="box-detail-description">이 보관함만의 테마와 구성을 만들어보세요.</div>')+'<div class="box-section-head"><h2>Watches <span class="small">'+items.length+'</span></h2><button class="box-action primary" onclick="openBoxWatchPicker(\''+esc(box.id)+'\')">＋ 시계 추가</button></div>'+(items.length?'<div class="box-watch-list">'+rows+'</div>':'<div class="box-empty">아직 시계가 없어요.<br>내 시계 목록에서 원하는 시계를 골라 담아보세요.<br><button class="box-action primary" style="margin-top:14px" onclick="openBoxWatchPicker(\''+esc(box.id)+'\')">시계 선택하기</button></div>')+'<div class="box-section-head" style="margin-top:28px"><h2>Manage</h2></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="box-action" onclick="openBoxEditor(\''+esc(box.id)+'\')">보관함 수정</button><button class="box-action" onclick="deleteCollectionBox(\''+esc(box.id)+'\')">보관함 삭제</button></div></main>'+nav('boxes');
+ const coverTools='<div class="box-detail-cover-tools"><label class="box-action" for="boxCoverFile">대표 사진 변경</label><input id="boxCoverFile" type="file" accept="image/*" onchange="uploadBoxCoverImage(this,\''+esc(box.id)+'\')">'+(box.cover_image_path?'<button type="button" class="box-action" onclick="clearBoxCoverImage(\''+esc(box.id)+'\')">시계 사진으로 되돌리기</button>':'')+'</div>';
+ $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">MY COLLECTION BOX</div><div class="brand" style="font-size:30px">My Boxes</div></div><button class="icon" onclick="boxesPage()" aria-label="보관함 목록으로">←</button></div><div class="box-detail-cover-wrap">'+(img?'<img class="box-detail-cover" src="'+esc(img)+'" alt="'+esc(box.name)+'" loading="lazy">':'<div class="box-detail-cover" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font:italic 22px Georgia,serif">WATCH ARCHIVE</div>')+coverTools+'</div><h1 class="box-detail-title">'+esc(box.name)+'</h1>'+(box.description?'<div class="box-detail-description">'+esc(box.description)+'</div>':'<div class="box-detail-description">이 보관함만의 테마와 구성을 만들어보세요.</div>')+'<div class="box-section-head"><h2>Watches <span class="small">'+items.length+'</span></h2><button class="box-action primary" onclick="openBoxWatchPicker(\''+esc(box.id)+'\')">＋ 시계 추가</button></div>'+(items.length?'<div class="box-watch-list" id="boxWatchList">'+rows+'</div>':'<div class="box-empty">아직 시계가 없어요.<br>내 시계 목록에서 원하는 시계를 골라 담아보세요.<br><button class="box-action primary" style="margin-top:14px" onclick="openBoxWatchPicker(\''+esc(box.id)+'\')">시계 선택하기</button></div>')+'<div class="box-section-head" style="margin-top:28px"><h2>Manage</h2></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="box-action" onclick="openBoxEditor(\''+esc(box.id)+'\')">보관함 수정</button><button class="box-action" onclick="deleteCollectionBox(\''+esc(box.id)+'\')">보관함 삭제</button></div></main>'+nav('boxes');
+ attachBoxDragHandlers();
 }
 function openBoxEditor(boxId=null){
  const box=boxId?collectionBoxes.find(x=>x.id===boxId):null;
@@ -901,6 +914,86 @@ async function setBoxCover(boxId,watchId){
  try{const {error}=await supabaseClient.from('collection_boxes').update({cover_watch_id:watchId,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id);if(error)throw error;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('대표 이미지를 변경했어요')}
  catch(error){console.error('Set box cover failed',error);toast('대표 이미지 변경 실패: '+(error?.message||String(error)))}
 }
+
+async function uploadBoxCoverImage(input,boxId){
+ const file=input.files?.[0];input.value='';if(!file)return;
+ if(!currentUser)return toast('로그인 후 이용해줘');
+ if(!file.type.startsWith('image/'))return toast('이미지 파일을 선택해줘');
+ const box=collectionBoxes.find(x=>x.id===boxId);if(!box)return;
+ try{
+  toast('보관함 사진을 업로드하고 있어요…');
+  const compressed=await compressWatchPhoto(file,{maxDimension:1600,quality:.82});
+  const path=currentUser.id+'/boxes/'+boxId+'/'+uid()+'.jpg';
+  const {error:uploadError}=await supabaseClient.storage.from('watch-photos').upload(path,compressed,{contentType:compressed.type||'image/jpeg',cacheControl:'3600',upsert:false});
+  if(uploadError)throw uploadError;
+  const {error:updateError}=await supabaseClient.from('collection_boxes').update({cover_image_path:path,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id);
+  if(updateError){await supabaseClient.storage.from('watch-photos').remove([path]);throw updateError}
+  if(box.cover_image_path&&box.cover_image_path!==path){const {error:removeError}=await supabaseClient.storage.from('watch-photos').remove([box.cover_image_path]);if(removeError)console.warn('Old box cover cleanup failed',removeError)}
+  await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('보관함 대표 사진을 변경했어요');
+ }catch(error){console.error('Upload box cover failed',error);toast('대표 사진 업로드 실패: '+(error?.message||String(error)))}
+}
+async function clearBoxCoverImage(boxId){
+ const box=collectionBoxes.find(x=>x.id===boxId);if(!box?.cover_image_path)return;
+ if(!confirm('직접 설정한 대표 사진을 해제할까요?\\n시계 컬렉션의 대표 사진이 대신 표시돼요.'))return;
+ try{
+  const oldPath=box.cover_image_path;
+  const {error}=await supabaseClient.from('collection_boxes').update({cover_image_path:null,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id);
+  if(error)throw error;
+  if(oldPath){const {error:removeError}=await supabaseClient.storage.from('watch-photos').remove([oldPath]);if(removeError)console.warn('Box cover cleanup failed',removeError)}
+  await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('시계 대표 사진으로 되돌렸어요');
+ }catch(error){console.error('Clear box cover failed',error);toast('대표 사진 해제 실패: '+(error?.message||String(error)))}
+}
+async function editBoxWatchRole(itemId){
+ const item=collectionBoxItems.find(x=>x.id===itemId);if(!item)return;
+ const watch=boxWatch(item.watch_id);
+ const value=prompt((watch?.brand||'')+' '+(watch?.model||'')+'\\n이 보관함에서 어떤 역할을 하는 시계인가요?\\n예: 데일리 / 드레스 / 여행용 / 스포츠',item.role_note||'');
+ if(value===null)return;
+ const role_note=value.trim().slice(0,500);
+ try{
+  const {error}=await supabaseClient.from('collection_box_items').update({role_note}).eq('id',itemId).eq('user_id',currentUser.id);
+  if(error)throw error;
+  await loadCollectionBoxes();activeBoxId=item.box_id;renderCollectionBoxDetail();toast('시계의 역할을 저장했어요');
+ }catch(error){console.error('Save box watch role failed',error);toast('역할 저장 실패: '+(error?.message||String(error)))}
+}
+function attachBoxDragHandlers(){
+ const list=document.getElementById('boxWatchList');if(!list)return;
+ list.dataset.boxId=activeBoxId||'';
+ const persist=async()=>{
+  const ids=[...list.querySelectorAll('[data-box-item]')].map(row=>row.dataset.boxItem);
+  try{
+   for(let i=0;i<ids.length;i++){
+    const item=collectionBoxItems.find(x=>x.id===ids[i]);if(!item||item.sort_order===i)continue;
+    const {error}=await supabaseClient.from('collection_box_items').update({sort_order:i}).eq('id',ids[i]).eq('user_id',currentUser.id);
+    if(error)throw error;
+   }
+   const boxId=list.dataset.boxId;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();
+  }catch(error){console.error('Persist box order failed',error);toast('순서를 저장하지 못했어요: '+(error?.message||String(error)));await loadCollectionBoxes();renderCollectionBoxDetail()}
+ };
+ let dragged=null;
+ list.querySelectorAll('[data-box-drag]').forEach(handle=>{
+  const row=handle.closest('[data-box-item]');if(!row)return;
+  handle.draggable=true;
+  handle.addEventListener('dragstart',event=>{dragged=row;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',row.dataset.boxItem);row.classList.add('is-dragging')});
+  handle.addEventListener('dragend',()=>{row.classList.remove('is-dragging');list.querySelectorAll('.is-drop-target').forEach(x=>x.classList.remove('is-drop-target'));if(dragged){dragged=null;persist()}});
+  row.addEventListener('dragover',event=>{if(!dragged||dragged===row)return;event.preventDefault();row.classList.add('is-drop-target')});
+  row.addEventListener('dragleave',()=>row.classList.remove('is-drop-target'));
+  row.addEventListener('drop',event=>{event.preventDefault();row.classList.remove('is-drop-target');if(!dragged||dragged===row)return;const rect=row.getBoundingClientRect();list.insertBefore(dragged,event.clientY<rect.top+rect.height/2?row:row.nextSibling)});
+  let holdTimer=null,touchDrag=false;
+  handle.addEventListener('touchstart',event=>{
+   if(event.touches.length!==1)return;
+   const touch=event.touches[0];holdTimer=setTimeout(()=>{touchDrag=true;row.classList.add('is-dragging');if(navigator.vibrate)navigator.vibrate(20)},320);
+   handle.dataset.touchX=String(touch.clientX);handle.dataset.touchY=String(touch.clientY);
+  },{passive:true});
+  handle.addEventListener('touchmove',event=>{
+   if(!touchDrag){const t=event.touches[0];if(Math.abs(t.clientX-Number(handle.dataset.touchX))>12||Math.abs(t.clientY-Number(handle.dataset.touchY))>12)clearTimeout(holdTimer);return}
+   event.preventDefault();const t=event.touches[0],target=document.elementFromPoint(t.clientX,t.clientY)?.closest('[data-box-item]');
+   if(target&&target!==row&&target.parentElement===list){target.classList.add('is-drop-target');const rect=target.getBoundingClientRect();list.insertBefore(row,t.clientY<rect.top+rect.height/2?target:target.nextSibling);target.classList.remove('is-drop-target')}
+  },{passive:false});
+  const finishTouch=()=>{clearTimeout(holdTimer);if(touchDrag){touchDrag=false;row.classList.remove('is-dragging');persist()}};
+  handle.addEventListener('touchend',finishTouch);handle.addEventListener('touchcancel',finishTouch);
+ });
+}
+
 async function deleteCollectionBox(boxId){
  const box=collectionBoxes.find(x=>x.id===boxId);if(!box)return;
  if(!confirm('"'+box.name+'" 보관함을 삭제할까요?\\n보관함 안의 연결 정보만 삭제되며, 실제 시계는 삭제되지 않아요.'))return;
@@ -1008,7 +1101,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.119';
+const APP_VERSION='v0.1.120';
 const APP_BUILD_DATE='2026.11.03';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
@@ -1423,7 +1516,7 @@ async function exportFullBackup(){
  startArchiveBackupTimer();
  try{
   const [watchRows,photoRows,wearRows,brandRows,historyRows,boxRows,boxItemRows]=await Promise.all([archiveRows('watches'),archiveRows('watch_photos'),archiveRows('wear_logs'),archiveRows('brands'),archiveRows('watch_history'),archiveRows('collection_boxes'),archiveRows('collection_box_items')]);
-  const photoPaths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))],photoFiles={};
+  const photoPaths=[...new Set([...photoRows.map(p=>p.storage_path),...boxRows.map(b=>b.cover_image_path)].filter(Boolean))],photoFiles={};
   setArchiveBackupProgress({percent:10,message:'시계와 기록을 불러왔어요. 사진 목록을 확인 중…',totalPhotos:photoPaths.length,donePhotos:0});
   if(photoPaths.length){
    const {data:signed,error}=await supabaseClient.storage.from('watch-photos').createSignedUrls(photoPaths,1800);
@@ -1590,8 +1683,8 @@ async function restoreFullBackup(input){
  const file=input.files?.[0];input.value='';if(!file)return;if(!currentUser)return toast('로그인 후 이용해줘');
  let backup;try{backup=JSON.parse(await file.text())}catch(e){return alert('백업 파일을 읽을 수 없어요. 올바른 JSON인지 확인해줘.')}
  const validation=validateBackupObject(backup);renderBackupValidation(validation,file.name,file.size);if(!validation.valid)return alert('백업 파일 검증에 실패했어요.\n\n'+validation.errors.join('\n'));if(validation.warnings.length&&!confirm('백업 파일에 확인할 사항이 있어요.\n\n'+validation.warnings.join('\n')+'\n\n계속 복원할까요?'))return;
- const d=backup.data,watchCount=d.watches.length,photoCount=d.watch_photos.length;
- if(!confirm('백업을 복원할까요?\n\n시계 '+watchCount+'개 · 사진 '+photoCount+'개\n\n같은 ID의 항목은 백업 내용으로 갱신되고, 백업에만 없는 기존 항목은 삭제하지 않아요. 복원 전 현재 상태도 백업하는 것을 권장해요.'))return;
+ const d=backup.data,watchCount=d.watches.length,photoCount=d.watch_photos.length,boxCoverCount=(d.collection_boxes||[]).filter(x=>x.cover_image_path).length;
+ if(!confirm('백업을 복원할까요?\n\n시계 '+watchCount+'개 · 사진 '+photoCount+'개 · 보관함 대표 사진 '+boxCoverCount+'개\n\n같은 ID의 항목은 백업 내용으로 갱신되고, 백업에만 없는 기존 항목은 삭제하지 않아요. 복원 전 현재 상태도 백업하는 것을 권장해요.'))return;
  const button=document.getElementById('archiveRestoreButton');if(button){button.disabled=true;button.textContent='복원 중…'}
  try{
   const watchesToRestore=d.watches.map(row=>({...row,user_id:currentUser.id}));
@@ -1606,7 +1699,7 @@ async function restoreFullBackup(input){
   }
   if(Array.isArray(d.wear_logs)&&d.wear_logs.length){const {error}=await supabaseClient.from('wear_logs').upsert(d.wear_logs.map(x=>({...x,user_id:currentUser.id})),{onConflict:'user_id,wear_date'});if(error)throw new Error('착용 기록 복원 실패: '+error.message)}
   if(Array.isArray(d.watch_history)&&d.watch_history.length){const {error}=await supabaseClient.from('watch_history').upsert(d.watch_history.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('시계 이력 복원 실패: '+error.message)}
-  if(Array.isArray(d.collection_boxes)&&d.collection_boxes.length){const {error}=await supabaseClient.from('collection_boxes').upsert(d.collection_boxes.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('보관함 복원 실패: '+error.message)}
+  if(Array.isArray(d.collection_boxes)&&d.collection_boxes.length){const restoredBoxes=[];for(const row of d.collection_boxes){let cover_image_path=row.cover_image_path||null;if(cover_image_path){const embedded=d.photoFiles?.[cover_image_path];if(!embedded?.data)throw new Error('보관함 대표 사진이 백업에 없습니다: '+cover_image_path);const blob=await(await fetch(embedded.data)).blob(),newPath=currentUser.id+'/boxes/'+row.id+'/'+uid()+'.jpg';const {error:uploadError}=await supabaseClient.storage.from('watch-photos').upload(newPath,blob,{contentType:embedded.contentType||blob.type||'image/jpeg',cacheControl:'3600',upsert:true});if(uploadError)throw new Error('보관함 대표 사진 복원 실패: '+uploadError.message);cover_image_path=newPath}restoredBoxes.push({...row,user_id:currentUser.id,cover_image_path})}const {error}=await supabaseClient.from('collection_boxes').upsert(restoredBoxes,{onConflict:'id'});if(error)throw new Error('보관함 복원 실패: '+error.message)}
   if(Array.isArray(d.collection_box_items)&&d.collection_box_items.length){const {error}=await supabaseClient.from('collection_box_items').upsert(d.collection_box_items.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('보관함 시계 복원 실패: '+error.message)}
   if(Array.isArray(d.brands)){for(const b of d.brands){if(!b.name)continue;const {data:existing,error:findError}=await supabaseClient.from('brands').select('id').eq('user_id',currentUser.id).eq('name',b.name).limit(1);if(findError)throw new Error('브랜드 확인 실패: '+findError.message);if(!existing?.length){const {error}=await supabaseClient.from('brands').insert({...b,user_id:currentUser.id});if(error)throw new Error('브랜드 복원 실패: '+error.message)}}}
   if(d.local?.brands!=null)localStorage.setItem(BRANDS_KEY,d.local.brands);if(d.local?.budget!=null)localStorage.setItem(BUDGET_KEY,d.local.budget);if(d.local?.showVersion!=null)localStorage.setItem(VERSION_VISIBLE_KEY,d.local.showVersion);
