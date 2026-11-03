@@ -972,7 +972,7 @@ function attachBoxDragHandlers(){
  let dragged=null;
  list.querySelectorAll('[data-box-drag]').forEach(handle=>{
   const row=handle.closest('[data-box-item]');if(!row)return;
-  handle.draggable=true;
+  handle.draggable=!('ontouchstart' in window);
   handle.addEventListener('dragstart',event=>{dragged=row;event.dataTransfer.effectAllowed='move';event.dataTransfer.setData('text/plain',row.dataset.boxItem);row.classList.add('is-dragging')});
   handle.addEventListener('dragend',()=>{row.classList.remove('is-dragging');list.querySelectorAll('.is-drop-target').forEach(x=>x.classList.remove('is-drop-target'));if(dragged){dragged=null;persist()}});
   row.addEventListener('dragover',event=>{if(!dragged||dragged===row)return;event.preventDefault();row.classList.add('is-drop-target')});
