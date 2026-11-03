@@ -459,6 +459,20 @@ html.dark .formgrid input:not([type="hidden"]),html.dark .formgrid textarea,html
 .box-watch-row.is-drop-target{outline:2px dashed var(--muted);outline-offset:2px}
 .box-drag-handle{border:0!important;background:transparent!important;padding:4px 7px!important;font-size:19px!important;line-height:1;color:var(--muted);cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .box-drag-handle:active{cursor:grabbing}
+.box-watch-actions .box-drag-handle{margin-left:auto;display:inline-flex;align-items:center;gap:5px;border:1px dashed var(--line)!important;border-radius:999px;padding:7px 10px!important;color:var(--ink);font-size:10px!important;white-space:nowrap;background:var(--soft)!important}
+.box-drag-handle span:first-child{font-size:17px;line-height:1}
+.box-role-overlay{opacity:0;transition:opacity .2s ease;align-items:flex-end}
+.box-role-overlay.is-visible{opacity:1}
+.box-role-sheet{transform:translateY(24px);transition:transform .24s cubic-bezier(.2,.75,.25,1)}
+.box-role-overlay.is-visible .box-role-sheet{transform:translateY(0)}
+.box-role-watch-name{font:17px Georgia,serif;margin:20px 0 18px;padding-bottom:14px;border-bottom:1px solid var(--line)}
+.box-role-input-label{display:block;font-size:12px;font-weight:650;margin-bottom:8px;color:var(--ink)}
+.box-role-textarea{display:block;width:100%;min-height:112px;resize:vertical;border:1px solid var(--line);border-radius:13px;background:var(--bg);color:var(--ink);padding:13px;font:14px/1.6 inherit;outline:none}
+.box-role-textarea:focus{border-color:var(--muted);box-shadow:0 0 0 3px #00000008}
+.box-role-helper{font-size:10px;color:var(--muted);margin-top:8px}
+.box-role-sheet-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:22px}
+.box-role-sheet-actions .primary{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.box-role-sheet-actions button{min-width:92px;padding:10px 15px;font-size:12px}
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,650)},{once:true});setTimeout(hide,1800)})();</script>
@@ -840,7 +854,7 @@ function renderCollectionBoxDetail(){
  const rows=items.map((item,index)=>{
   const w=boxWatch(item.watch_id);if(!w)return '';
   const photo=cover(w),role=String(item.role_note||'').trim();
-  return '<article class="box-watch-row" data-box-item="'+esc(item.id)+'"><div>'+(photo?'<img class="box-watch-photo" src="'+esc(photo)+'" alt="'+esc(w.brand||'')+' '+esc(w.model||'')+'" loading="lazy">':'<div class="box-watch-photo-empty">WATCH</div>')+'</div><div class="box-watch-info"><div class="box-watch-brand">'+esc(w.brand||'')+'</div><div class="box-watch-model">'+esc(w.model||'Untitled')+'</div><div class="box-watch-ref">'+esc(w.reference||'')+(w.size?' · '+esc(w.size)+' mm':'')+'</div>'+(role?'<div class="box-role"><strong>ROLE</strong> · '+esc(role)+'</div>':'<div class="box-role">아직 이 시계의 역할이 정해지지 않았어요.</div>')+'<div class="box-watch-actions"><button type="button" class="box-drag-handle" aria-label="길게 눌러 순서 이동" title="길게 눌러 순서 이동" data-box-drag="'+esc(item.id)+'">⠿</button><button type="button" onclick="openBoxWatchDetail(\''+esc(w.id)+'\')">시계 상세</button><button type="button" onclick="editBoxWatchRole(\''+esc(item.id)+'\')">역할 '+(role?'수정':'작성')+'</button><button type="button" onclick="removeBoxWatch(\''+esc(item.id)+'\')">빼기</button></div></div></article>';
+  return '<article class="box-watch-row" data-box-item="'+esc(item.id)+'"><div>'+(photo?'<img class="box-watch-photo" src="'+esc(photo)+'" alt="'+esc(w.brand||'')+' '+esc(w.model||'')+'" loading="lazy">':'<div class="box-watch-photo-empty">WATCH</div>')+'</div><div class="box-watch-info"><div class="box-watch-brand">'+esc(w.brand||'')+'</div><div class="box-watch-model">'+esc(w.model||'Untitled')+'</div><div class="box-watch-ref">'+esc(w.reference||'')+(w.size?' · '+esc(w.size)+' mm':'')+'</div>'+(role?'<div class="box-role"><strong>ROLE</strong> · '+esc(role)+'</div>':'<div class="box-role">아직 이 시계의 역할이 정해지지 않았어요.</div>')+'<div class="box-watch-actions"><button type="button" onclick="openBoxWatchDetail(\''+esc(w.id)+'\')">시계 상세</button><button type="button" onclick="editBoxWatchRole(\''+esc(item.id)+'\')">역할 '+(role?'수정':'작성')+'</button><button type="button" onclick="removeBoxWatch(\''+esc(item.id)+'\')">빼기</button><button type="button" class="box-drag-handle" aria-label="길게 눌러 드래그하여 순서 이동" title="길게 눌러 드래그하여 순서 이동" data-box-drag="'+esc(item.id)+'"><span aria-hidden="true">⠿</span><span>길게 눌러 이동</span></button></div></div></article>';
  }).join('');
  const coverTools='<div class="box-detail-cover-tools"><label class="box-action" for="boxCoverFile">대표 사진 변경</label><input id="boxCoverFile" type="file" accept="image/*" onchange="uploadBoxCoverImage(this,\''+esc(box.id)+'\')">'+(box.cover_image_path?'<button type="button" class="box-action" onclick="clearBoxCoverImage(\''+esc(box.id)+'\')">시계 사진으로 되돌리기</button>':'')+'</div>';
  $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">MY COLLECTION BOX</div><div class="brand" style="font-size:30px">My Boxes</div></div><button class="icon" onclick="boxesPage()" aria-label="보관함 목록으로">←</button></div><div class="box-detail-cover-wrap">'+(img?'<img class="box-detail-cover" src="'+esc(img)+'" alt="'+esc(box.name)+'" loading="lazy">':'<div class="box-detail-cover" style="display:flex;align-items:center;justify-content:center;color:var(--muted);font:italic 22px Georgia,serif">WATCH ARCHIVE</div>')+coverTools+'</div><h1 class="box-detail-title">'+esc(box.name)+'</h1>'+(box.description?'<div class="box-detail-description">'+esc(box.description)+'</div>':'<div class="box-detail-description">이 보관함만의 테마와 구성을 만들어보세요.</div>')+'<div class="box-section-head"><h2>Watches <span class="small">'+items.length+'</span></h2><button class="box-action primary" onclick="openBoxWatchPicker(\''+esc(box.id)+'\')">＋ 시계 추가</button></div>'+(items.length?'<div class="box-watch-list" id="boxWatchList">'+rows+'</div>':'<div class="box-empty">아직 시계가 없어요.<br>내 시계 목록에서 원하는 시계를 골라 담아보세요.<br><button class="box-action primary" style="margin-top:14px" onclick="openBoxWatchPicker(\''+esc(box.id)+'\')">시계 선택하기</button></div>')+'<div class="box-section-head" style="margin-top:28px"><h2>Manage</h2></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="box-action" onclick="openBoxEditor(\''+esc(box.id)+'\')">보관함 수정</button><button class="box-action" onclick="deleteCollectionBox(\''+esc(box.id)+'\')">보관함 삭제</button></div></main>'+nav('boxes');
@@ -946,28 +960,38 @@ async function clearBoxCoverImage(boxId){
 async function editBoxWatchRole(itemId){
  const item=collectionBoxItems.find(x=>x.id===itemId);if(!item)return;
  const watch=boxWatch(item.watch_id);
- const value=prompt((watch?.brand||'')+' '+(watch?.model||'')+'\\n이 보관함에서 어떤 역할을 하는 시계인가요?\\n예: 데일리 / 드레스 / 여행용 / 스포츠',item.role_note||'');
- if(value===null)return;
- const role_note=value.trim().slice(0,500);
+ document.getElementById('boxRoleOverlay')?.remove();
+ const overlay=document.createElement('div');overlay.className='overlay box-role-overlay';overlay.id='boxRoleOverlay';
+ overlay.innerHTML='<section class="sheet box-role-sheet" role="dialog" aria-modal="true" aria-labelledby="boxRoleTitle"><div class="sheettop"><div><div class="eyebrow">COLLECTION NOTE</div><h2 class="title" id="boxRoleTitle" style="font-size:27px;margin-top:4px">Watch Role</h2></div><button type="button" class="close" aria-label="닫기" onclick="closeBoxRoleEditor()">✕</button></div><div class="box-role-watch-name">'+esc((watch?.brand||'')+' '+(watch?.model||''))+'</div><label class="box-role-input-label" for="boxRoleInput">이 보관함에서 어떤 역할을 하는 시계인가요?</label><textarea id="boxRoleInput" class="box-role-textarea" maxlength="500" rows="4" placeholder="예: 매일 편하게 착용하는 데일리 워치\\n특별한 날을 위한 드레스 워치">'+esc(item.role_note||'')+'</textarea><div class="box-role-helper">예: 데일리 · 드레스 · 여행용 · 스포츠 · 기념일</div><div class="box-role-sheet-actions"><button type="button" class="box-action" onclick="closeBoxRoleEditor()">취소</button><button type="button" class="box-action primary" id="boxRoleSave" onclick="saveBoxWatchRole(\''+esc(itemId)+'\')">역할 저장</button></div></section>';
+ document.body.appendChild(overlay);overlay.addEventListener('click',e=>{if(e.target===overlay)closeBoxRoleEditor()});
+ requestAnimationFrame(()=>{overlay.classList.add('is-visible');document.getElementById('boxRoleInput')?.focus()});
+}
+function closeBoxRoleEditor(){const overlay=document.getElementById('boxRoleOverlay');if(!overlay)return;overlay.classList.remove('is-visible');setTimeout(()=>overlay.remove(),220)}
+async function saveBoxWatchRole(itemId){
+ const item=collectionBoxItems.find(x=>x.id===itemId),input=document.getElementById('boxRoleInput'),button=document.getElementById('boxRoleSave');if(!item||!input)return;
+ const role_note=input.value.trim().slice(0,500);if(button){button.disabled=true;button.textContent='저장 중…'}
  try{
   const {error}=await supabaseClient.from('collection_box_items').update({role_note}).eq('id',itemId).eq('user_id',currentUser.id);
   if(error)throw error;
-  await loadCollectionBoxes();activeBoxId=item.box_id;renderCollectionBoxDetail();toast('시계의 역할을 저장했어요');
- }catch(error){console.error('Save box watch role failed',error);toast('역할 저장 실패: '+(error?.message||String(error)))}
+  item.role_note=role_note;closeBoxRoleEditor();activeBoxId=item.box_id;renderCollectionBoxDetail();toast('시계의 역할을 저장했어요');
+ }catch(error){console.error('Save box watch role failed',error);toast('역할 저장 실패: '+(error?.message||String(error)));if(button){button.disabled=false;button.textContent='역할 저장'}}
 }
 function attachBoxDragHandlers(){
  const list=document.getElementById('boxWatchList');if(!list)return;
  list.dataset.boxId=activeBoxId||'';
  const persist=async()=>{
   const ids=[...list.querySelectorAll('[data-box-item]')].map(row=>row.dataset.boxItem);
+  const original=collectionBoxItems.filter(x=>x.box_id===list.dataset.boxId).slice().sort((a,b)=>(Number(a.sort_order)||0)-(Number(b.sort_order)||0)).map(x=>x.id);
+  if(ids.length===original.length&&ids.every((id,index)=>id===original[index]))return;
   try{
    for(let i=0;i<ids.length;i++){
-    const item=collectionBoxItems.find(x=>x.id===ids[i]);if(!item||item.sort_order===i)continue;
+    const item=collectionBoxItems.find(x=>x.id===ids[i]);if(!item||Number(item.sort_order)===i)continue;
     const {error}=await supabaseClient.from('collection_box_items').update({sort_order:i}).eq('id',ids[i]).eq('user_id',currentUser.id);
     if(error)throw error;
+    item.sort_order=i;
    }
-   const boxId=list.dataset.boxId;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();
-  }catch(error){console.error('Persist box order failed',error);toast('순서를 저장하지 못했어요: '+(error?.message||String(error)));await loadCollectionBoxes();renderCollectionBoxDetail()}
+   toast('보관함 순서를 저장했어요');
+  }catch(error){console.error('Persist box order failed',error);toast('순서를 저장하지 못했어요: '+(error?.message||String(error)));const boxId=list.dataset.boxId;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail()}
  };
  let dragged=null;
  list.querySelectorAll('[data-box-drag]').forEach(handle=>{
@@ -1101,7 +1125,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.120';
+const APP_VERSION='v0.1.121';
 const APP_BUILD_DATE='2026.11.03';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
