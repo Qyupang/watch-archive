@@ -505,6 +505,18 @@ html,body,#app{max-width:100%;overflow-x:clip}
  #app>.overlay>.sheet{padding-left:14px;padding-right:14px}
  #app>.overlay>.sheet .formgrid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:8px}
 }
+
+/* iOS Safari: prevent focus auto-zoom and keyboard-induced horizontal panning */
+html,body{width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+input:not([type="hidden"]),textarea,select{
+  font-size:16px!important;
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  -webkit-text-size-adjust:100%;
+}
+input[type="file"],input[type="checkbox"],input[type="radio"]{font-size:16px!important}
+textarea{overflow-wrap:anywhere;word-break:normal}
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,650)},{once:true});setTimeout(hide,1800)})();</script>
@@ -1032,7 +1044,7 @@ async function editBoxWatchRole(itemId){
  const watch=boxWatch(item.watch_id);
  document.getElementById('boxRoleOverlay')?.remove();
  const overlay=document.createElement('div');overlay.className='overlay box-role-overlay';overlay.id='boxRoleOverlay';
- overlay.innerHTML='<section class="sheet box-role-sheet" role="dialog" aria-modal="true" aria-labelledby="boxRoleTitle"><div class="sheettop"><div><div class="eyebrow">COLLECTION NOTE</div><h2 class="title" id="boxRoleTitle" style="font-size:27px;margin-top:4px">Watch Role</h2></div><button type="button" class="close" aria-label="닫기" onclick="closeBoxRoleEditor()">✕</button></div><div class="box-role-watch-name">'+esc((watch?.brand||'')+' '+(watch?.model||''))+'</div><label class="box-role-input-label" for="boxRoleInput">이 보관함에서 어떤 역할을 하는 시계인가요?</label><textarea id="boxRoleInput" class="box-role-textarea" maxlength="500" rows="4" placeholder="예: 매일 편하게 착용하는 데일리 워치\\n특별한 날을 위한 드레스 워치">'+esc(item.role_note||'')+'</textarea><div class="box-role-helper">예: 데일리 · 드레스 · 여행용 · 스포츠 · 기념일</div><div class="box-role-sheet-actions"><button type="button" class="box-action" onclick="closeBoxRoleEditor()">취소</button><button type="button" class="box-action primary" id="boxRoleSave" onclick="saveBoxWatchRole(\''+esc(itemId)+'\')">역할 저장</button></div></section>';
+ overlay.innerHTML='<section class="sheet box-role-sheet" role="dialog" aria-modal="true" aria-labelledby="boxRoleTitle"><div class="sheettop"><div><div class="eyebrow">COLLECTION NOTE</div><h2 class="title" id="boxRoleTitle" style="font-size:27px;margin-top:4px">Watch Role</h2></div><button type="button" class="close" aria-label="닫기" onclick="closeBoxRoleEditor()">✕</button></div><div class="box-role-watch-name">'+esc((watch?.brand||'')+' '+(watch?.model||''))+'</div><label class="box-role-input-label" for="boxRoleInput">이 보관함에서 어떤 역할을 하는 시계인가요?</label><textarea id="boxRoleInput" class="box-role-textarea" maxlength="500" rows="4" placeholder="예: 매일 편하게 착용하는 데일리 워치\n특별한 날을 위한 드레스 워치">'+esc(item.role_note||'')+'</textarea><div class="box-role-helper">예: 데일리 · 드레스 · 여행용 · 스포츠 · 기념일</div><div class="box-role-sheet-actions"><button type="button" class="box-action" onclick="closeBoxRoleEditor()">취소</button><button type="button" class="box-action primary" id="boxRoleSave" onclick="saveBoxWatchRole(\''+esc(itemId)+'\')">역할 저장</button></div></section>';
  document.body.appendChild(overlay);overlay.addEventListener('click',e=>{if(e.target===overlay)closeBoxRoleEditor()});
  requestAnimationFrame(()=>{overlay.classList.add('is-visible');document.getElementById('boxRoleInput')?.focus()});
 }
@@ -1195,7 +1207,7 @@ function updateHomeResults(){
  h.replaceChildren(...temp.childNodes);
  if(list.length){appendWatchBatch();const more=$('#homeLoadMore');if(more&&'IntersectionObserver'in window){homeRenderState.observer=new IntersectionObserver(entries=>{if(entries.some(e=>e.isIntersecting))appendWatchBatch()},{rootMargin:'400px'});homeRenderState.observer.observe(more)}}
 }
-const APP_VERSION='v0.1.124';
+const APP_VERSION='v0.1.125';
 const APP_BUILD_DATE='2026.11.03';
 const VERSION_VISIBLE_KEY='watchArchiveShowVersion';
 function isVersionVisible(){try{return localStorage.getItem(VERSION_VISIBLE_KEY)!=='false'}catch(e){return true}}
