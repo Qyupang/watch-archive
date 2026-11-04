@@ -578,6 +578,21 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 .new-watch-preview-brand{font-size:9px;letter-spacing:.13em;color:var(--muted);font-weight:700}
 .new-watch-preview-model{margin-top:6px;font-family:Georgia,"Times New Roman",serif;font-size:19px;line-height:1.25;color:var(--ink);overflow-wrap:anywhere}
 .new-watch-preview-meta{margin-top:7px;font-size:9px;line-height:1.5;letter-spacing:.07em;color:var(--muted);overflow-wrap:anywhere}
+
+/* Mobile registration layout refinement */
+@media(max-width:600px){
+ .new-watch-sheet .formgrid{grid-template-columns:minmax(0,1fr);column-gap:0;row-gap:9px}
+ .new-watch-sheet .formgrid>.field{grid-column:1/-1;width:100%;max-width:100%}
+ .new-watch-sheet .formgrid>.editor-section-title{grid-column:1/-1}
+ .new-watch-sheet .new-watch-heading{border-bottom:0;padding-bottom:10px}
+ .new-watch-sheet .new-watch-photo-section{margin-top:12px}
+ .new-watch-sheet .new-watch-collection{margin-top:10px}
+ .new-watch-sheet .formgrid>.field input,
+ .new-watch-sheet .formgrid>.field select,
+ .new-watch-sheet .formgrid>.field textarea{width:100%;max-width:100%;min-width:0}
+ .new-watch-sheet .formgrid [id="brandSelect"]{min-width:0;width:100%}
+ .new-watch-sheet .formgrid>.field:has(#brandSelect)>div{min-width:0}
+}
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,650)},{once:true});setTimeout(hide,1800)})();</script>
