@@ -1484,7 +1484,7 @@ window.addEventListener('pagehide',()=>{const d=captureEditorDraft();if(d)writeD
 
 let editorRepairs=[];
 let newEntryStep=0;
-function goNewEntryStep(step){const current=captureEditorDraft();if(current)editorDraftFields=current.fields;newEntryStep=Math.max(0,Math.min(3,step));renderEditor();const sheet=document.querySelector('.new-watch-sheet');if(sheet)sheet.scrollTo({top:0,behavior:'smooth'});}
+function goNewEntryStep(step){if(step>newEntryStep&&newEntryStep===1){const brand=document.getElementById('brand')?.value?.trim(),model=document.getElementById('model')?.value?.trim();if(!brand||!model){toast('브랜드와 모델을 입력해주세요');return}}const current=captureEditorDraft();if(current)editorDraftFields=current.fields;newEntryStep=Math.max(0,Math.min(3,step));renderEditor();const sheet=document.querySelector('.new-watch-sheet');if(sheet)sheet.scrollTo({top:0,behavior:'smooth'});}
 function setupNewEntryWizard(){
  const sheet=document.querySelector('.new-watch-sheet');if(!sheet)return;
  const photo=sheet.querySelector('.new-watch-photo-section'),collection=sheet.querySelector('.new-watch-collection'),grid=sheet.querySelector('.formgrid'),preview=sheet.querySelector('.new-watch-preview'),save=sheet.querySelector('.save-watch-button'),progress=sheet.querySelector('#saveProgress');
@@ -1509,7 +1509,7 @@ function setupNewEntryWizard(){
  update();
  const finish=()=>{nav.innerHTML='<button type="button" class="action new-entry-back" onclick="goNewEntryStep(2)">이전</button><span class="new-entry-finish-note">정보를 확인하고 등록해 주세요.</span>'};
  if(newEntryStep===3)finish();
- nav.addEventListener('click',event=>{const next=event.target.closest('.new-entry-next');if(!next)return;if(newEntryStep===1){const brand=document.getElementById('brand')?.value?.trim(),model=document.getElementById('model')?.value?.trim();if(!brand||!model){toast('브랜드와 모델을 입력해주세요');return}}});
+ 
 }
 function openEditor(w=null){newEntryStep=0;editorDraftFields=null;editorRepairs=JSON.parse(JSON.stringify(w?.repair_history||[]));editing=w?.id||null;editPhotos=w?JSON.parse(JSON.stringify(w.photos||[])):[];editStatus=w?.status||filter;renderEditor();scheduleDraftSave()}
 function renderRepairEditor(){return editorRepairs.map((r,i)=>`<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="font-size:13px">수리 ${i+1}</strong><button type="button" class="action" style="padding:6px 9px;font-size:12px" onclick="removeRepair(${i})">삭제</button></div><div class="formgrid"><div class="field"><label>수리 날짜</label><input type="date" value="${esc(r.date||'')}" onchange="updateRepair(${i},'date',this.value)"></div><div class="field"><label>수리 비용 (원)</label><input type="text" inputmode="numeric" value="${esc(r.cost?Number(r.cost).toLocaleString('ko-KR'):'')}" placeholder="150,000" oninput="formatRepairCostInput(this,${i})"></div><div class="field full"><label>수리 내용 (선택)</label><input value="${esc(r.note||'')}" placeholder="예: 용두 교체, 폴리싱" oninput="updateRepair(${i},'note',this.value)"></div></div></div>`).join('')||'<div class="small" style="padding:8px 0">등록된 수리 이력이 없어.</div>'}
