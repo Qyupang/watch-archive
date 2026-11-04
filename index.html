@@ -5,12 +5,14 @@
 <link rel="apple-touch-icon" href="icon.svg"><link rel="manifest" href="manifest.webmanifest"><title>Watch Archive</title>
 <style>
 /* Watch Archive 02 Light identity + startup splash */
-#startupSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;background:#f7f4ec;color:#171717;opacity:1;visibility:visible;transition:opacity .42s ease,visibility .42s ease;animation:splashFailsafe 0s linear 2.5s forwards}@keyframes splashFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
+#startupSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;background:#f7f4ec;color:#171717;opacity:1;visibility:visible;transition:opacity .55s ease,visibility .55s ease;animation:splashFailsafe 0s linear 3.2s forwards}
+@keyframes splashFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
 #startupSplash.is-hidden{opacity:0;visibility:hidden;pointer-events:none}
-#startupSplash img{display:block;width:min(76vw,360px);height:auto}
+#startupSplash img{display:block;width:min(76vw,360px);height:auto;animation:splashMarkIn 1.25s cubic-bezier(.2,.7,.2,1) both}
+@keyframes splashMarkIn{from{opacity:0;transform:translateY(9px) scale(.985);clip-path:inset(0 50% 0 50%)}to{opacity:1;transform:translateY(0) scale(1);clip-path:inset(0 0 0 0)}}
 html.dark #startupSplash{background:#171614;color:#f7f4ec}
 #startupSplash .splash-dark{display:none}html.dark #startupSplash .splash-light{display:none}html.dark #startupSplash .splash-dark{display:block}
-@media(prefers-reduced-motion:reduce){#startupSplash{transition:none}}
+@media(prefers-reduced-motion:reduce){#startupSplash{transition:none;animation:none}#startupSplash img{animation:none;opacity:1;transform:none;clip-path:none}}
 :root{--bg:#f5f3ee;--paper:#fffdf8;--ink:#171717;--muted:#77736b;--line:#d9d5cc;--soft:#ece9e2}
 html.dark{--bg:#171614;--paper:#22201d;--ink:#f1eee7;--muted:#aaa59b;--line:#3b3833;--soft:#302d29}
 html{background:var(--bg);color-scheme:light}html.dark{color-scheme:dark}
@@ -681,7 +683,7 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 }
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
-<script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,650)},{once:true});setTimeout(hide,1800)})();</script>
+<script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co", SUPABASE_KEY="sb_publishable_9VmErfXpK1W4RK1BhGI5vA_3-EY0oKd";
@@ -2168,5 +2170,5 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
 });
 boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해주세요.')});
 
-(function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,650),{once:true});setTimeout(hide,1800)})();
+(function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,1500),{once:true});setTimeout(hide,2200)})();
 </script></body></html>
