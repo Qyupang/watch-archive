@@ -1389,6 +1389,14 @@ async function loadWatchHistory(watchId){
  watchHistoryCache.set(watchId,data||[]);const w=watches.find(x=>String(x.id)===String(watchId));
  if(section.isConnected){section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,false);section.onclick=(event)=>{const button=event.target.closest('[data-watch-history-add]');if(button)openWatchHistory(button.dataset.watchId||watchId);};}
 }
+async function loadWatchHistoryEditor(watchId){
+ const section=document.getElementById('watchHistoryEditorSection');if(!section||!currentUser)return;
+ const {data,error}=await supabaseClient.from('watch_history').select('*').eq('user_id',currentUser.id).eq('watch_id',watchId).order('event_date',{ascending:false}).order('created_at',{ascending:false});
+ if(error){console.error('Watch history editor load failed',error);if(section.isConnected)section.innerHTML='<div class="small">히스토리를 불러오지 못했어요. 다시 열어 확인해줘.</div>';return}
+ watchHistoryCache.set(watchId,data||[]);if(!section.isConnected||String(editing)!==String(watchId))return;
+ const w=watches.find(x=>String(x.id)===String(watchId));section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,true);
+ section.onclick=(event)=>{const button=event.target.closest('[data-watch-history-add]');if(button)openWatchHistory(button.dataset.watchId||watchId);};
+}
 function openWatchHistory(watchId){
  watchId=watchId||editing||detail;
  if(!currentUser){toast('로그인 후 기록을 추가할 수 있어요.');return;}
