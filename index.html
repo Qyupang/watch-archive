@@ -1385,18 +1385,9 @@ function renderUnifiedWatchHistory(w,data,watchId,editor=false){
 async function loadWatchHistory(watchId){
  const section=document.getElementById('watchHistorySection');if(!section||!currentUser)return;
  const {data,error}=await supabaseClient.from('watch_history').select('*').eq('user_id',currentUser.id).eq('watch_id',watchId).order('event_date',{ascending:false}).order('created_at',{ascending:false});
- if(error){console.error('Watch history load failed',error);section.querySelector('.small').textContent='기록을 불러오지 못했어. 잠시 후 다시 시도해줘.';return}
- watchHistoryCache.set(watchId,data||[]);
- const html=(data||[]).map(item=>'<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><div><strong>'+esc(watchHistoryTypeLabel(item.event_type))+'</strong><div class="small" style="margin-top:4px">'+esc(item.event_date)+'</div></div><div style="display:flex;align-items:center;gap:8px">'+(item.cost!==null&&item.cost!==''?'<strong>'+Number(item.cost).toLocaleString('ko-KR')+'원</strong>':'')+'<button class="small" style="border:0;background:transparent;color:var(--muted)" onclick="deleteWatchHistory(\''+item.id+'\',\''+watchId+'\')" aria-label="기록 삭제">삭제</button></div></div>'+(item.event_type==='valuation'&&item.previous_value!==null&&item.new_value!==null?'<div class="small" style="margin-top:6px">평가금액 '+Number(item.previous_value).toLocaleString('ko-KR')+'원 → '+Number(item.new_value).toLocaleString('ko-KR')+'원</div>':'')+(item.note?'<div class="small" style="margin-top:6px;white-space:pre-wrap">'+esc(item.note)+'</div>':'')+'</div>').join('');
- section.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:5px"><h2 style="margin:0;font-size:18px">시계 기록</h2><button class="action" type="button" onclick="openWatchHistory(\''+watchId+'\')">+ 기록 추가</button></div>'+(html||'<div class="empty" style="margin-top:12px">아직 추가 기록이 없어. 정비나 스트랩 교체, 기타 메모를 남겨봐.</div>')+'<div class="small" style="margin-top:10px">구매·판매 정보는 기존 기록을 사용하고, 이곳에는 정비와 변경 이력을 추가해.</div>';
-}
-async function loadWatchHistoryEditor(watchId){
- const section=document.getElementById('watchHistoryEditorSection');if(!section||!currentUser)return;
- const {data,error}=await supabaseClient.from('watch_history').select('*').eq('user_id',currentUser.id).eq('watch_id',watchId).order('event_date',{ascending:false}).order('created_at',{ascending:false});
- if(error){console.error('Watch history editor load failed',error);if(section.isConnected)section.innerHTML='<div class="small">히스토리를 불러오지 못했어요. 다시 열어 확인해줘.</div>';return}
- watchHistoryCache.set(watchId,data||[]);if(!section.isConnected||editing!==watchId)return;
- const w=watches.find(x=>String(x.id)===String(watchId));section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,true);
- section.onclick=(event)=>{const button=event.target.closest('[data-watch-history-add]');if(button)openWatchHistory(button.dataset.watchId||watchId);};
+ if(error){console.error('Watch history load failed',error);section.innerHTML='<div class="small">히스토리를 불러오지 못했어요.</div>';return}
+ watchHistoryCache.set(watchId,data||[]);const w=watches.find(x=>String(x.id)===String(watchId));
+ if(section.isConnected){section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,false);section.onclick=(event)=>{const button=event.target.closest('[data-watch-history-add]');if(button)openWatchHistory(button.dataset.watchId||watchId);};}
 }
 function openWatchHistory(watchId){
  watchId=watchId||editing||detail;
