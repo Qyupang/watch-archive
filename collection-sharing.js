@@ -92,7 +92,7 @@
       '<div class="wa-preview-label">SELECT INFORMATION</div>'+
       '<div class="wa-preview-toggles">'+
       '<label><input type="checkbox" data-option="nickname" checked> 컬렉터 이름</label>'+
-      '<label><input type="checkbox" data-option="details" checked> 레퍼런스 및 사이즈</label>'+
+      ''+
       '<label><input type="checkbox" data-option="note" checked> 컬렉션 소개</label>'+
       '<label><input type="checkbox" data-option="count" checked> 시계 개수</label></div>'+
       '<div class="wa-preview-actions">'+
@@ -160,14 +160,14 @@
   async function renderCollectionCardBlob(share,options) {
     const items=Array.isArray(share?.watch_items)?share.watch_items:[];
     const template=options.template||'editorial';
-    const width=1080,height=template==='story'?1920:1350,margin=68;
+    const width=1080,height=template==='story'?1920:1280,margin=68;
     const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
     const ctx=canvas.getContext('2d');
     const dark=template==='gallery',bg=dark?'#171614':'#f5f3ee',ink=dark?'#f5f3ee':'#171717',muted=dark?'#aaa59b':'#77736b',line=dark?'#49453f':'#d9d5cc';
     ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
     const hero=await loadCanvasImage(share.cover_image_url);
     if(template==='editorial'||template==='story'){
-      const heroH=template==='story'?1640:1050,heroY=0;
+      const heroH=template==='story'?1640:1120,heroY=0;
       if(hero){const scale=Math.max(width/hero.width,heroH/hero.height),sw=width/scale,sh=heroH/scale;ctx.save();ctx.beginPath();ctx.rect(0,0,width,heroH);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,0,0,width,heroH);ctx.restore()}
       else{ctx.fillStyle='#d8d0c4';ctx.fillRect(0,0,width,heroH)}
       const gradient=ctx.createLinearGradient(0,heroH*.52,0,heroH);
