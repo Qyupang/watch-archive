@@ -133,8 +133,12 @@
     if(existing&&current){
       const title=current.querySelector('#waShareTitleInput');if(title)title.value=existing.title;
       const desc=current.querySelector('#waShareDescriptionInput');if(desc)desc.value=existing.description||'';
-      const selected=new Set((existing.watch_items||[]).map(w=>w.watch_id).filter(Boolean));
-      if(selected.size)current.querySelectorAll('input[name="waShareWatch"]').forEach(input=>{input.checked=selected.has(input.value)});
+      const selected=new Set((existing.watch_items||[]).map(w=>(w.brand||'')+'|'+(w.model||'')));
+      if(selected.size)current.querySelectorAll('input[name="waShareWatch"]').forEach(input=>{
+        const label=input.closest('.wa-share-watch');
+        const name=label?.querySelector('strong')?.textContent||'';
+        input.checked=[...selected].some(key=>name===key.replace('|',' '));
+      });
     }
   }
 
