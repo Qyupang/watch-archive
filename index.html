@@ -751,6 +751,34 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 .wa-share-success p,.wa-share-empty,.wa-share-loading{font-size:12px;line-height:1.7;color:var(--muted)}
 .wa-share-empty{padding:22px;text-align:center;border:1px dashed var(--line)}
 
+
+/* Share preview modal — native bottom-sheet composition */
+.wa-share-sheet{max-height:94dvh;overflow-y:auto;padding-bottom:max(22px,env(safe-area-inset-bottom))}
+.wa-share-preview-overlay{align-items:flex-end!important}
+.wa-share-preview-overlay .wa-share-sheet{width:100%;max-width:760px;margin:0 auto;border-radius:26px 26px 0 0!important;max-height:94dvh}
+.wa-preview-user{display:flex;align-items:center;gap:11px;margin:2px 0 16px}
+.wa-preview-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font:20px Georgia,serif}
+.wa-preview-user strong,.wa-preview-user small{display:block}
+.wa-preview-user strong{font-size:13px;letter-spacing:.08em}
+.wa-preview-user small{font-size:9px;letter-spacing:.15em;color:var(--muted);margin-top:3px}
+.wa-preview-edit{margin-left:auto;border:1px solid var(--line);border-radius:18px;background:transparent;color:var(--text);padding:7px 13px;font-size:11px}
+.wa-preview-stage{position:relative;width:min(100%,430px);margin:0 auto;background:#e8e5de;border-radius:14px;overflow:hidden;min-height:300px;display:grid;place-items:center}
+.wa-preview-stage img{display:block;width:100%;height:auto;object-fit:contain}
+.wa-preview-loading{position:absolute;inset:0;display:grid;place-items:center;color:#777;font-size:12px}
+.wa-preview-dots{display:flex;justify-content:center;gap:9px;margin:14px 0 20px}
+.wa-preview-dots button{border:0;background:var(--surface-2);color:var(--muted);border-radius:20px;width:25px;height:6px;padding:0;font-size:0}
+.wa-preview-dots button.is-active{background:var(--text);width:27px}
+.wa-preview-label{font-size:11px;color:var(--muted);letter-spacing:.08em;margin:0 0 10px}
+.wa-preview-toggles{display:flex;flex-wrap:wrap;gap:9px 16px;padding:0 0 17px;border-bottom:1px solid var(--line)}
+.wa-preview-toggles label{display:flex;align-items:center;gap:7px;font-size:12px;white-space:nowrap}
+.wa-preview-toggles input{width:16px;height:16px;accent-color:var(--text)}
+.wa-preview-actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:18px 0 4px}
+.wa-preview-actions button{min-height:76px;border:1px solid var(--line);border-radius:15px;background:transparent;color:var(--text);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px}
+.wa-preview-actions button span{font-size:25px;line-height:1}
+.wa-preview-actions button strong{font-size:11px;font-weight:500}
+.wa-preview-disable{display:block;margin:15px auto 0;border:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px;padding:8px}
+@media(max-width:420px){.wa-preview-stage{width:100%;min-height:240px}.wa-preview-toggles{gap:10px 12px}.wa-preview-toggles label{font-size:11px}.wa-preview-actions{gap:7px}.wa-preview-actions button{min-height:70px}}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
