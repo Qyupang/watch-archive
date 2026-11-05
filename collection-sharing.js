@@ -31,6 +31,17 @@
       .eq('box_id',boxId).eq('user_id',currentUser.id).maybeSingle();
     if(error) throw error; return data;
   }
+  async function syncBoxCoverToShare(share,box) {
+    if(!box?.cover_image_path)return share;
+    const source=share.cover_source||'box';
+    if(source!=='box'||share.cover_source_path===box.cover_image_path)return share;
+    const nextUrl=await uploadPublicCopy(box.cover_image_path,share.token,'cover');
+    const {data,error}=await supabaseClient.from('collection_shares').update({cover_image_url:nextUrl,cover_source:'box',cover_source_path:box.cover_image_path,updated_at:new Date().toISOString()}).eq('id',share.id).eq('user_id',currentUser.id).select().single();
+    if(error)throw error;
+    const oldPath=publicPath(share.cover_image_url);
+    if(oldPath)supabaseClient.storage.from(bucket).remove([oldPath]).then(({error:removeError})=>{if(removeError)console.warn('Old shared cover cleanup failed',removeError)});
+    return data;
+  }
   function makeModal(content) {
     document.getElementById('collectionShareOverlay')?.remove();
     const overlay = document.createElement('div'); overlay.className='overlay'; overlay.id='collectionShareOverlay';
@@ -46,7 +57,7 @@
     const overlay=makeModal('<div class="wa-share-loading">공유 설정을 불러오고 있어요…</div>');
     try {
       const existing=await getExisting(boxId);
-      if(existing?.is_active&&!forceEditor){openCollectionSharePreview(existing,boxId);return}
+      if(existing?.is_active&&!forceEditor){const refreshed=await syncBoxCoverToShare(existing,box);openCollectionSharePreview(refreshed,boxId);return}
       const rows=boxItems(boxId).map(item=>({item,watch:boxWatch(item.watch_id)})).filter(x=>x.watch);
       const choices=rows.map(({item,watch})=>{
         const photo=cover(watch);
@@ -248,7 +259,9 @@
         coverUrl=publicWatches[coverIndex]?.image_url||publicWatches[0]?.image_url||'';
       }
       const collectorName=currentUser.user_metadata?.nickname||currentUser.user_metadata?.full_name||currentUser.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';
-      const payload={user_id:currentUser.id,box_id:boxId,token,title:title.slice(0,80),description:description.slice(0,500),collector_name:String(collectorName).slice(0,60),cover_image_url:coverUrl,watch_items:publicWatches,is_active:true,updated_at:new Date().toISOString()};
+      const coverSource=coverChoice==='keep'?(old?.cover_source||'upload'):coverFile?'upload':coverChoice!=='auto'?'watch':box.cover_image_path?'box':'watch';
+      const coverSourcePath=coverChoice==='keep'?(old?.cover_source_path||null):coverFile?null:coverChoice!=='auto'?coverChoice:box.cover_image_path||box.cover_watch_id||null;
+      const payload={user_id:currentUser.id,box_id:boxId,token,title:title.slice(0,80),description:description.slice(0,500),collector_name:String(collectorName).slice(0,60),cover_image_url:coverUrl,cover_source:coverSource,cover_source_path:coverSourcePath,watch_items:publicWatches,is_active:true,updated_at:new Date().toISOString()};
       let result;
       if(old?.id)result=await supabaseClient.from('collection_shares').update(payload).eq('id',old.id).eq('user_id',currentUser.id).select().single();
       else result=await supabaseClient.from('collection_shares').insert(payload).select().single();
