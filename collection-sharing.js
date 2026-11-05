@@ -145,7 +145,7 @@
   async function renderCollectionCardBlob(share,options) {
     const items=Array.isArray(share?.watch_items)?share.watch_items:[];
     const template=options.template||'editorial';
-    const width=1080,height=template==='story'?1920:template==='gallery'?1080:1350;
+    const width=1080,height=template==='story'?1920:1350;
     const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
     const ctx=canvas.getContext('2d');
     const dark=template==='gallery',bg=dark?'#171614':'#f5f3ee',ink=dark?'#f5f3ee':'#171717',muted=dark?'#aaa59b':'#77736b',line=dark?'#49453f':'#d9d5cc';
@@ -160,7 +160,7 @@
     else{ctx.fillStyle=dark?'#302d29':'#e7e2d8';ctx.fillRect(margin,heroY,width-margin*2,heroH)}
     let y=heroY+heroH+82;
     ctx.fillStyle=ink;ctx.font=(template==='story'?'64px':'58px')+' Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,30),margin,y,width-margin*2);y+=54;
-    if(options.nickname){ctx.fillStyle=muted;ctx.font='22px Arial';ctx.fillText('CURATED BY WATCH ARCHIVE COLLECTOR',margin,y);y+=43}
+    if(options.nickname){ctx.fillStyle=muted;ctx.font='22px Arial';const collector=currentUser?.user_metadata?.nickname||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';ctx.fillText('CURATED BY '+String(collector).toUpperCase().slice(0,38),margin,y);y+=43}
     if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='22px Georgia';const note=String(share.description).slice(0,150);ctx.fillText(note,margin,y,width-margin*2);y+=58}
     if(options.count){ctx.fillStyle=muted;ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,y);y+=35}
     const story=template==='story',cols=template==='gallery'?2:2,gap=24,tileW=(width-margin*2-gap)/cols;
