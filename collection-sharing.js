@@ -43,11 +43,13 @@
     const overlay=makeModal('<div class="wa-share-loading">공유 설정을 불러오고 있어요…</div>');
     try {
       const existing=await getExisting(boxId);
-      if(existing?.is_active&&!forceEditor){const refreshed=await syncBoxCoverToShare(existing,box);openCollectionSharePreview(refreshed,boxId);return}
+      // Always open the editor for an existing share so the user can update its content before previewing.
       const rows=boxItems(boxId).map(item=>({item,watch:boxWatch(item.watch_id)})).filter(x=>x.watch);
       const choices=rows.map(({item,watch})=>{
         const photo=cover(watch);
-        return '<label class="wa-share-watch"><input type="checkbox" name="waShareWatch" value="'+escShare(item.id)+'" checked><span class="wa-share-watch-thumb">'+(photo?'<img src="'+escShare(photo)+'" alt="">':'')+'</span><span><strong>'+escShare((watch.brand||'')+' '+(watch.model||''))+'</strong><small>'+escShare(watch.reference||'')+'</small></span></label>';
+        const saved=Array.isArray(existing?.watch_items)?existing.watch_items:null;
+        const selected=!saved||saved.some(w=>w.box_item_id===item.id||((w.brand||'')===(watch.brand||'')&&(w.model||'')===(watch.model||'')));
+        return '<label class="wa-share-watch"><input type="checkbox" name="waShareWatch" value="'+escShare(item.id)+'" '+(selected?'checked':'')+'><span class="wa-share-watch-thumb">'+(photo?'<img src="'+escShare(photo)+'" alt="">':'')+'</span><span><strong>'+escShare((watch.brand||'')+' '+(watch.model||''))+'</strong><small>'+escShare(watch.reference||'')+'</small></span></label>';
       }).join('');
       overlay.querySelector('#waShareContent').innerHTML=
         '<p class="wa-share-intro">공유할 시계를 선택해줘. 구매 가격, 관세, 평가 금액, 구매 사유와 개인 기록은 공개하지 않아.</p>'+
@@ -248,7 +250,7 @@
       for(let i=0;i<selected.length;i++){
         const {item,watch}=selected[i],photo=(watch.photos||[]).find(p=>p.cover)||(watch.photos||[])[0];
         const imageUrl=photo?.path?await uploadPublicCopy(photo.path,token,'watch-'+String(i+1).padStart(2,'0')):'';
-        publicWatches.push({brand:String(watch.brand||''),model:String(watch.model||''),reference:String(watch.reference||''),size:String(watch.size||''),movement:String(watch.movement||''),role_note:String(item.role_note||''),image_url:imageUrl});
+        publicWatches.push({box_item_id:item.id,brand:String(watch.brand||''),model:String(watch.model||''),reference:String(watch.reference||''),size:String(watch.size||''),movement:String(watch.movement||''),role_note:String(item.role_note||''),image_url:imageUrl});
       }
       let coverUrl='';
       if(coverFile){
