@@ -36,13 +36,17 @@ create policy "Owners can delete collection shares" on public.collection_shares 
 revoke all on public.collection_shares from anon, authenticated;
 grant select, insert, update, delete on public.collection_shares to authenticated;
 
-create or replace function public.get_collection_share(p_token uuid)
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to anon;
+
+create or replace function private.get_collection_share(p_token uuid)
 returns jsonb
 language sql
 stable
 security definer
 set search_path = ''
-as $
+as $share$
   select jsonb_build_object(
     'token', s.token,
     'title', s.title,
@@ -54,7 +58,18 @@ as $
   from public.collection_shares as s
   where s.token = p_token and s.is_active = true
   limit 1;
-$;
+$share$;
+revoke all on function private.get_collection_share(uuid) from public, anon, authenticated;
+grant execute on function private.get_collection_share(uuid) to anon;
+
+create or replace function public.get_collection_share(p_token uuid)
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $wrapper$
+  select private.get_collection_share(p_token);
+$wrapper$;
 revoke all on function public.get_collection_share(uuid) from public, anon, authenticated;
 grant execute on function public.get_collection_share(uuid) to anon;
 
