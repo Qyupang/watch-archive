@@ -292,5 +292,5 @@
   }
   window.openCollectionShareModal=openCollectionShareModal;
   window.openCollectionSharePreview=openCollectionSharePreview;
-  if(activeBoxId)injectShareButton();
+
 })();
