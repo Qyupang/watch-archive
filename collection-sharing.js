@@ -17,15 +17,29 @@
       .eq('box_id',boxId).eq('user_id',currentUser.id).maybeSingle();
     if(error) throw error; return data;
   }
-  async function syncBoxCoverToShare(share,box) {
-    if(!box?.cover_image_path)return share;
+  async function syncBoxDetailsToShare(share,box) {
+    if(!share||!box)return share;
+    const nextTitle=String(box.name||'My Collection').slice(0,80);
+    const nextDescription=String(box.description||'').slice(0,500);
     const source=share.cover_source||'box';
-    if(source!=='box'||share.cover_source_path===box.cover_image_path)return share;
-    const nextUrl=await uploadPublicCopy(box.cover_image_path,share.token,'cover');
-    const {data,error}=await supabaseClient.from('collection_shares').update({cover_image_url:nextUrl,cover_source:'box',cover_source_path:box.cover_image_path,updated_at:new Date().toISOString()}).eq('id',share.id).eq('user_id',currentUser.id).select().single();
+    let coverFields={};
+    if(box.cover_image_path&&source==='box'&&share.cover_source_path!==box.cover_image_path){
+      const nextUrl=await uploadPublicCopy(box.cover_image_path,share.token,'cover');
+      coverFields={cover_image_url:nextUrl,cover_source:'box',cover_source_path:box.cover_image_path};
+    }
+    const changed=share.title!==nextTitle||String(share.description||'')!==nextDescription||Object.keys(coverFields).length>0;
+    if(!changed)return share;
+    const {data,error}=await supabaseClient.from('collection_shares').update({
+      title:nextTitle,
+      description:nextDescription,
+      ...coverFields,
+      updated_at:new Date().toISOString()
+    }).eq('id',share.id).eq('user_id',currentUser.id).select().single();
     if(error)throw error;
-    const oldPath=publicPath(share.cover_image_url);
-    if(oldPath)supabaseClient.storage.from(bucket).remove([oldPath]).then(({error:removeError})=>{if(removeError)console.warn('Old shared cover cleanup failed',removeError)});
+    if(coverFields.cover_image_url){
+      const oldPath=publicPath(share.cover_image_url);
+      if(oldPath)supabaseClient.storage.from(bucket).remove([oldPath]).then(({error:removeError})=>{if(removeError)console.warn('Old shared cover cleanup failed',removeError)});
+    }
     return data;
   }
   function makeModal(content) {
@@ -44,7 +58,9 @@
     try {
       const existing=await getExisting(boxId);
       if(existing?.is_active&&!forceEditor){
-        const refreshed=await syncBoxCoverToShare(existing,box);
+        // The collection is the source of truth: refresh title/note (and its linked hero image)
+        // before rendering the existing share preview, while preserving the existing token and watch selection.
+        const refreshed=await syncBoxDetailsToShare(existing,box);
         overlay.remove();
         openCollectionSharePreview(refreshed,boxId);
         return;
