@@ -17,6 +17,8 @@ create table if not exists public.collection_shares (
   constraint collection_shares_watch_items_array check (jsonb_typeof(watch_items) = 'array')
 );
 alter table public.collection_shares add column if not exists collector_name text not null default '';
+alter table public.collection_shares add column if not exists cover_source text not null default 'box';
+alter table public.collection_shares add column if not exists cover_source_path text;
 create index if not exists collection_shares_active_token_idx on public.collection_shares(token) where is_active = true;
 alter table public.collection_shares enable row level security;
 
