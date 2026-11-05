@@ -149,39 +149,51 @@
   async function renderCollectionCardBlob(share,options) {
     const items=Array.isArray(share?.watch_items)?share.watch_items:[];
     const template=options.template||'editorial';
-    const width=1080,height=template==='story'?1920:1350;
+    const width=1080,height=template==='story'?1920:1350,margin=68;
     const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
     const ctx=canvas.getContext('2d');
     const dark=template==='gallery',bg=dark?'#171614':'#f5f3ee',ink=dark?'#f5f3ee':'#171717',muted=dark?'#aaa59b':'#77736b',line=dark?'#49453f':'#d9d5cc';
     ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
-    const margin=template==='story'?72:76;
-    ctx.fillStyle=ink;ctx.font='600 25px Arial';ctx.fillText('WATCH ARCHIVE',margin,92);
-    ctx.fillStyle=muted;ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,92);ctx.textAlign='left';
-    ctx.strokeStyle=line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,125);ctx.lineTo(width-margin,125);ctx.stroke();
     const hero=await loadCanvasImage(share.cover_image_url);
-    const heroY=template==='story'?170:160,heroH=template==='story'?520:template==='gallery'?350:400;
-    if(hero){const s=Math.max((width-margin*2)/hero.width,heroH/hero.height),sw=(width-margin*2)/s,sh=heroH/s;ctx.save();ctx.beginPath();ctx.rect(margin,heroY,width-margin*2,heroH);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,margin,heroY,width-margin*2,heroH);ctx.restore()}
-    else{ctx.fillStyle=dark?'#302d29':'#e7e2d8';ctx.fillRect(margin,heroY,width-margin*2,heroH)}
-    let y=heroY+heroH+82;
-    ctx.fillStyle=ink;ctx.font=(template==='story'?'64px':'58px')+' Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,30),margin,y,width-margin*2);y+=54;
-    if(options.nickname){ctx.fillStyle=muted;ctx.font='22px Arial';const collector=currentUser?.user_metadata?.nickname||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';ctx.fillText('CURATED BY '+String(collector).toUpperCase().slice(0,38),margin,y);y+=43}
-    if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='22px Georgia';const note=String(share.description).slice(0,150);ctx.fillText(note,margin,y,width-margin*2);y+=58}
-    if(options.count){ctx.fillStyle=muted;ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,y);y+=35}
-    const story=template==='story',cols=template==='gallery'?2:2,gap=24,tileW=(width-margin*2-gap)/cols;
-    const imageH=template==='story'?300:template==='gallery'?250:245;
-    const startY=Math.max(y+18,template==='story'?1000:template==='gallery'?690:790);
-    for(let i=0;i<items.length;i++){
-      const w=items[i],x=margin+(i%cols)*(tileW+gap),row=Math.floor(i/cols),top=startY+row*(imageH+125);
-      if(top+imageH+100>height-100)break;
-      const photo=await loadCanvasImage(w.image_url);
-      ctx.fillStyle=dark?'#302d29':'#e7e2d8';ctx.fillRect(x,top,tileW,imageH);
-      if(photo){const s=Math.max(tileW/photo.width,imageH/photo.height),sw=tileW/s,sh=imageH/s;ctx.save();ctx.beginPath();ctx.rect(x,top,tileW,imageH);ctx.clip();ctx.drawImage(photo,(photo.width-sw)/2,(photo.height-sh)/2,sw,sh,x,top,tileW,imageH);ctx.restore()}
-      ctx.fillStyle=muted;ctx.font='17px Arial';ctx.fillText(String(w.brand||'').toUpperCase().slice(0,30),x,top+imageH+32);
-      ctx.fillStyle=ink;ctx.font='27px Georgia';ctx.fillText(String(w.model||'').slice(0,27),x,top+imageH+68,tileW);
-      if(options.details){ctx.fillStyle=muted;ctx.font='16px Arial';ctx.fillText([w.reference,w.size].filter(Boolean).join(' · ').slice(0,45),x,top+imageH+98,tileW)}
+    if(template==='editorial'||template==='story'){
+      const heroH=template==='story'?1640:1050,heroY=0;
+      if(hero){const scale=Math.max(width/hero.width,heroH/hero.height),sw=width/scale,sh=heroH/scale;ctx.save();ctx.beginPath();ctx.rect(0,0,width,heroH);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,0,0,width,heroH);ctx.restore()}
+      else{ctx.fillStyle='#d8d0c4';ctx.fillRect(0,0,width,heroH)}
+      const gradient=ctx.createLinearGradient(0,heroH*.52,0,heroH);
+      gradient.addColorStop(0,'rgba(0,0,0,0)');gradient.addColorStop(1,'rgba(0,0,0,.72)');
+      ctx.fillStyle=gradient;ctx.fillRect(0,0,width,heroH);
+      ctx.fillStyle='#fff';ctx.font='600 25px Arial';ctx.fillText('WATCH ARCHIVE',margin,template==='story'?100:86);
+      ctx.fillStyle='rgba(255,255,255,.78)';ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,template==='story'?100:86);ctx.textAlign='left';
+      const title=String(share.title||'My Collection').slice(0,34);
+      ctx.fillStyle='#fff';ctx.font=(template==='story'?'72px':'68px')+' Georgia';
+      ctx.fillText(title,margin,heroH-(template==='story'?250:190),width-margin*2);
+      let metaY=heroH-(template==='story'?180:125);
+      if(options.nickname){const collector=currentUser?.user_metadata?.nickname||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';ctx.fillStyle='rgba(255,255,255,.86)';ctx.font='22px Arial';ctx.fillText('CURATED BY '+String(collector).toUpperCase().slice(0,38),margin,metaY);metaY+=38}
+      if(options.count){ctx.fillStyle='rgba(255,255,255,.8)';ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,metaY)}
+      ctx.fillStyle=ink;ctx.font='600 19px Arial';ctx.fillText('WATCH ARCHIVE',margin,height-55);
+      if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='18px Georgia';ctx.fillText(String(share.description).slice(0,105),margin,height-100,width-margin*2)}
+    } else {
+      ctx.fillStyle=ink;ctx.font='600 25px Arial';ctx.fillText('WATCH ARCHIVE',margin,86);
+      ctx.fillStyle=muted;ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,86);ctx.textAlign='left';
+      ctx.strokeStyle=line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,120);ctx.lineTo(width-margin,120);ctx.stroke();
+      if(hero){const scale=Math.max((width-margin*2)/hero.width,330/hero.height),sw=(width-margin*2)/scale,sh=330/scale;ctx.save();ctx.beginPath();ctx.rect(margin,145,width-margin*2,330);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,margin,145,width-margin*2,330);ctx.restore()}
+      ctx.fillStyle=ink;ctx.font='58px Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,30),margin,550,width-margin*2);
+      let y=595;
+      if(options.nickname){ctx.fillStyle=muted;ctx.font='19px Arial';ctx.fillText('CURATED BY WATCH ARCHIVE COLLECTOR',margin,y);y+=32}
+      if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='18px Georgia';ctx.fillText(String(share.description).slice(0,90),margin,y,width-margin*2);y+=44}
+      if(options.count){ctx.fillStyle=muted;ctx.font='16px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,y);y+=28}
+      const gap=20,tileW=(width-margin*2-gap)/2,imageH=190,startY=Math.max(700,y+18);
+      for(let i=0;i<Math.min(items.length,4);i++){
+        const w=items[i],x=margin+(i%2)*(tileW+gap),top=startY+Math.floor(i/2)*270,photo=await loadCanvasImage(w.image_url);
+        if(top+imageH+70>height-90)break;
+        ctx.fillStyle='#302d29';ctx.fillRect(x,top,tileW,imageH);
+        if(photo){const scale=Math.max(tileW/photo.width,imageH/photo.height),sw=tileW/scale,sh=imageH/scale;ctx.save();ctx.beginPath();ctx.rect(x,top,tileW,imageH);ctx.clip();ctx.drawImage(photo,(photo.width-sw)/2,(photo.height-sh)/2,sw,sh,x,top,tileW,imageH);ctx.restore()}
+        ctx.fillStyle=muted;ctx.font='15px Arial';ctx.fillText(String(w.brand||'').toUpperCase().slice(0,28),x,top+imageH+25);
+        ctx.fillStyle=ink;ctx.font='24px Georgia';ctx.fillText(String(w.model||'').slice(0,25),x,top+imageH+56,tileW);
+      }
+      ctx.strokeStyle=line;ctx.beginPath();ctx.moveTo(margin,height-70);ctx.lineTo(width-margin,height-70);ctx.stroke();
+      ctx.fillStyle=muted;ctx.font='15px Arial';ctx.fillText('A PERSONAL ARCHIVE OF TIMEPIECES',margin,height-38);
     }
-    ctx.strokeStyle=line;ctx.beginPath();ctx.moveTo(margin,height-82);ctx.lineTo(width-margin,height-82);ctx.stroke();
-    ctx.fillStyle=muted;ctx.font='16px Arial';ctx.fillText('WATCH ARCHIVE  /  A PERSONAL ARCHIVE OF TIMEPIECES',margin,height-48);
     return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('이미지 생성 실패')),'image/png'));
   }
   async function copyShareLink(link) {
