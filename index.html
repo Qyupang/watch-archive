@@ -722,6 +722,35 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 @media(max-width:380px){.box-watch-row{grid-template-columns:94px minmax(0,1fr)}.box-watch-card-media{width:94px;min-height:116px}.box-watch-photo,.box-watch-photo-empty{min-height:116px}.box-watch-info{padding:10px}.box-watch-model{font-size:17px}.box-watch-actions{gap:5px}}
 @media(prefers-reduced-motion:reduce){.box-detail-stage .top,.box-detail-stage .box-detail-cover-wrap,.box-detail-stage .box-detail-cover,.box-detail-stage .box-detail-title,.box-detail-stage .box-detail-description,.box-detail-stage .box-section-head,.box-watch-row,.box-watch-photo{animation:none!important;opacity:1!important;transform:none!important;filter:none!important;clip-path:none!important;transition:none!important}}
 
+
+/* Collection sharing sheet */
+.wa-share-sheet{max-height:92dvh;overflow-y:auto}
+.wa-share-intro{margin:0 0 18px;color:var(--muted);font-size:12px;line-height:1.75}
+.wa-share-section-head{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;padding-bottom:10px;border-bottom:1px solid var(--line);font-size:13px}
+.wa-share-section-head span,.wa-share-watch small{font-size:10px;color:var(--muted)}
+.wa-share-watch-list{display:grid;gap:7px;max-height:34vh;overflow:auto}
+.wa-share-watch{display:grid;grid-template-columns:20px 54px minmax(0,1fr);gap:10px;align-items:center;padding:9px;border:1px solid var(--line);background:var(--paper);cursor:pointer}
+.wa-share-watch input{width:17px;height:17px;accent-color:var(--ink)}
+.wa-share-watch-thumb{width:54px;height:54px;background:var(--soft);display:block;overflow:hidden}
+.wa-share-watch-thumb img{width:100%;height:100%;object-fit:cover}
+.wa-share-watch strong,.wa-share-watch small{display:block;overflow-wrap:anywhere}
+.wa-share-watch strong{font-size:12px;line-height:1.45}
+.wa-share-watch small{margin-top:3px}
+.wa-share-privacy{display:flex;gap:11px;align-items:center;margin-top:18px;padding:13px;border:1px solid var(--line);background:var(--soft)}
+.wa-share-privacy>span:first-child{font:22px Georgia,serif}
+.wa-share-privacy strong,.wa-share-privacy small{display:block}
+.wa-share-privacy strong{font-size:12px}.wa-share-privacy small{margin-top:4px;color:var(--muted);font-size:10px}
+.wa-share-save{width:100%;min-height:52px;margin-top:18px;border-radius:2px!important}
+.wa-share-existing,.wa-share-success{margin-top:18px;padding:16px;border:1px solid var(--line);background:var(--paper)}
+.wa-share-status{display:inline-block;font-size:9px;letter-spacing:.18em;font-weight:750;color:var(--muted)}
+.wa-share-existing input,.wa-share-success input{display:block;width:100%;min-height:46px;margin-top:10px;padding:0 11px;border:1px solid var(--line);border-radius:2px;background:var(--bg);color:var(--ink);font-size:12px}
+.wa-share-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.wa-share-actions button{min-height:42px}
+.wa-share-disable{display:block;margin:15px auto 0;border:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px}
+.wa-share-success h3{margin:12px 0 5px;font:25px Georgia,serif}
+.wa-share-success p,.wa-share-empty,.wa-share-loading{font-size:12px;line-height:1.7;color:var(--muted)}
+.wa-share-empty{padding:22px;text-align:center;border:1px dashed var(--line)}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
@@ -2212,4 +2241,5 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
 boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해주세요.')});
 
 (function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,1500),{once:true});setTimeout(hide,2200)})();
-</script></body></html>
+</script><script src="collection-sharing.js"></script>
+</body></html>
