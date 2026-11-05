@@ -38,7 +38,7 @@ grant select, insert, update, delete on public.collection_shares to authenticate
 
 create schema if not exists private;
 revoke all on schema private from public;
-grant usage on schema private to anon;
+grant usage on schema private to anon, authenticated;
 
 create or replace function private.get_collection_share(p_token uuid)
 returns jsonb
@@ -60,7 +60,7 @@ as $share$
   limit 1;
 $share$;
 revoke all on function private.get_collection_share(uuid) from public, anon, authenticated;
-grant execute on function private.get_collection_share(uuid) to anon;
+grant execute on function private.get_collection_share(uuid) to anon, authenticated;
 
 create or replace function public.get_collection_share(p_token uuid)
 returns jsonb
@@ -71,7 +71,7 @@ as $wrapper$
   select private.get_collection_share(p_token);
 $wrapper$;
 revoke all on function public.get_collection_share(uuid) from public, anon, authenticated;
-grant execute on function public.get_collection_share(uuid) to anon;
+grant execute on function public.get_collection_share(uuid) to anon, authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('collection-shares', 'collection-shares', true, 10485760, array['image/jpeg','image/png','image/webp'])
