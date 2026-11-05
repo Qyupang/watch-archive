@@ -1,5 +1,5 @@
-const CACHE='watch-archive-v29-reason-record-view';
-self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./manifest.webmanifest','./icon.svg','./logo-wordmark.svg','./logo-wordmark-dark.svg'])))});
+const CACHE='watch-archive-v30-collection-sharing';
+self.addEventListener('install',e=>{self.skipWaiting();e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./manifest.webmanifest','./icon.svg','./logo-wordmark.svg','./logo-wordmark-dark.svg','./collection-sharing.js','./share.html'])))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(fetch(e.request).then(r=>{let c=r.clone();caches.open(CACHE).then(x=>x.put(e.request,c));return r}).catch(()=>caches.match(e.request).then(r=>r||caches.match('./index.html'))) )});
 self.addEventListener('push',e=>{let data={title:'착용 기록 알림',body:'오늘 착용한 시계를 기록해 주세요.',url:'./'};try{if(e.data)data={...data,...e.data.json()}}catch(_){if(e.data)data.body=e.data.text()}e.waitUntil(self.registration.showNotification(data.title,{body:data.body,icon:'./icon.svg',badge:'./icon.svg',tag:data.tag||'wear-reminder',data:{url:data.url||'./'},renotify:false}))});
