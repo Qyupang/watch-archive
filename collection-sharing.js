@@ -58,7 +58,7 @@
         '<div class="field"><label for="waShareDescriptionInput">COLLECTOR’S NOTE</label><textarea id="waShareDescriptionInput" rows="3" maxlength="500">'+escShare(existing?.description??box.description??'')+'</textarea></div>'+
         '<div class="wa-share-section-head"><strong>공개할 시계</strong><span>'+rows.length+' PIECES</span></div><div class="wa-share-watch-list">'+(choices||'<div class="wa-share-empty">이 컬렉션에 등록된 시계가 없습니다.</div>')+'</div>'+
         '<div class="wa-share-section-head"><strong>대표 사진</strong><span>HERO IMAGE</span></div>'+
-        '<div class="wa-share-cover-options"><label><input type="radio" name="waShareCover" value="auto" checked><span>컬렉션 기본 사진 사용</span></label>'+
+        '<div class="wa-share-cover-options">'+(existing?.cover_image_url?'<label><input type="radio" name="waShareCover" value="keep" checked><span class="wa-share-cover-thumb"><img src="'+escShare(existing.cover_image_url)+'" alt=""></span><span>현재 대표 사진 유지</span></label>':'')+'<label><input type="radio" name="waShareCover" value="auto" '+(existing?.cover_image_url?'':'checked')+'><span>컬렉션 기본 사진 사용</span></label>'+
         rows.map(({item,watch})=>{const p=(watch.photos||[]).find(x=>x.cover)||(watch.photos||[])[0];return p?.path?'<label><input type="radio" name="waShareCover" value="'+escShare(item.id)+'"><span class="wa-share-cover-thumb"><img src="'+escShare(cover(watch)||'')+'" alt=""></span><span>'+escShare((watch.brand||'')+' '+(watch.model||''))+'</span></label>':''}).join('')+
         '<label class="wa-share-upload-cover"><span>＋</span><span>별도 대표 사진 업로드</span><input type="file" id="waShareCoverUpload" accept="image/jpeg,image/png,image/webp"></label></div>'+
         '<div class="wa-share-privacy"><span>↗</span><span><strong>링크를 가진 사람만 열람</strong><small>공개 목록이나 검색 결과에는 노출되지 않아.</small></span></div>'+
@@ -250,7 +250,7 @@
       if(old?.id)result=await supabaseClient.from('collection_shares').update(payload).eq('id',old.id).eq('user_id',currentUser.id).select().single();
       else result=await supabaseClient.from('collection_shares').insert(payload).select().single();
       if(result.error)throw result.error;
-      oldUrls.forEach(url=>{const path=publicPath(url);if(path)supabaseClient.storage.from(bucket).remove([path]).then(({error})=>{if(error)console.warn('Share image cleanup failed',error)})});
+      oldUrls.filter(url=>!(coverChoice==='keep'&&url===(old?.cover_image_url||overlay.dataset.existingCoverUrl))).forEach(url=>{const path=publicPath(url);if(path)supabaseClient.storage.from(bucket).remove([path]).then(({error})=>{if(error)console.warn('Share image cleanup failed',error)})});
       toast('컬렉션 공유 링크를 만들었어요');
       openCollectionSharePreview(result.data,boxId);
     } catch(error) {
