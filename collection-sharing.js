@@ -43,7 +43,12 @@
     const overlay=makeModal('<div class="wa-share-loading">공유 설정을 불러오고 있어요…</div>');
     try {
       const existing=await getExisting(boxId);
-      // Always open the editor for an existing share so the user can update its content before previewing.
+      if(existing?.is_active&&!forceEditor){
+        const refreshed=await syncBoxCoverToShare(existing,box);
+        overlay.remove();
+        openCollectionSharePreview(refreshed,boxId);
+        return;
+      }
       const rows=boxItems(boxId).map(item=>({item,watch:boxWatch(item.watch_id)})).filter(x=>x.watch);
       const choices=rows.map(({item,watch})=>{
         const photo=cover(watch);
@@ -62,6 +67,14 @@
         '<div class="wa-share-privacy"><span>↗</span><span><strong>링크를 가진 사람만 열람</strong><small>공개 목록이나 검색 결과에는 노출되지 않아.</small></span></div>'+
         '<button class="action primary wa-share-save" id="waCreateShare" '+(rows.length?'':'disabled')+'>'+(existing?'공유 설정 업데이트':'공유 링크 만들기')+'</button>';
       overlay.querySelector('#waCreateShare').addEventListener('click',()=>saveCollectionShare(boxId));
+      if(!existing?.is_active&&!forceEditor){
+        // First share: create a sensible default from the collection, then land directly on the share page.
+        if(!box.cover_image_path){
+          overlay.querySelector('#waShareContent').insertAdjacentHTML('afterbegin','<p class="wa-share-intro">먼저 컬렉션 대표 사진을 등록해줘.</p>');
+        } else {
+          saveCollectionShare(boxId);
+        }
+      }
     } catch(error) {
       console.error('Load share settings failed',error);
       overlay.querySelector('#waShareContent').textContent='공유 설정을 불러오지 못했어요: '+(error.message||error);
@@ -71,22 +84,18 @@
   function openCollectionSharePreview(share,boxId) {
     const overlay=makeModal('<div class="wa-share-loading">이미지 미리보기를 준비하고 있어요…</div>');
     overlay.classList.add('wa-share-preview-overlay');
-    const options={template:'editorial',nickname:true,details:true,note:true,count:true};
+    const options={template:'editorial',nickname:true,details:true,note:true,count:false};
     const previewMarkup=
       '<div class="wa-preview-user"><span class="wa-preview-avatar">Q</span><span><strong>WATCH ARCHIVE</strong><small>COLLECTION PREVIEW</small></span><button type="button" class="wa-preview-edit" id="waEditShare">편집</button></div>'+
       '<div class="wa-preview-stage"><img id="waPreviewImage" alt="컬렉션 이미지 카드 미리보기"><div class="wa-preview-loading">카드를 렌더링하고 있어요…</div></div>'+
       '<div class="wa-preview-dots" aria-label="템플릿 선택"><button class="is-active" data-template="editorial">01</button><button data-template="gallery">02</button><button data-template="story">03</button></div>'+
       '<div class="wa-preview-label">SELECT INFORMATION</div>'+
       '<div class="wa-preview-toggles">'+
-      '<label><input type="checkbox" data-option="nickname" checked> 컬렉터 이름</label>'+
-      ''+
-      '<label><input type="checkbox" data-option="note" checked> 컬렉션 소개</label>'+
-      '<label><input type="checkbox" data-option="count" checked> 시계 개수</label></div>'+
+      '<label><input type="checkbox" data-option="nickname" checked><span>컬렉터 이름</span></label>'+
+      '<label><input type="checkbox" data-option="note" checked><span>컬렉션 소개</span></label></div>'+
       '<div class="wa-preview-actions">'+
-      '<button type="button" id="waSaveImage"><span>↓</span><strong>Save</strong></button>'+
-      '<button type="button" id="waCopyImage"><span>▧</span><strong>Copy</strong></button>'+
-      '<button type="button" id="waCopyShareLink"><span>↗</span><strong>Link</strong></button>'+
-      '<button type="button" id="waNativeShare"><span>⌯</span><strong>Share</strong></button></div>'+
+      '<button type="button" id="waSaveImage"><span>↓</span><strong>Save image</strong></button>'+
+      '<button type="button" id="waNativeShare"><span>↗</span><strong>Share</strong></button></div>'+
       '<button type="button" class="wa-preview-disable" id="waDisableShare">컬렉션 공유 중단</button>';
     overlay.querySelector('#waShareContent').innerHTML=previewMarkup;
     let currentBlob=null,currentUrl=null;
@@ -106,12 +115,6 @@
       const url=URL.createObjectURL(currentBlob),a=document.createElement('a');
       a.href=url;a.download='watch-archive-'+options.template+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
     });
-    overlay.querySelector('#waCopyImage').addEventListener('click',async()=>{
-      if(!currentBlob)return;
-      try{await navigator.clipboard.write([new ClipboardItem({'image/png':currentBlob})]);toast('이미지 카드를 복사했어요')}
-      catch(error){toast('이미지 복사를 지원하지 않는 환경이에요. Save를 이용해줘')}
-    });
-    overlay.querySelector('#waCopyShareLink').addEventListener('click',()=>copyShareLink(shareUrl(share.token)));
     overlay.querySelector('#waNativeShare').addEventListener('click',async()=>{
       if(!currentBlob)return;
       const file=new File([currentBlob],'watch-archive-collection.png',{type:'image/png'});
