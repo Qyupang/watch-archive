@@ -779,6 +779,16 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 .wa-preview-disable{display:block;margin:15px auto 0;border:0;background:transparent;color:var(--muted);font-size:11px;text-decoration:underline;text-underline-offset:3px;padding:8px}
 @media(max-width:420px){.wa-preview-stage{width:100%;min-height:240px}.wa-preview-toggles{gap:10px 12px}.wa-preview-toggles label{font-size:11px}.wa-preview-actions{gap:7px}.wa-preview-actions button{min-height:70px}}
 
+
+.wa-share-cover-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:10px 0 18px}
+.wa-share-cover-options>label{min-height:54px;display:flex;align-items:center;gap:9px;padding:8px;border:1px solid var(--line);background:var(--paper);font-size:11px;cursor:pointer}
+.wa-share-cover-options input{accent-color:var(--text);width:16px;height:16px;flex:none}
+.wa-share-cover-thumb{width:46px;height:46px;display:block;flex:none;background:var(--surface-2);overflow:hidden}
+.wa-share-cover-thumb img{width:100%;height:100%;object-fit:cover}
+.wa-share-upload-cover{border-style:dashed!important;justify-content:center;color:var(--muted)}
+.wa-share-upload-cover>span:first-child{font-size:22px}
+.wa-share-upload-cover input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
