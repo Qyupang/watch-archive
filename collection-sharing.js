@@ -245,7 +245,7 @@
         const coverIndex=Math.max(0,selected.findIndex(x=>x.watch.id===box.cover_watch_id));
         coverUrl=publicWatches[coverIndex]?.image_url||publicWatches[0]?.image_url||'';
       }
-      const payload={user_id:currentUser.id,box_id:boxId,token,title:title.slice(0,80),description:description.slice(0,500),cover_image_url:coverUrl,watch_items:publicWatches,is_active:true,updated_at:new Date().toISOString()};
+      const collectorName=currentUser.user_metadata?.nickname||currentUser.user_metadata?.full_name||currentUser.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';\n      const payload={user_id:currentUser.id,box_id:boxId,token,title:title.slice(0,80),description:description.slice(0,500),collector_name:String(collectorName).slice(0,60),cover_image_url:coverUrl,watch_items:publicWatches,is_active:true,updated_at:new Date().toISOString()};
       let result;
       if(old?.id)result=await supabaseClient.from('collection_shares').update(payload).eq('id',old.id).eq('user_id',currentUser.id).select().single();
       else result=await supabaseClient.from('collection_shares').insert(payload).select().single();
