@@ -268,16 +268,44 @@
       button.disabled=false;button.textContent='다시 시도';
     }
   }
-  async function disableCollectionShare(boxId) {
-    if(!confirm('이 컬렉션의 공유를 중단할까요? 기존 링크와 공유 이미지가 더 이상 열리지 않도록 처리합니다.'))return;
+  function showDisableShareConfirm(boxId) {
+    document.getElementById('waDisableShareConfirm')?.remove();
+    const parent=document.getElementById('collectionShareOverlay');
+    if(!parent)return;
+    const confirmLayer=document.createElement('div');
+    confirmLayer.id='waDisableShareConfirm';
+    confirmLayer.className='wa-confirm-backdrop';
+    confirmLayer.innerHTML='<section class="wa-confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="waDisableConfirmTitle" aria-describedby="waDisableConfirmText"><div class="wa-confirm-eyebrow">WATCH ARCHIVE / SHARE</div><h3 id="waDisableConfirmTitle">공유를 중단할까요?</h3><p id="waDisableConfirmText">기존 공유 링크와 이미지가 더 이상 열리지 않게 됩니다.</p><div class="wa-confirm-actions"><button type="button" class="wa-confirm-cancel" id="waDisableCancel">취소</button><button type="button" class="wa-confirm-accept" id="waDisableAccept">공유 중단</button></div></section>';
+    parent.appendChild(confirmLayer);
+    confirmLayer.querySelector('#waDisableCancel').addEventListener('click',()=>confirmLayer.remove());
+    confirmLayer.addEventListener('click',event=>{if(event.target===confirmLayer)confirmLayer.remove()});
+    confirmLayer.querySelector('#waDisableAccept').addEventListener('click',()=>performDisableCollectionShare(boxId,confirmLayer));
+  }
+  async function performDisableCollectionShare(boxId,confirmLayer) {
+    const accept=confirmLayer?.querySelector('#waDisableAccept');
+    if(accept){accept.disabled=true;accept.textContent='처리 중…'}
     const {data:share,error:readError}=await supabaseClient.from('collection_shares').select('cover_image_url,watch_items').eq('box_id',boxId).eq('user_id',currentUser.id).maybeSingle();
-    if(readError)return toast('공유 정보를 확인하지 못했어요: '+readError.message);
+    if(readError){
+      if(accept){accept.disabled=false;accept.textContent='다시 시도'}
+      toast('공유 정보를 확인하지 못했어요: '+readError.message);return;
+    }
     const {error}=await supabaseClient.from('collection_shares').update({is_active:false,updated_at:new Date().toISOString()}).eq('box_id',boxId).eq('user_id',currentUser.id);
-    if(error)return toast('공유 중단에 실패했어요: '+error.message);
+    if(error){
+      if(accept){accept.disabled=false;accept.textContent='다시 시도'}
+      toast('공유 중단에 실패했어요: '+error.message);return;
+    }
     const urls=[share?.cover_image_url,...(share?.watch_items||[]).map(item=>item.image_url)].filter(Boolean);
     const paths=[...new Set(urls.map(publicPath).filter(Boolean))];
-    if(paths.length){const {error:removeError}=await supabaseClient.storage.from(bucket).remove(paths);if(removeError)console.warn('Disabled share images cleanup failed',removeError)}
-    toast('컬렉션 공유를 중단했어요');openCollectionShareModal(boxId);
+    if(paths.length){
+      const {error:removeError}=await supabaseClient.storage.from(bucket).remove(paths);
+      if(removeError)console.warn('Disabled share images cleanup failed',removeError);
+    }
+    // Close the entire share sheet only after the deactivation succeeds; do not reopen the editor.
+    document.getElementById('collectionShareOverlay')?.remove();
+    toast('컬렉션 공유를 중단했어요');
+  }
+  async function disableCollectionShare(boxId) {
+    showDisableShareConfirm(boxId);
   }
   function loadCanvasImage(url) {
     return new Promise(resolve=>{if(!url)return resolve(null);const image=new Image();image.crossOrigin='anonymous';image.onload=()=>resolve(image);image.onerror=()=>resolve(null);image.src=url});
