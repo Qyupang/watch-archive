@@ -22,7 +22,6 @@ alter table public.collection_shares enable row level security;
 drop policy if exists "Owners can view their collection shares" on public.collection_shares;
 create policy "Owners can view their collection shares" on public.collection_shares for select to authenticated using ((select auth.uid()) = user_id);
 drop policy if exists "Anyone can view active collection shares" on public.collection_shares;
-create policy "Anyone can view active collection shares" on public.collection_shares for select to anon using (is_active = true);
 drop policy if exists "Owners can create collection shares" on public.collection_shares;
 create policy "Owners can create collection shares" on public.collection_shares for insert to authenticated with check (
   (select auth.uid()) = user_id and exists (select 1 from public.collection_boxes b where b.id = box_id and b.user_id = (select auth.uid()))
@@ -35,8 +34,29 @@ drop policy if exists "Owners can delete collection shares" on public.collection
 create policy "Owners can delete collection shares" on public.collection_shares for delete to authenticated using ((select auth.uid()) = user_id);
 
 revoke all on public.collection_shares from anon, authenticated;
-grant select (token, title, description, cover_image_url, watch_items, card_image_url) on public.collection_shares to anon;
 grant select, insert, update, delete on public.collection_shares to authenticated;
+
+create or replace function public.get_collection_share(p_token uuid)
+returns jsonb
+language sql
+stable
+security definer
+set search_path = ''
+as $
+  select jsonb_build_object(
+    'token', s.token,
+    'title', s.title,
+    'description', s.description,
+    'cover_image_url', s.cover_image_url,
+    'watch_items', s.watch_items,
+    'card_image_url', s.card_image_url
+  )
+  from public.collection_shares as s
+  where s.token = p_token and s.is_active = true
+  limit 1;
+$;
+revoke all on function public.get_collection_share(uuid) from public, anon, authenticated;
+grant execute on function public.get_collection_share(uuid) to anon;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('collection-shares', 'collection-shares', true, 10485760, array['image/jpeg','image/png','image/webp'])
