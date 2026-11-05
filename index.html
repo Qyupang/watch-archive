@@ -805,6 +805,17 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 .wa-preview-dots{display:flex;justify-content:center;gap:9px;margin:14px 0 20px}
 .wa-preview-dots button{border:0;background:var(--surface-2);color:var(--muted);border-radius:20px;width:25px;height:6px;padding:0;font-size:0}
 .wa-preview-dots button.is-active{background:var(--text);width:27px}
+/* Branded confirmation layer for destructive share actions */
+.wa-confirm-backdrop{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;padding:22px;background:rgba(0,0,0,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);border-radius:inherit}
+.wa-confirm-dialog{width:min(100%,390px);padding:25px 22px 18px;background:#211f1c;border:1px solid #4a463f;border-radius:18px;box-shadow:0 22px 70px rgba(0,0,0,.42);color:#f3f0e9}
+.wa-confirm-eyebrow{font-size:9px;font-weight:700;letter-spacing:.2em;color:#aaa49a}
+.wa-confirm-dialog h3{margin:13px 0 8px;font:normal 25px/1.2 Georgia,serif;letter-spacing:-.025em;color:#f3f0e9}
+.wa-confirm-dialog p{margin:0;color:#b9b3a9;font-size:13px;line-height:1.65;word-break:keep-all}
+.wa-confirm-actions{display:flex;justify-content:flex-end;align-items:center;gap:9px;margin-top:23px}
+.wa-confirm-actions button{min-width:92px;min-height:40px;padding:8px 15px;border-radius:999px;font-size:12px;font-weight:600;cursor:pointer}
+.wa-confirm-cancel{border:1px solid #514d46;background:transparent;color:#ddd8ce}
+.wa-confirm-accept{border:1px solid #eeeae1;background:#eeeae1;color:#201e1b}
+.wa-confirm-actions button:disabled{opacity:.55;cursor:wait}
 .wa-preview-label{font-size:10px;color:var(--muted);letter-spacing:.18em;font-weight:700;margin:22px 0 11px}
 .wa-preview-toggles{display:flex;flex-wrap:wrap;gap:9px;padding:0 0 16px;border-bottom:1px solid var(--line)}
 .wa-preview-toggles label{position:relative;display:inline-flex;align-items:center;gap:9px;min-height:38px;padding:0 13px;border:1px solid var(--line);border-radius:999px;background:var(--paper);color:var(--ink);font-size:11px;white-space:nowrap;cursor:pointer;transition:background .18s ease,border-color .18s ease}
