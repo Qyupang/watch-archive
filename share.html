@@ -49,7 +49,7 @@ async function downloadCard(share){
 (async()=>{
  const token=new URLSearchParams(location.search).get('token');
  if(!token){document.getElementById('app').innerHTML='<div class="state"><strong>Collection not found</strong>유효하지 않은 공유 링크예요.</div>';return}
- const {data:share,error}=await client.from('collection_shares').select('token,title,description,cover_image_url,watch_items,card_image_url').eq('token',token).maybeSingle();
+ const {data:share,error}=await client.rpc('get_collection_share',{p_token:token});
  if(error||!share){document.getElementById('app').innerHTML='<div class="state"><strong>Collection unavailable</strong>공유가 중단되었거나 존재하지 않는 링크예요.</div>';return}
  const items=Array.isArray(share.watch_items)?share.watch_items:[];document.title=(share.title||'Collection')+' — WATCH ARCHIVE';
  document.getElementById('app').innerHTML='<header class="masthead"><div class="wordmark">WATCH ARCHIVE</div><div class="edition">A PRIVATE COLLECTION</div></header>'+
