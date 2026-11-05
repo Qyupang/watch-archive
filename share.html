@@ -58,7 +58,7 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt
  (share.description?'<div class="intro"><div class="section-kicker">COLLECTOR’S NOTE</div><p class="description">'+esc(share.description)+'</p></div>':'')+
  '<div class="collection-heading"><h2>The Collection</h2><span class="collection-count">'+String(items.length).padStart(2,'0')+' PIECES</span></div>'+
  '<section class="watch-list">'+items.map(w=>'<article class="watch">'+(w.image_url?'<img class="watch-image" src="'+esc(w.image_url)+'" alt="'+esc((w.brand||'')+' '+(w.model||''))+'" loading="lazy">':'<div class="watch-image"></div>')+
- '<div class="watch-brand">'+esc(w.brand||'')+'</div><div class="watch-model">'+esc(w.model||'Untitled')+'</div><div class="watch-meta">'+esc([w.reference,w.size,w.movement].filter(Boolean).join(' · '))+'</div>'+(w.role_note?'<div class="watch-role">'+esc(w.role_note)+'</div>':'')+'</article>').join('')+'</section>'+
+ '<div class="watch-brand">'+esc(w.brand||'')+'</div><div class="watch-model">'+esc(w.model||'Untitled')+'</div><div class="watch-meta">'+esc([w.movement].filter(Boolean).join(' · '))+'</div>'+(w.role_note?'<div class="watch-role">'+esc(w.role_note)+'</div>':'')+'</article>').join('')+'</section>'+
  '<footer class="footer"><span>WATCH ARCHIVE</span><span>A PERSONAL ARCHIVE OF TIMEPIECES</span></footer></section>';
 })().catch(error=>{console.error(error);document.getElementById('app').innerHTML='<div class="state"><strong>Something went wrong</strong>컬렉션을 불러오지 못했어요.</div>'});
 </script></body></html>
