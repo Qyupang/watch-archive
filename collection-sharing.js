@@ -46,29 +46,135 @@
     const overlay=makeModal('<div class="wa-share-loading">공유 설정을 불러오고 있어요…</div>');
     try {
       const existing=await getExisting(boxId);
+      if(existing?.is_active){openCollectionSharePreview(existing,boxId);return}
       const rows=boxItems(boxId).map(item=>({item,watch:boxWatch(item.watch_id)})).filter(x=>x.watch);
-      const active=existing?.is_active===true, link=existing?shareUrl(existing.token):'';
       const choices=rows.map(({item,watch})=>{
         const photo=cover(watch);
         return '<label class="wa-share-watch"><input type="checkbox" name="waShareWatch" value="'+escShare(item.id)+'" checked><span class="wa-share-watch-thumb">'+(photo?'<img src="'+escShare(photo)+'" alt="">':'')+'</span><span><strong>'+escShare((watch.brand||'')+' '+(watch.model||''))+'</strong><small>'+escShare(watch.reference||'')+'</small></span></label>';
       }).join('');
-      overlay.dataset.boxId=boxId;
       overlay.querySelector('#waShareContent').innerHTML=
-        '<p class="wa-share-intro">선택한 시계만 공개돼요. 구매 가격, 관세, 평가 금액, 구매 사유와 개인 기록은 공유하지 않습니다.</p>'+
+        '<p class="wa-share-intro">공유할 시계를 선택해줘. 구매 가격, 관세, 평가 금액, 구매 사유와 개인 기록은 공개하지 않아.</p>'+
         '<div class="field"><label for="waShareTitleInput">COLLECTION TITLE</label><input id="waShareTitleInput" maxlength="80" value="'+escShare(existing?.title||box.name)+'"></div>'+
         '<div class="field"><label for="waShareDescriptionInput">COLLECTOR’S NOTE</label><textarea id="waShareDescriptionInput" rows="3" maxlength="500">'+escShare(existing?.description??box.description??'')+'</textarea></div>'+
         '<div class="wa-share-section-head"><strong>공개할 시계</strong><span>'+rows.length+' PIECES</span></div><div class="wa-share-watch-list">'+(choices||'<div class="wa-share-empty">이 컬렉션에 등록된 시계가 없습니다.</div>')+'</div>'+
-        '<div class="wa-share-privacy"><span>↗</span><span><strong>링크를 가진 사람만 열람</strong><small>검색 결과나 공개 목록에는 노출되지 않습니다.</small></span></div>'+
-        (active?'<div class="wa-share-existing"><span class="wa-share-status">SHARING ACTIVE</span><input id="waShareLink" readonly value="'+escShare(link)+'"><div class="wa-share-actions"><button class="box-action" id="waCopyLink">링크 복사</button><button class="box-action primary" id="waDownloadCard">이미지 카드 저장</button></div><button class="wa-share-disable" id="waDisableShare">공유 중단</button></div>':'')+
-        '<button class="action primary wa-share-save" id="waCreateShare" '+(rows.length?'':'disabled')+'>'+(active?'변경사항 저장':'공유 링크 만들기')+'</button>';
+        '<div class="wa-share-privacy"><span>↗</span><span><strong>링크를 가진 사람만 열람</strong><small>공개 목록이나 검색 결과에는 노출되지 않아.</small></span></div>'+
+        '<button class="action primary wa-share-save" id="waCreateShare" '+(rows.length?'':'disabled')+'>'+(existing?'공유 설정 업데이트':'공유 링크 만들기')+'</button>';
       overlay.querySelector('#waCreateShare').addEventListener('click',()=>saveCollectionShare(boxId));
-      overlay.querySelector('#waCopyLink')?.addEventListener('click',()=>copyShareLink(link));
-      overlay.querySelector('#waDownloadCard')?.addEventListener('click',()=>downloadCollectionCard(existing));
-      overlay.querySelector('#waDisableShare')?.addEventListener('click',()=>disableCollectionShare(boxId));
     } catch(error) {
       console.error('Load share settings failed',error);
       overlay.querySelector('#waShareContent').textContent='공유 설정을 불러오지 못했어요: '+(error.message||error);
     }
+  }
+
+  function openCollectionSharePreview(share,boxId) {
+    const overlay=makeModal('<div class="wa-share-loading">이미지 미리보기를 준비하고 있어요…</div>');
+    overlay.classList.add('wa-share-preview-overlay');
+    const options={template:'editorial',nickname:true,details:true,note:true,count:true};
+    const previewMarkup=
+      '<div class="wa-preview-user"><span class="wa-preview-avatar">Q</span><span><strong>WATCH ARCHIVE</strong><small>COLLECTION PREVIEW</small></span><button type="button" class="wa-preview-edit" id="waEditShare">편집</button></div>'+
+      '<div class="wa-preview-stage"><img id="waPreviewImage" alt="컬렉션 이미지 카드 미리보기"><div class="wa-preview-loading">카드를 렌더링하고 있어요…</div></div>'+
+      '<div class="wa-preview-dots" aria-label="템플릿 선택"><button class="is-active" data-template="editorial">01</button><button data-template="gallery">02</button><button data-template="story">03</button></div>'+
+      '<div class="wa-preview-label">SELECT INFORMATION</div>'+
+      '<div class="wa-preview-toggles">'+
+      '<label><input type="checkbox" data-option="nickname" checked> 컬렉터 이름</label>'+
+      '<label><input type="checkbox" data-option="details" checked> 레퍼런스 및 사이즈</label>'+
+      '<label><input type="checkbox" data-option="note" checked> 컬렉션 소개</label>'+
+      '<label><input type="checkbox" data-option="count" checked> 시계 개수</label></div>'+
+      '<div class="wa-preview-actions">'+
+      '<button type="button" id="waSaveImage"><span>↓</span><strong>Save</strong></button>'+
+      '<button type="button" id="waCopyImage"><span>▧</span><strong>Copy</strong></button>'+
+      '<button type="button" id="waCopyShareLink"><span>↗</span><strong>Link</strong></button>'+
+      '<button type="button" id="waNativeShare"><span>⌯</span><strong>Share</strong></button></div>'+
+      '<button type="button" class="wa-preview-disable" id="waDisableShare">컬렉션 공유 중단</button>';
+    overlay.querySelector('#waShareContent').innerHTML=previewMarkup;
+    let currentBlob=null,currentUrl=null;
+    const image=overlay.querySelector('#waPreviewImage');
+    const render=async()=>{
+      overlay.querySelectorAll('[data-template]').forEach(b=>b.classList.toggle('is-active',b.dataset.template===options.template));
+      const blob=await renderCollectionCardBlob(share,options);
+      currentBlob=blob;
+      if(currentUrl)URL.revokeObjectURL(currentUrl);
+      currentUrl=URL.createObjectURL(blob);image.src=currentUrl;
+      overlay.querySelector('.wa-preview-loading').style.display='none';
+    };
+    overlay.querySelectorAll('[data-template]').forEach(button=>button.addEventListener('click',()=>{options.template=button.dataset.template;render()}));
+    overlay.querySelectorAll('[data-option]').forEach(input=>input.addEventListener('change',()=>{options[input.dataset.option]=input.checked;render()}));
+    overlay.querySelector('#waSaveImage').addEventListener('click',async()=>{
+      if(!currentBlob)return;
+      const url=URL.createObjectURL(currentBlob),a=document.createElement('a');
+      a.href=url;a.download='watch-archive-'+options.template+'.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    });
+    overlay.querySelector('#waCopyImage').addEventListener('click',async()=>{
+      if(!currentBlob)return;
+      try{await navigator.clipboard.write([new ClipboardItem({'image/png':currentBlob})]);toast('이미지 카드를 복사했어요')}
+      catch(error){toast('이미지 복사를 지원하지 않는 환경이에요. Save를 이용해줘')}
+    });
+    overlay.querySelector('#waCopyShareLink').addEventListener('click',()=>copyShareLink(shareUrl(share.token)));
+    overlay.querySelector('#waNativeShare').addEventListener('click',async()=>{
+      if(!currentBlob)return;
+      const file=new File([currentBlob],'watch-archive-collection.png',{type:'image/png'});
+      try{
+        if(navigator.share&&(!navigator.canShare||navigator.canShare({files:[file]})))await navigator.share({title:share.title,text:'My collection on WATCH ARCHIVE',url:shareUrl(share.token),files:[file]});
+        else await copyShareLink(shareUrl(share.token));
+      }catch(error){if(error.name!=='AbortError')toast('공유를 실행하지 못했어요')}
+    });
+    overlay.querySelector('#waEditShare').addEventListener('click',()=>openShareEditor(boxId));
+    overlay.querySelector('#waDisableShare').addEventListener('click',()=>disableCollectionShare(boxId));
+    render().catch(error=>{console.error(error);overlay.querySelector('.wa-preview-loading').textContent='이미지 미리보기를 만들지 못했어요.'});
+  }
+
+  async function openShareEditor(boxId) {
+    const box=collectionBoxes.find(x=>x.id===boxId);if(!box)return;
+    const existing=await getExisting(boxId);
+    const overlay=document.getElementById('collectionShareOverlay');
+    if(overlay)overlay.remove();
+    await openCollectionShareModal(boxId);
+    const current=document.getElementById('collectionShareOverlay');
+    if(existing&&current){
+      const title=current.querySelector('#waShareTitleInput');if(title)title.value=existing.title;
+      const desc=current.querySelector('#waShareDescriptionInput');if(desc)desc.value=existing.description||'';
+      const selected=new Set((existing.watch_items||[]).map(w=>w.watch_id).filter(Boolean));
+      if(selected.size)current.querySelectorAll('input[name="waShareWatch"]').forEach(input=>{input.checked=selected.has(input.value)});
+    }
+  }
+
+  async function renderCollectionCardBlob(share,options) {
+    const items=Array.isArray(share?.watch_items)?share.watch_items:[];
+    const template=options.template||'editorial';
+    const width=1080,height=template==='story'?1920:template==='gallery'?1080:1350;
+    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
+    const ctx=canvas.getContext('2d');
+    const dark=template==='gallery',bg=dark?'#171614':'#f5f3ee',ink=dark?'#f5f3ee':'#171717',muted=dark?'#aaa59b':'#77736b',line=dark?'#49453f':'#d9d5cc';
+    ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
+    const margin=template==='story'?72:76;
+    ctx.fillStyle=ink;ctx.font='600 25px Arial';ctx.fillText('WATCH ARCHIVE',margin,92);
+    ctx.fillStyle=muted;ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,92);ctx.textAlign='left';
+    ctx.strokeStyle=line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,125);ctx.lineTo(width-margin,125);ctx.stroke();
+    const hero=await loadCanvasImage(share.cover_image_url);
+    const heroY=template==='story'?170:160,heroH=template==='story'?520:template==='gallery'?350:400;
+    if(hero){const s=Math.max((width-margin*2)/hero.width,heroH/hero.height),sw=(width-margin*2)/s,sh=heroH/s;ctx.save();ctx.beginPath();ctx.rect(margin,heroY,width-margin*2,heroH);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,margin,heroY,width-margin*2,heroH);ctx.restore()}
+    else{ctx.fillStyle=dark?'#302d29':'#e7e2d8';ctx.fillRect(margin,heroY,width-margin*2,heroH)}
+    let y=heroY+heroH+82;
+    ctx.fillStyle=ink;ctx.font=(template==='story'?'64px':'58px')+' Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,30),margin,y,width-margin*2);y+=54;
+    if(options.nickname){ctx.fillStyle=muted;ctx.font='22px Arial';ctx.fillText('CURATED BY WATCH ARCHIVE COLLECTOR',margin,y);y+=43}
+    if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='22px Georgia';const note=String(share.description).slice(0,150);ctx.fillText(note,margin,y,width-margin*2);y+=58}
+    if(options.count){ctx.fillStyle=muted;ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,y);y+=35}
+    const story=template==='story',cols=template==='gallery'?2:2,gap=24,tileW=(width-margin*2-gap)/cols;
+    const imageH=template==='story'?300:template==='gallery'?250:245;
+    const startY=Math.max(y+18,template==='story'?1000:template==='gallery'?690:790);
+    for(let i=0;i<items.length;i++){
+      const w=items[i],x=margin+(i%cols)*(tileW+gap),row=Math.floor(i/cols),top=startY+row*(imageH+125);
+      if(top+imageH+100>height-100)break;
+      const photo=await loadCanvasImage(w.image_url);
+      ctx.fillStyle=dark?'#302d29':'#e7e2d8';ctx.fillRect(x,top,tileW,imageH);
+      if(photo){const s=Math.max(tileW/photo.width,imageH/photo.height),sw=tileW/s,sh=imageH/s;ctx.save();ctx.beginPath();ctx.rect(x,top,tileW,imageH);ctx.clip();ctx.drawImage(photo,(photo.width-sw)/2,(photo.height-sh)/2,sw,sh,x,top,tileW,imageH);ctx.restore()}
+      ctx.fillStyle=muted;ctx.font='17px Arial';ctx.fillText(String(w.brand||'').toUpperCase().slice(0,30),x,top+imageH+32);
+      ctx.fillStyle=ink;ctx.font='27px Georgia';ctx.fillText(String(w.model||'').slice(0,27),x,top+imageH+68,tileW);
+      if(options.details){ctx.fillStyle=muted;ctx.font='16px Arial';ctx.fillText([w.reference,w.size].filter(Boolean).join(' · ').slice(0,45),x,top+imageH+98,tileW)}
+    }
+    ctx.strokeStyle=line;ctx.beginPath();ctx.moveTo(margin,height-82);ctx.lineTo(width-margin,height-82);ctx.stroke();
+    ctx.fillStyle=muted;ctx.font='16px Arial';ctx.fillText('WATCH ARCHIVE  /  A PERSONAL ARCHIVE OF TIMEPIECES',margin,height-48);
+    return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('이미지 생성 실패')),'image/png'));
   }
   async function copyShareLink(link) {
     try { await navigator.clipboard.writeText(link); toast('공유 링크를 복사했어요'); }
@@ -116,12 +222,8 @@
       else result=await supabaseClient.from('collection_shares').insert(payload).select().single();
       if(result.error)throw result.error;
       oldUrls.forEach(url=>{const path=publicPath(url);if(path)supabaseClient.storage.from(bucket).remove([path]).then(({error})=>{if(error)console.warn('Share image cleanup failed',error)})});
-      const link=shareUrl(token);
-      overlay.querySelector('#waShareContent').innerHTML='<div class="wa-share-success"><span class="wa-share-status">SHARING ACTIVE</span><h3>컬렉션이 준비됐어요.</h3><p>아래 링크를 가진 사람만 컬렉션을 볼 수 있어요.</p><input id="waShareLink" readonly value="'+escShare(link)+'"><div class="wa-share-actions"><button class="box-action" id="waCopyLink">링크 복사</button><button class="box-action primary" id="waDownloadCard">이미지 카드 저장</button></div><button class="wa-share-disable" id="waDisableShare">공유 중단</button></div>';
-      overlay.querySelector('#waCopyLink').addEventListener('click',()=>copyShareLink(link));
-      overlay.querySelector('#waDownloadCard').addEventListener('click',()=>downloadCollectionCard(result.data));
-      overlay.querySelector('#waDisableShare').addEventListener('click',()=>disableCollectionShare(boxId));
       toast('컬렉션 공유 링크를 만들었어요');
+      openCollectionSharePreview(result.data,boxId);
     } catch(error) {
       console.error('Create share failed',error);toast('공유 페이지 생성 실패: '+(error.message||error));
       button.disabled=false;button.textContent='다시 시도';
@@ -141,23 +243,7 @@
   function loadCanvasImage(url) {
     return new Promise(resolve=>{if(!url)return resolve(null);const image=new Image();image.crossOrigin='anonymous';image.onload=()=>resolve(image);image.onerror=()=>resolve(null);image.src=url});
   }
-  async function downloadCollectionCard(share) {
-    const items=Array.isArray(share?.watch_items)?share.watch_items:[];
-    if(!items.length)return toast('이미지 카드에 넣을 시계가 없어요');
-    const width=1080,margin=76,gap=28,tileW=(width-margin*2-gap)/2,rows=Math.ceil(items.length/2),height=320+410+210+rows*370+110;
-    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');
-    ctx.fillStyle='#f5f3ee';ctx.fillRect(0,0,width,height);ctx.fillStyle='#171717';ctx.font='600 24px Arial';ctx.fillText('WATCH ARCHIVE',margin,78);
-    ctx.strokeStyle='#cfc9bd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,112);ctx.lineTo(width-margin,112);ctx.stroke();
-    const hero=await loadCanvasImage(share.cover_image_url);
-    if(hero){const scale=Math.max((width-margin*2)/hero.width,410/hero.height),sw=(width-margin*2)/scale,sh=410/scale;ctx.save();ctx.beginPath();ctx.rect(margin,150,width-margin*2,410);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,margin,150,width-margin*2,410);ctx.restore()}else{ctx.fillStyle='#e7e2d8';ctx.fillRect(margin,150,width-margin*2,410)}
-    ctx.fillStyle='#171717';ctx.font='52px Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,28),margin,635);
-    ctx.fillStyle='#77736b';ctx.font='22px Arial';if(share.description)ctx.fillText(String(share.description).slice(0,110),margin,680,width-margin*2);
-    ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,735);
-    for(let i=0;i<items.length;i++){const w=items[i],x=margin+(i%2)*(tileW+gap),y=780+Math.floor(i/2)*370,img=await loadCanvasImage(w.image_url);ctx.fillStyle='#e7e2d8';ctx.fillRect(x,y,tileW,250);if(img){const scale=Math.max(tileW/img.width,250/img.height),sw=tileW/scale,sh=250/scale;ctx.save();ctx.beginPath();ctx.rect(x,y,tileW,250);ctx.clip();ctx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,x,y,tileW,250);ctx.restore()}ctx.fillStyle='#77736b';ctx.font='17px Arial';ctx.fillText(String(w.brand||'').toUpperCase().slice(0,30),x,y+285);ctx.fillStyle='#171717';ctx.font='29px Georgia';ctx.fillText(String(w.model||'').slice(0,26),x,y+325,tileW);ctx.fillStyle='#77736b';ctx.font='17px Arial';ctx.fillText([w.reference,w.size].filter(Boolean).join(' · ').slice(0,40),x,y+355,tileW)}
-    ctx.strokeStyle='#cfc9bd';ctx.beginPath();ctx.moveTo(margin,height-70);ctx.lineTo(width-margin,height-70);ctx.stroke();ctx.fillStyle='#77736b';ctx.font='16px Arial';ctx.fillText('A PERSONAL ARCHIVE OF TIMEPIECES',margin,height-35);
-    canvas.toBlob(blob=>{if(!blob)return toast('이미지 카드를 만들지 못했어요');const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='watch-archive-collection.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)},'image/png');
-  }
   window.openCollectionShareModal=openCollectionShareModal;
-  window.downloadCollectionCard=downloadCollectionCard;
+  window.openCollectionSharePreview=openCollectionSharePreview;
   if(activeBoxId)injectShareButton();
 })();
