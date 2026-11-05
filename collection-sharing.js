@@ -40,13 +40,13 @@
     overlay.querySelector('#waShareClose').addEventListener('click',()=>overlay.remove());
     return overlay;
   }
-  async function openCollectionShareModal(boxId) {
+  async function openCollectionShareModal(boxId,forceEditor=false) {
     if(!currentUser)return toast('로그인 후 이용해줘');
     const box=collectionBoxes.find(x=>x.id===boxId); if(!box)return;
     const overlay=makeModal('<div class="wa-share-loading">공유 설정을 불러오고 있어요…</div>');
     try {
       const existing=await getExisting(boxId);
-      if(existing?.is_active){openCollectionSharePreview(existing,boxId);return}
+      if(existing?.is_active&&!forceEditor){openCollectionSharePreview(existing,boxId);return}
       const rows=boxItems(boxId).map(item=>({item,watch:boxWatch(item.watch_id)})).filter(x=>x.watch);
       const choices=rows.map(({item,watch})=>{
         const photo=cover(watch);
@@ -57,6 +57,10 @@
         '<div class="field"><label for="waShareTitleInput">COLLECTION TITLE</label><input id="waShareTitleInput" maxlength="80" value="'+escShare(existing?.title||box.name)+'"></div>'+
         '<div class="field"><label for="waShareDescriptionInput">COLLECTOR’S NOTE</label><textarea id="waShareDescriptionInput" rows="3" maxlength="500">'+escShare(existing?.description??box.description??'')+'</textarea></div>'+
         '<div class="wa-share-section-head"><strong>공개할 시계</strong><span>'+rows.length+' PIECES</span></div><div class="wa-share-watch-list">'+(choices||'<div class="wa-share-empty">이 컬렉션에 등록된 시계가 없습니다.</div>')+'</div>'+
+        '<div class="wa-share-section-head"><strong>대표 사진</strong><span>HERO IMAGE</span></div>'+
+        '<div class="wa-share-cover-options"><label><input type="radio" name="waShareCover" value="auto" checked><span>컬렉션 기본 사진 사용</span></label>'+
+        rows.map(({item,watch})=>{const p=(watch.photos||[]).find(x=>x.cover)||(watch.photos||[])[0];return p?.path?'<label><input type="radio" name="waShareCover" value="'+escShare(item.id)+'"><span class="wa-share-cover-thumb"><img src="'+escShare(cover(watch)||'')+'" alt=""></span><span>'+escShare((watch.brand||'')+' '+(watch.model||''))+'</span></label>':''}).join('')+
+        '<label class="wa-share-upload-cover"><span>＋</span><span>별도 대표 사진 업로드</span><input type="file" id="waShareCoverUpload" accept="image/jpeg,image/png,image/webp"></label></div>'+
         '<div class="wa-share-privacy"><span>↗</span><span><strong>링크를 가진 사람만 열람</strong><small>공개 목록이나 검색 결과에는 노출되지 않아.</small></span></div>'+
         '<button class="action primary wa-share-save" id="waCreateShare" '+(rows.length?'':'disabled')+'>'+(existing?'공유 설정 업데이트':'공유 링크 만들기')+'</button>';
       overlay.querySelector('#waCreateShare').addEventListener('click',()=>saveCollectionShare(boxId));
@@ -128,7 +132,7 @@
     const existing=await getExisting(boxId);
     const overlay=document.getElementById('collectionShareOverlay');
     if(overlay)overlay.remove();
-    await openCollectionShareModal(boxId);
+    await openCollectionShareModal(boxId,true);
     const current=document.getElementById('collectionShareOverlay');
     if(existing&&current){
       const title=current.querySelector('#waShareTitleInput');if(title)title.value=existing.title;
@@ -200,7 +204,7 @@
     const button=overlay.querySelector('#waCreateShare');
     const title=overlay.querySelector('#waShareTitleInput')?.value.trim();
     const description=overlay.querySelector('#waShareDescriptionInput')?.value.trim()||'';
-    const ids=[...overlay.querySelectorAll('input[name="waShareWatch"]:checked')].map(x=>x.value);
+    const ids=[...overlay.querySelectorAll('input[name="waShareWatch"]:checked')].map(x=>x.value);\n    const coverChoice=overlay.querySelector('input[name="waShareCover"]:checked')?.value||'auto';\n    const coverFile=overlay.querySelector('#waShareCoverUpload')?.files?.[0]||null;
     if(!title)return toast('컬렉션 이름을 입력해줘');
     if(!ids.length)return toast('공개할 시계를 한 개 이상 선택해줘');
     button.disabled=true;button.textContent='공유 페이지를 준비하고 있어요…';
@@ -215,7 +219,16 @@
         publicWatches.push({brand:String(watch.brand||''),model:String(watch.model||''),reference:String(watch.reference||''),size:String(watch.size||''),movement:String(watch.movement||''),role_note:String(item.role_note||''),image_url:imageUrl});
       }
       let coverUrl='';
-      if(box.cover_image_path)coverUrl=await uploadPublicCopy(box.cover_image_path,token,'cover');
+      if(coverFile){
+        const mime=coverFile.type||'image/jpeg',ext=mime.includes('png')?'png':mime.includes('webp')?'webp':'jpg';
+        const path=currentUser.id+'/'+token+'/hero-'+crypto.randomUUID()+'.'+ext;
+        const {error:uploadError}=await supabaseClient.storage.from(bucket).upload(path,coverFile,{contentType:mime,cacheControl:'31536000',upsert:false});
+        if(uploadError)throw uploadError;
+        coverUrl=supabaseClient.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+      } else if(coverChoice!=='auto'){
+        const coverIndex=selected.findIndex(x=>x.item.id===coverChoice);
+        coverUrl=publicWatches[coverIndex]?.image_url||'';
+      } else if(box.cover_image_path)coverUrl=await uploadPublicCopy(box.cover_image_path,token,'cover');
       else {
         const coverIndex=Math.max(0,selected.findIndex(x=>x.watch.id===box.cover_watch_id));
         coverUrl=publicWatches[coverIndex]?.image_url||publicWatches[0]?.image_url||'';
