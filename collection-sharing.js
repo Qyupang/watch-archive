@@ -128,9 +128,14 @@
     }
   }
   async function disableCollectionShare(boxId) {
-    if(!confirm('이 컬렉션의 공유를 중단할까요? 기존 링크는 더 이상 열리지 않습니다.'))return;
+    if(!confirm('이 컬렉션의 공유를 중단할까요? 기존 링크와 공유 이미지가 더 이상 열리지 않도록 처리합니다.'))return;
+    const {data:share,error:readError}=await supabaseClient.from('collection_shares').select('cover_image_url,watch_items').eq('box_id',boxId).eq('user_id',currentUser.id).maybeSingle();
+    if(readError)return toast('공유 정보를 확인하지 못했어요: '+readError.message);
     const {error}=await supabaseClient.from('collection_shares').update({is_active:false,updated_at:new Date().toISOString()}).eq('box_id',boxId).eq('user_id',currentUser.id);
     if(error)return toast('공유 중단에 실패했어요: '+error.message);
+    const urls=[share?.cover_image_url,...(share?.watch_items||[]).map(item=>item.image_url)].filter(Boolean);
+    const paths=[...new Set(urls.map(publicPath).filter(Boolean))];
+    if(paths.length){const {error:removeError}=await supabaseClient.storage.from(bucket).remove(paths);if(removeError)console.warn('Disabled share images cleanup failed',removeError)}
     toast('컬렉션 공유를 중단했어요');openCollectionShareModal(boxId);
   }
   function loadCanvasImage(url) {
