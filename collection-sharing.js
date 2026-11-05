@@ -167,22 +167,44 @@
     ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
     const hero=await loadCanvasImage(share.cover_image_url);
     if(template==='editorial'||template==='story'){
-      const heroH=template==='story'?1640:1120,heroY=0;
-      if(hero){const scale=Math.max(width/hero.width,heroH/hero.height),sw=width/scale,sh=heroH/scale;ctx.save();ctx.beginPath();ctx.rect(0,0,width,heroH);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,0,0,width,heroH);ctx.restore()}
-      else{ctx.fillStyle='#d8d0c4';ctx.fillRect(0,0,width,heroH)}
-      const gradient=ctx.createLinearGradient(0,heroH*.52,0,heroH);
-      gradient.addColorStop(0,'rgba(0,0,0,0)');gradient.addColorStop(1,'rgba(0,0,0,.72)');
+      // Full-bleed editorial: the photograph fills the entire card, with all copy layered over it.
+      const heroH=height;
+      if(hero){
+        const scale=Math.max(width/hero.width,heroH/hero.height),sw=width/scale,sh=heroH/scale;
+        ctx.save();ctx.beginPath();ctx.rect(0,0,width,heroH);ctx.clip();
+        ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,0,0,width,heroH);ctx.restore();
+      } else {ctx.fillStyle='#d8d0c4';ctx.fillRect(0,0,width,heroH)}
+      const gradient=ctx.createLinearGradient(0,0,0,heroH);
+      gradient.addColorStop(0,'rgba(0,0,0,.38)');
+      gradient.addColorStop(.38,'rgba(0,0,0,0)');
+      gradient.addColorStop(.62,'rgba(0,0,0,.05)');
+      gradient.addColorStop(1,'rgba(0,0,0,.76)');
       ctx.fillStyle=gradient;ctx.fillRect(0,0,width,heroH);
-      ctx.fillStyle='#fff';ctx.font='600 25px Arial';ctx.fillText('WATCH ARCHIVE',margin,template==='story'?100:86);
-      ctx.fillStyle='rgba(255,255,255,.78)';ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,template==='story'?100:86);ctx.textAlign='left';
+      ctx.fillStyle='#fff';ctx.font='600 25px Arial';
+      ctx.fillText('WATCH ARCHIVE',margin,template==='story'?100:86);
+      ctx.fillStyle='rgba(255,255,255,.8)';ctx.font='16px Arial';ctx.textAlign='right';
+      ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,template==='story'?100:86);ctx.textAlign='left';
       const title=String(share.title||'My Collection').slice(0,34);
-      ctx.fillStyle='#fff';ctx.font=(template==='story'?'72px':'68px')+' Georgia';
-      ctx.fillText(title,margin,heroH-(template==='story'?250:190),width-margin*2);
-      let metaY=heroH-(template==='story'?180:125);
-      if(options.nickname){const collector=currentUser?.user_metadata?.nickname||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';ctx.fillStyle='rgba(255,255,255,.86)';ctx.font='22px Arial';ctx.fillText('CURATED BY '+String(collector).toUpperCase().slice(0,38),margin,metaY);metaY+=38}
-      if(options.count){ctx.fillStyle='rgba(255,255,255,.8)';ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,metaY)}
-      ctx.fillStyle=ink;ctx.font='600 19px Arial';ctx.fillText('WATCH ARCHIVE',margin,height-55);
-      if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='18px Georgia';ctx.fillText(String(share.description).slice(0,105),margin,height-100,width-margin*2)}
+      const titleFont=template==='story'?76:70;
+      ctx.fillStyle='#fff';ctx.font=titleFont+'px Georgia';
+      const titleY=heroH-(template==='story'?310:250);
+      ctx.fillText(title,margin,titleY,width-margin*2);
+      let metaY=titleY+52;
+      if(options.nickname){
+        const collector=currentUser?.user_metadata?.nickname||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';
+        ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='21px Arial';
+        ctx.fillText('CURATED BY '+String(collector).toUpperCase().slice(0,38),margin,metaY);metaY+=38;
+      }
+      if(options.count){
+        ctx.fillStyle='rgba(255,255,255,.84)';ctx.font='18px Arial';
+        ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,metaY);metaY+=34;
+      }
+      if(options.note&&share.description){
+        ctx.fillStyle='rgba(255,255,255,.86)';ctx.font='19px Georgia';
+        ctx.fillText(String(share.description).replace(/\s+/g,' ').slice(0,100),margin,metaY,width-margin*2);
+      }
+      ctx.fillStyle='rgba(255,255,255,.88)';ctx.font='600 17px Arial';
+      ctx.fillText('WATCH ARCHIVE',margin,heroH-30);
     } else {
       ctx.fillStyle=ink;ctx.font='600 25px Arial';ctx.fillText('WATCH ARCHIVE',margin,86);
       ctx.fillStyle=muted;ctx.font='16px Arial';ctx.textAlign='right';ctx.fillText('A PERSONAL WATCH ARCHIVE',width-margin,86);ctx.textAlign='left';
