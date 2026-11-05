@@ -1,29 +1,40 @@
 <!doctype html>
 <html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f5f3ee"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta property="og:site_name" content="WATCH ARCHIVE">
+<meta name="theme-color" content="#171614"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="no-referrer"><meta property="og:site_name" content="WATCH ARCHIVE">
 <title>Collection — WATCH ARCHIVE</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{--bg:#f5f3ee;--paper:#fffdf8;--ink:#171717;--muted:#77736b;--line:#d9d5cc;--soft:#ece9e2}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
-.page{width:min(100% - 36px,820px);margin:auto;padding:26px 0 70px}.masthead{display:flex;align-items:center;justify-content:space-between;padding:8px 0 20px;border-bottom:1px solid var(--line)}
-.wordmark{font:24px Georgia,serif;letter-spacing:.08em}.edition{font-size:9px;letter-spacing:.18em;color:var(--muted)}
-.hero{margin-top:24px}.hero-image{width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--soft);display:block}
-.kicker{margin-top:26px;font-size:9px;font-weight:700;letter-spacing:.2em;color:var(--muted)}
-h1{font:clamp(36px,8vw,58px)/1.06 Georgia,serif;letter-spacing:-.04em;margin:10px 0 12px;overflow-wrap:anywhere}
-.description{max-width:650px;color:#625e56;font:15px/1.85 Georgia,serif;white-space:pre-wrap}
-.collection-meta{display:flex;justify-content:space-between;gap:12px;margin:28px 0 14px;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);font-size:10px;letter-spacing:.13em;color:var(--muted)}
-.watch-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px}.watch{min-width:0}
+*{box-sizing:border-box}html{background:var(--bg)}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif}
+.page{width:100%;max-width:1100px;margin:auto}.hero{position:relative;min-height:min(88svh,980px);height:min(88svh,980px);background:#29241f;overflow:hidden;color:#fff}
+.hero-image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
+.hero:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.38) 0%,transparent 32%,rgba(0,0,0,.08) 52%,rgba(0,0,0,.72) 100%)}
+.hero-top,.hero-copy{position:absolute;z-index:1;left:clamp(24px,6vw,72px);right:clamp(24px,6vw,72px)}
+.hero-top{top:clamp(24px,5vw,54px);display:flex;align-items:center;justify-content:space-between}
+.wordmark{font:600 15px Georgia,serif;letter-spacing:.16em}.edition{font-size:9px;letter-spacing:.2em;color:rgba(255,255,255,.78)}
+.hero-copy{bottom:clamp(34px,7vw,78px)}
+.kicker{font-size:10px;letter-spacing:.2em;color:rgba(255,255,255,.78);margin-bottom:16px}
+h1{font:clamp(42px,8vw,88px)/.98 Georgia,serif;letter-spacing:-.045em;margin:0 0 18px;max-width:850px;text-wrap:balance}
+.hero-meta{font-size:10px;letter-spacing:.16em;color:rgba(255,255,255,.82)}
+.content{width:min(100% - 44px,900px);margin:0 auto;padding:64px 0 80px}
+.intro{max-width:670px;margin:0 auto 56px;text-align:center}
+.section-kicker{font-size:9px;letter-spacing:.22em;color:var(--muted);font-weight:700}
+.description{margin:15px auto 0;color:#625e56;font:clamp(16px,2.2vw,19px)/1.85 Georgia,serif;white-space:pre-wrap}
+.collection-heading{display:flex;justify-content:space-between;align-items:end;gap:16px;padding-bottom:15px;border-bottom:1px solid var(--line);margin-bottom:22px}
+.collection-heading h2{margin:0;font:34px Georgia,serif}.collection-count{font-size:10px;letter-spacing:.15em;color:var(--muted)}
+.watch-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:38px 22px}.watch{min-width:0}
 .watch-image{display:block;width:100%;aspect-ratio:4/4.5;object-fit:cover;background:var(--soft)}
-.watch-brand{margin-top:12px;font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;text-transform:uppercase}
-.watch-model{margin-top:5px;font:clamp(19px,4vw,25px)/1.2 Georgia,serif;overflow-wrap:anywhere}
-.watch-meta{margin-top:6px;color:var(--muted);font-size:11px}.watch-role{margin-top:9px;color:#625e56;font:italic 12px/1.6 Georgia,serif;white-space:pre-wrap}
-.footer{margin-top:45px;padding-top:18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:9px;letter-spacing:.14em}
-.actions{display:flex;justify-content:center;margin:24px 0}.button{min-height:46px;padding:0 18px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);font-size:12px;letter-spacing:.04em}
-.state{padding:70px 20px;text-align:center;color:var(--muted);line-height:1.8}.state strong{display:block;color:var(--ink);font:28px Georgia,serif;margin-bottom:10px}
-@media(max-width:560px){.page{width:min(100% - 30px,820px);padding-top:18px}.wordmark{font-size:21px}.watch-list{gap:20px 10px}.watch-model{font-size:18px}.description{font-size:14px}.collection-meta{font-size:9px}}
-@media(prefers-color-scheme:dark){body{background:#171614;color:#f1eee7}.masthead,.collection-meta,.footer{border-color:#3b3833}.description,.watch-role{color:#b9b3a8}.watch-image,.hero-image{background:#302d29}.kicker,.edition,.watch-brand,.watch-meta,.collection-meta,.footer{color:#aaa59b}.button{background:#f1eee7;color:#171614;border-color:#f1eee7}}
+.watch-brand{margin-top:15px;font-size:9px;letter-spacing:.18em;color:var(--muted);font-weight:700;text-transform:uppercase}
+.watch-model{margin-top:7px;font:clamp(21px,3vw,29px)/1.15 Georgia,serif;overflow-wrap:anywhere}
+.watch-meta{margin-top:8px;color:var(--muted);font-size:11px;letter-spacing:.03em}
+.watch-role{margin-top:10px;color:#625e56;font:italic 13px/1.7 Georgia,serif;white-space:pre-wrap}
+.footer{margin-top:70px;padding-top:20px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:9px;letter-spacing:.16em}
+.state{min-height:70svh;display:grid;place-content:center;text-align:center;color:var(--muted);line-height:1.8;padding:30px}
+.state strong{display:block;color:var(--ink);font:30px Georgia,serif;margin-bottom:10px}
+@media(min-width:760px){.watch-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:46px 26px}.hero{min-height:780px}}
+@media(max-width:560px){.hero{height:82svh;min-height:590px}.content{width:calc(100% - 36px);padding:48px 0 60px}.intro{margin-bottom:42px}.watch-list{gap:28px 12px}.watch-model{font-size:19px}.watch-brand{font-size:8px}.watch-meta{font-size:10px}.collection-heading h2{font-size:28px}.footer{font-size:8px}}
+@media(prefers-color-scheme:dark){html,body{background:#171614;color:#f1eee7}.description,.watch-role{color:#b9b3a8}.collection-heading,.footer{border-color:#3b3833}.section-kicker,.collection-count,.watch-brand,.watch-meta,.footer{color:#aaa59b}.watch-image{background:#302d29}}
 </style></head><body>
 <main class="page" id="app"><div class="state"><strong>WATCH ARCHIVE</strong>컬렉션을 불러오고 있어요.</div></main>
 <script>
@@ -31,32 +42,23 @@ const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co";
 const SUPABASE_KEY="sb_publishable_9VmErfXpK1W4RK1BhGI5vA_3-EY0oKd";
 const client=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
-function loadImage(url){return new Promise(resolve=>{if(!url)return resolve(null);const img=new Image();img.crossOrigin='anonymous';img.onload=()=>resolve(img);img.onerror=()=>resolve(null);img.src=url})}
-async function downloadCard(share){
- const items=Array.isArray(share.watch_items)?share.watch_items:[],width=1080,margin=76,gap=28,tileW=(width-margin*2-gap)/2,rows=Math.ceil(items.length/2),height=320+410+210+rows*370+110;
- const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');
- ctx.fillStyle='#f5f3ee';ctx.fillRect(0,0,width,height);ctx.fillStyle='#171717';ctx.font='600 24px Arial';ctx.fillText('WATCH ARCHIVE',margin,78);
- ctx.strokeStyle='#cfc9bd';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,112);ctx.lineTo(width-margin,112);ctx.stroke();
- const hero=await loadImage(share.cover_image_url);
- if(hero){const s=Math.max((width-margin*2)/hero.width,410/hero.height),sw=(width-margin*2)/s,sh=410/s;ctx.save();ctx.beginPath();ctx.rect(margin,150,width-margin*2,410);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,margin,150,width-margin*2,410);ctx.restore()}else{ctx.fillStyle='#e7e2d8';ctx.fillRect(margin,150,width-margin*2,410)}
- ctx.fillStyle='#171717';ctx.font='52px Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,28),margin,635);
- ctx.fillStyle='#77736b';ctx.font='22px Arial';if(share.description)ctx.fillText(String(share.description).slice(0,110),margin,680,width-margin*2);
- ctx.font='18px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,735);
- for(let i=0;i<items.length;i++){const w=items[i],x=margin+(i%2)*(tileW+gap),y=780+Math.floor(i/2)*370,img=await loadImage(w.image_url);ctx.fillStyle='#e7e2d8';ctx.fillRect(x,y,tileW,250);if(img){const s=Math.max(tileW/img.width,250/img.height),sw=tileW/s,sh=250/s;ctx.save();ctx.beginPath();ctx.rect(x,y,tileW,250);ctx.clip();ctx.drawImage(img,(img.width-sw)/2,(img.height-sh)/2,sw,sh,x,y,tileW,250);ctx.restore()}ctx.fillStyle='#77736b';ctx.font='17px Arial';ctx.fillText(String(w.brand||'').toUpperCase().slice(0,30),x,y+285);ctx.fillStyle='#171717';ctx.font='29px Georgia';ctx.fillText(String(w.model||'').slice(0,26),x,y+325,tileW);ctx.fillStyle='#77736b';ctx.font='17px Arial';ctx.fillText([w.reference,w.size].filter(Boolean).join(' · ').slice(0,40),x,y+355,tileW)}
- ctx.strokeStyle='#cfc9bd';ctx.beginPath();ctx.moveTo(margin,height-70);ctx.lineTo(width-margin,height-70);ctx.stroke();ctx.fillStyle='#77736b';ctx.font='16px Arial';ctx.fillText('A PERSONAL ARCHIVE OF TIMEPIECES',margin,height-35);
- canvas.toBlob(blob=>{if(!blob)return;const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='watch-archive-collection.png';a.click();setTimeout(()=>URL.revokeObjectURL(url),1500)},'image/png');
-}
 (async()=>{
  const token=new URLSearchParams(location.search).get('token');
  if(!token){document.getElementById('app').innerHTML='<div class="state"><strong>Collection not found</strong>유효하지 않은 공유 링크예요.</div>';return}
  const {data:share,error}=await client.rpc('get_collection_share',{p_token:token});
  if(error||!share){document.getElementById('app').innerHTML='<div class="state"><strong>Collection unavailable</strong>공유가 중단되었거나 존재하지 않는 링크예요.</div>';return}
- const items=Array.isArray(share.watch_items)?share.watch_items:[];document.title=(share.title||'Collection')+' — WATCH ARCHIVE';
- document.getElementById('app').innerHTML='<header class="masthead"><div class="wordmark">WATCH ARCHIVE</div><div class="edition">A PRIVATE COLLECTION</div></header>'+
- '<section class="hero">'+(share.cover_image_url?'<img class="hero-image" src="'+esc(share.cover_image_url)+'" alt="">':'<div class="hero-image"></div>')+'<div class="kicker">A PERSONAL WATCH ARCHIVE</div><h1>'+esc(share.title)+'</h1>'+(share.description?'<p class="description">'+esc(share.description)+'</p>':'')+'</section>'+
- '<div class="collection-meta"><span>'+String(items.length).padStart(2,'0')+' TIMEPIECES</span><span>CURATED WITH INTENTION</span></div>'+
- '<section class="watch-list">'+items.map(w=>'<article class="watch">'+(w.image_url?'<img class="watch-image" src="'+esc(w.image_url)+'" alt="'+esc((w.brand||'')+' '+(w.model||''))+'" loading="lazy">':'<div class="watch-image"></div>')+'<div class="watch-brand">'+esc(w.brand||'')+'</div><div class="watch-model">'+esc(w.model||'Untitled')+'</div><div class="watch-meta">'+esc([w.reference,w.size,w.movement].filter(Boolean).join(' · '))+'</div>'+(w.role_note?'<div class="watch-role">'+esc(w.role_note)+'</div>':'')+'</article>').join('')+'</section>'+
- '<div class="actions"><button class="button" id="downloadCard">SAVE COLLECTION CARD</button></div><footer class="footer"><span>WATCH ARCHIVE</span><span>A PERSONAL ARCHIVE OF TIMEPIECES</span></footer>';
- document.getElementById('downloadCard').addEventListener('click',()=>downloadCard(share));
+ const items=Array.isArray(share.watch_items)?share.watch_items:[];
+ document.title=(share.title||'Collection')+' — WATCH ARCHIVE';
+ const hero=share.cover_image_url?'<img class="hero-image" src="'+esc(share.cover_image_url)+'" alt="">':'<div class="hero-image"></div>';
+ document.getElementById('app').innerHTML=
+ '<section class="hero">'+hero+
+ '<div class="hero-top"><div class="wordmark">WATCH ARCHIVE</div><div class="edition">A PERSONAL ARCHIVE</div></div>'+
+ '<div class="hero-copy"><div class="kicker">A COLLECTION OF TIME</div><h1>'+esc(share.title||'My Collection')+'</h1><div class="hero-meta">'+(share.collector_name?'CURATED BY '+esc(share.collector_name).toUpperCase()+'　·　':'')+String(items.length).padStart(2,'0')+' TIMEPIECES</div></div></section>'+
+ '<section class="content">'+
+ (share.description?'<div class="intro"><div class="section-kicker">COLLECTOR’S NOTE</div><p class="description">'+esc(share.description)+'</p></div>':'')+
+ '<div class="collection-heading"><h2>The Collection</h2><span class="collection-count">'+String(items.length).padStart(2,'0')+' PIECES</span></div>'+
+ '<section class="watch-list">'+items.map(w=>'<article class="watch">'+(w.image_url?'<img class="watch-image" src="'+esc(w.image_url)+'" alt="'+esc((w.brand||'')+' '+(w.model||''))+'" loading="lazy">':'<div class="watch-image"></div>')+
+ '<div class="watch-brand">'+esc(w.brand||'')+'</div><div class="watch-model">'+esc(w.model||'Untitled')+'</div><div class="watch-meta">'+esc([w.reference,w.size,w.movement].filter(Boolean).join(' · '))+'</div>'+(w.role_note?'<div class="watch-role">'+esc(w.role_note)+'</div>':'')+'</article>').join('')+'</section>'+
+ '<footer class="footer"><span>WATCH ARCHIVE</span><span>A PERSONAL ARCHIVE OF TIMEPIECES</span></footer></section>';
 })().catch(error=>{console.error(error);document.getElementById('app').innerHTML='<div class="state"><strong>Something went wrong</strong>컬렉션을 불러오지 못했어요.</div>'});
 </script></body></html>
