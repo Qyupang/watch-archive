@@ -17,21 +17,34 @@
       .eq('box_id',boxId).eq('user_id',currentUser.id).maybeSingle();
     if(error) throw error; return data;
   }
+  async function getCollectorProfile() {
+    const {data,error}=await supabaseClient.from('profiles').select('collector_name,bio,avatar_url,show_collector_name').eq('id',currentUser.id).maybeSingle();
+    if(error)throw error;
+    return data||{
+      collector_name:currentUser.user_metadata?.nickname||currentUser.user_metadata?.full_name||currentUser.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR',
+      show_collector_name:true
+    };
+  }
   async function syncBoxDetailsToShare(share,box) {
     if(!share||!box)return share;
+    const profile=await getCollectorProfile();
     const nextTitle=String(box.name||'My Collection').slice(0,80);
     const nextDescription=String(box.description||'').slice(0,500);
+    const nextCollector=String(profile.collector_name||'WATCH ARCHIVE COLLECTOR').slice(0,60);
+    const nextShowCollector=profile.show_collector_name!==false;
     const source=share.cover_source||'box';
     let coverFields={};
     if(box.cover_image_path&&source==='box'&&share.cover_source_path!==box.cover_image_path){
       const nextUrl=await uploadPublicCopy(box.cover_image_path,share.token,'cover');
       coverFields={cover_image_url:nextUrl,cover_source:'box',cover_source_path:box.cover_image_path};
     }
-    const changed=share.title!==nextTitle||String(share.description||'')!==nextDescription||Object.keys(coverFields).length>0;
+    const changed=share.title!==nextTitle||String(share.description||'')!==nextDescription||share.collector_name!==nextCollector||share.show_collector_name!==nextShowCollector||Object.keys(coverFields).length>0;
     if(!changed)return share;
     const {data,error}=await supabaseClient.from('collection_shares').update({
       title:nextTitle,
       description:nextDescription,
+      collector_name:nextCollector,
+      show_collector_name:nextShowCollector,
       ...coverFields,
       updated_at:new Date().toISOString()
     }).eq('id',share.id).eq('user_id',currentUser.id).select().single();
@@ -100,14 +113,14 @@
   function openCollectionSharePreview(share,boxId) {
     const overlay=makeModal('<div class="wa-share-loading">이미지 미리보기를 준비하고 있어요…</div>');
     overlay.classList.add('wa-share-preview-overlay');
-    const options={template:'editorial',nickname:true,details:true,note:true,count:false};
+    const options={template:'editorial',nickname:share.show_collector_name!==false,details:true,note:true,count:false};
     const previewMarkup=
       '<div class="wa-preview-user"><span class="wa-preview-avatar">Q</span><span><strong>WATCH ARCHIVE</strong><small>COLLECTION PREVIEW</small></span><button type="button" class="wa-preview-edit" id="waEditShare">편집</button></div>'+
       '<div class="wa-preview-stage"><img id="waPreviewImage" alt="컬렉션 이미지 카드 미리보기"><div class="wa-preview-loading">카드를 렌더링하고 있어요…</div></div>'+
       '<div class="wa-preview-dots" aria-label="템플릿 선택"><button class="is-active" data-template="editorial">01</button><button data-template="gallery">02</button><button data-template="story">03</button></div>'+
       '<div class="wa-preview-label">SELECT INFORMATION</div>'+
       '<div class="wa-preview-toggles">'+
-      '<label><input type="checkbox" data-option="nickname" checked><span>컬렉터 이름</span></label>'+
+      '<label><input type="checkbox" data-option="nickname" '+(options.nickname?'checked':'')+'><span>컬렉터 이름</span></label>'+
       '<label><input type="checkbox" data-option="note" checked><span>컬렉션 소개</span></label></div>'+
       '<div class="wa-preview-actions">'+
       '<button type="button" id="waSaveImage"><span>↓</span><strong>Save image</strong></button>'+
@@ -184,7 +197,7 @@
       ctx.fillText(title,margin,titleY,width-margin*2);
       let metaY=titleY+52;
       if(options.nickname){
-        const collector=currentUser?.user_metadata?.nickname||currentUser?.user_metadata?.full_name||currentUser?.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';
+        const collector=share.collector_name||'WATCH ARCHIVE COLLECTOR';
         ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='21px Arial';
         ctx.fillText('CURATED BY '+String(collector).toUpperCase().slice(0,38),margin,metaY);metaY+=38;
       }
@@ -205,7 +218,7 @@
       if(hero){const scale=Math.max((width-margin*2)/hero.width,330/hero.height),sw=(width-margin*2)/scale,sh=330/scale;ctx.save();ctx.beginPath();ctx.rect(margin,145,width-margin*2,330);ctx.clip();ctx.drawImage(hero,(hero.width-sw)/2,(hero.height-sh)/2,sw,sh,margin,145,width-margin*2,330);ctx.restore()}
       ctx.fillStyle=ink;ctx.font='58px Georgia';ctx.fillText(String(share.title||'My Collection').slice(0,30),margin,550,width-margin*2);
       let y=595;
-      if(options.nickname){ctx.fillStyle=muted;ctx.font='19px Arial';ctx.fillText('CURATED BY WATCH ARCHIVE COLLECTOR',margin,y);y+=32}
+      if(options.nickname){ctx.fillStyle=muted;ctx.font='19px Arial';ctx.fillText('CURATED BY '+String(share.collector_name||'WATCH ARCHIVE COLLECTOR').toUpperCase().slice(0,38),margin,y);y+=32}
       if(options.note&&share.description){ctx.fillStyle=muted;ctx.font='18px Georgia';ctx.fillText(String(share.description).slice(0,90),margin,y,width-margin*2);y+=44}
       if(options.count){ctx.fillStyle=muted;ctx.font='16px Arial';ctx.fillText(String(items.length).padStart(2,'0')+' TIMEPIECES',margin,y);y+=28}
       const gap=20,tileW=(width-margin*2-gap)/2,imageH=190,startY=Math.max(700,y+18);
@@ -268,10 +281,11 @@
       } else if(coverChoice==='auto'&&box.cover_image_path)coverUrl=await uploadPublicCopy(box.cover_image_path,token,'cover');
       else if(coverChoice==='keep')coverUrl=old?.cover_image_url||'';
       if(!coverUrl)throw new Error('컬렉션 대표 사진을 먼저 등록하거나 공유용 대표 사진을 업로드해줘.');
-      const collectorName=currentUser.user_metadata?.nickname||currentUser.user_metadata?.full_name||currentUser.email?.split('@')[0]||'WATCH ARCHIVE COLLECTOR';
+      const profile=await getCollectorProfile();
+      const collectorName=profile.collector_name||'WATCH ARCHIVE COLLECTOR';
       const coverSource=coverChoice==='keep'?(old?.cover_source||'upload'):coverFile?'upload':'box';
       const coverSourcePath=coverChoice==='keep'?(old?.cover_source_path||null):coverFile?null:box.cover_image_path||null;
-      const payload={user_id:currentUser.id,box_id:boxId,token,title:title.slice(0,80),description:description.slice(0,500),collector_name:String(collectorName).slice(0,60),cover_image_url:coverUrl,cover_source:coverSource,cover_source_path:coverSourcePath,watch_items:publicWatches,is_active:true,updated_at:new Date().toISOString()};
+      const payload={user_id:currentUser.id,box_id:boxId,token,title:title.slice(0,80),description:description.slice(0,500),collector_name:String(collectorName).slice(0,60),show_collector_name:profile.show_collector_name!==false,cover_image_url:coverUrl,cover_source:coverSource,cover_source_path:coverSourcePath,watch_items:publicWatches,is_active:true,updated_at:new Date().toISOString()};
       let result;
       if(old?.id)result=await supabaseClient.from('collection_shares').update(payload).eq('id',old.id).eq('user_id',currentUser.id).select().single();
       else result=await supabaseClient.from('collection_shares').insert(payload).select().single();
