@@ -1225,7 +1225,7 @@ function nav(active='watches'){
 }
 
 
-const mainTabScrollPositions={watches:null,boxes:null,timeline:null,portfolio:null,wear:null,photos:null,settings:null,profile:null,more:null};
+const mainTabScrollPositions={watches:null,boxes:null,timeline:null,portfolio:null,wear:null,photos:null,settings:null,profile:null,more:null,ai:null};
 let activeMainTab='watches';
 function mainPageScrollY(){
  const y=window.scrollY;
@@ -1243,7 +1243,7 @@ function restoreMainTabScroll(y){
  }));
 }
 function navigateMainTab(next){
- const allowed=['watches','boxes','timeline','portfolio','wear','photos','settings','profile','more'];
+ const allowed=['watches','boxes','timeline','portfolio','wear','photos','settings','profile','more','ai'];
  const target=allowed.includes(next)?next:'watches';
  if(target===activeMainTab)return;
  mainTabScrollPositions[activeMainTab]=mainPageScrollY();
@@ -1257,6 +1257,7 @@ function navigateMainTab(next){
  else if(target==='photos')photosPage();
  else if(target==='settings')settings();
  else if(target==='profile')profilePage();
+ else if(target==='ai')watchArchiveAiPage();
  else morePage();
  restoreMainTabScroll(restoreY===null?0:restoreY);
 }
@@ -1723,14 +1724,14 @@ async function loadWatchHistory(watchId){
  const section=document.getElementById('watchHistorySection');if(!section||!currentUser)return;
  const {data,error}=await supabaseClient.from('watch_history').select('*').eq('user_id',currentUser.id).eq('watch_id',watchId).order('event_date',{ascending:false}).order('created_at',{ascending:false});
  if(error){console.error('Watch history load failed',error);section.innerHTML='<div class="small">히스토리를 불러오지 못했어요.</div>';return}
- watchHistoryCache.set(watchId,data||[]);const w=watches.find(x=>String(x.id)===String(watchId));
+ watchHistoryCache.set(watchId,data||[]);try{const cached=JSON.parse(localStorage.getItem('watchArchiveAiHistory_v1:'+currentUser.id)||'[]');const merged=cached.filter(x=>x.watch_id!==watchId).concat(data||[]);localStorage.setItem('watchArchiveAiHistory_v1:'+currentUser.id,JSON.stringify(merged))}catch(e){}const w=watches.find(x=>String(x.id)===String(watchId));
  if(section.isConnected){section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,false);section.onclick=null;}
 }
 async function loadWatchHistoryEditor(watchId){
  const section=document.getElementById('watchHistoryEditorSection');if(!section||!currentUser)return;
  const {data,error}=await supabaseClient.from('watch_history').select('*').eq('user_id',currentUser.id).eq('watch_id',watchId).order('event_date',{ascending:false}).order('created_at',{ascending:false});
  if(error){console.error('Watch history editor load failed',error);if(section.isConnected)section.innerHTML='<div class="small">히스토리를 불러오지 못했어요. 다시 열어 확인해줘.</div>';return}
- watchHistoryCache.set(watchId,data||[]);if(!section.isConnected||String(editing)!==String(watchId))return;
+ watchHistoryCache.set(watchId,data||[]);try{const cached=JSON.parse(localStorage.getItem('watchArchiveAiHistory_v1:'+currentUser.id)||'[]');const merged=cached.filter(x=>x.watch_id!==watchId).concat(data||[]);localStorage.setItem('watchArchiveAiHistory_v1:'+currentUser.id,JSON.stringify(merged))}catch(e){}if(!section.isConnected||String(editing)!==String(watchId))return;
  const w=watches.find(x=>String(x.id)===String(watchId));section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,true);
  section.onclick=(event)=>{const button=event.target.closest('[data-watch-history-add]');if(button)openWatchHistory(button.dataset.watchId||watchId);};
 }
@@ -2004,6 +2005,7 @@ async function wearPage(){
   const {data,error}=await supabaseClient.from('wear_logs').select('id,watch_id,wear_date,created_at').eq('user_id',currentUser.id).order('wear_date',{ascending:false});
   if(error)throw error;
   wearLogs=data||[];
+  try{localStorage.setItem('watchArchiveAiWear_v1:'+currentUser.id,JSON.stringify(wearLogs))}catch(e){}
   renderWearContent();
  }catch(e){console.error('Wear log load failed',e);const el=$('#wearContent');if(el)el.innerHTML='<div class="empty">착용 기록을 불러오지 못했어. Supabase 설정을 확인해줘.</div>'}
 }
@@ -2412,6 +2414,7 @@ async function saveCollectorProfile(){
 }
 function morePage(){
  const items=[
+  {key:'ai',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"/><circle cx="12" cy="12" r="5"/><path d="M10 12h4M12 10v4"/></svg>',title:'Archive AI',desc:'내 컬렉션과 착용 기록을 AI로 분석'},
   {key:'profile',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20c.8-4 3.3-6 7.5-6s6.7 2 7.5 6"/></svg>',title:'Profile',desc:'컬렉터 이름과 프로필 관리'},
   {key:'photos',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="15" rx="2"/><circle cx="9" cy="11" r="2"/><path d="m5 18 5-4 3 2 3-3 3.5 4"/></svg>',title:'Photos',desc:'전체 시계 사진 아카이브'},
   {key:'timeline',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19V5M5 5l-3 3M5 5l3 3M10 7h9M10 12h7M10 17h5"/></svg>',title:'Timeline',desc:'컬렉션의 구매 및 판매 기록'},
@@ -2490,5 +2493,5 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
 boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해주세요.')});
 
 (function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,1500),{once:true});setTimeout(hide,2200)})();
-</script><script src="collection-sharing.js"></script>
+</script><script src="watch-archive-ai.js"></script><script src="collection-sharing.js"></script>
 </body></html>
