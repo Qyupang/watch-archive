@@ -42,10 +42,10 @@ with seed(
 
     -- Seiko vintage divers and chronographs
     ('Seiko', '62MAS', '6217-8000', 'First-generation small-crown 62MAS',
-      38.2, 'Automatic', '6217A', 'Stainless steel', 'Acrylic',
+      null, 'Automatic', '6217A', 'Stainless steel', 'Acrylic',
       1965, 1965, 'https://www.theseikoguy.com/seiko-62mas/', 'community'),
     ('Seiko', '62MAS', '6217-8001', 'Later large-crown 62MAS',
-      38.2, 'Automatic', '6217A', 'Stainless steel', 'Acrylic',
+      null, 'Automatic', '6217A', 'Stainless steel', 'Acrylic',
       1965, 1968, 'https://www.theseikoguy.com/seiko-62mas/', 'community'),
     ('Seiko', '6105 Diver', '6105-8000', 'Early symmetrical-case diver',
       null, 'Automatic', '6105A', 'Stainless steel', 'Acrylic',
@@ -63,7 +63,7 @@ with seed(
       42.5, 'Quartz', '7548', 'Stainless steel', 'Hardlex',
       1978, 1985, 'https://www.theseikoguy.com/seiko-slim-turtle-7548/', 'community'),
     ('Seiko', 'SKX Diver', '7S26-0020', 'SKX007 / SKX009 family',
-      43, 'Automatic', '7S26', 'Stainless steel', 'Hardlex',
+      null, 'Automatic', '7S26', 'Stainless steel', 'Hardlex',
       1996, 2019, 'https://www.theseikoguy.com/seiko-skx-divers', 'community'),
     ('Seiko', 'SKX Diver', '7S26-0030', 'SKX013 compact diver',
       38, 'Automatic', '7S26', 'Stainless steel', 'Hardlex',
