@@ -146,10 +146,6 @@ set search_aliases = array['서브마리너', '섭마']
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Submariner';
 
-update public.watch_catalog_models m
-set search_aliases = array['데이데이트', '데이 데이트']
-from public.watch_catalog_brands b
-where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Day-Date';
 
 update public.watch_catalog_models m
 set search_aliases = array['gmt마스터', '지엠티 마스터', '펩시']
@@ -247,30 +243,10 @@ set search_aliases = array['데이데이트', '데이 데이트']
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Day-Date';
 
-update public.watch_catalog_models m
-set search_aliases = array['씨드웰러', '씨 드웰러']
-from public.watch_catalog_brands b
-where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Sea-Dweller';
 
-update public.watch_catalog_models m
-set search_aliases = array['데이토나']
-from public.watch_catalog_brands b
-where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Cosmograph Daytona';
 
-update public.watch_catalog_models m
-set search_aliases = array['아쿠아테라', '아쿠아 테라']
-from public.watch_catalog_brands b
-where m.brand_id = b.id and b.name = 'Omega' and m.model_name = 'Seamaster Aqua Terra';
 
-update public.watch_catalog_models m
-set search_aliases = array['플래닛오션', '플래닛 오션']
-from public.watch_catalog_brands b
-where m.brand_id = b.id and b.name = 'Omega' and m.model_name = 'Seamaster Planet Ocean';
 
-update public.watch_catalog_models m
-set search_aliases = array['드빌', '드 빌']
-from public.watch_catalog_brands b
-where m.brand_id = b.id and b.name = 'Omega' and m.model_name = 'De Ville';
 
 update public.watch_catalog_models m
 set search_aliases = array['링크']
@@ -1515,6 +1491,77 @@ set search_aliases = array['슈퍼 티타늄']
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Citizen' and m.model_name = 'Super Titanium';
 
+-- Additional well-established Korean names for selected dress and complication lines.
+update public.watch_catalog_models m
+set search_aliases = array['드라이브 드 까르띠에', '드라이브']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Cartier' and m.model_name = 'Drive de Cartier';
+
+update public.watch_catalog_models m
+set search_aliases = array['쿠생']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Cartier' and m.model_name = 'Coussin';
+
+update public.watch_catalog_models m
+set search_aliases = array['헤리티지']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Tissot' and m.model_name = 'Heritage';
+
+update public.watch_catalog_models m
+set search_aliases = array['PR100', '피알 100']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Tissot' and m.model_name = 'PR 100';
+
+update public.watch_catalog_models m
+set search_aliases = array['그랑드 더블 소네리']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Blancpain' and m.model_name = 'Grande Double Sonnerie';
+
+update public.watch_catalog_models m
+set search_aliases = array['트래디션']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Audemars Piguet' and m.model_name = 'Tradition';
+
+update public.watch_catalog_models m
+set search_aliases = array['클래식']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Audemars Piguet' and m.model_name = 'Classique';
+
+update public.watch_catalog_models m
+set search_aliases = array['컴플리케이션']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Patek Philippe' and m.model_name = 'Complications';
+
+update public.watch_catalog_models m
+set search_aliases = array['그랜드 컴플리케이션']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Patek Philippe' and m.model_name = 'Grand Complications';
+
+update public.watch_catalog_models m
+set search_aliases = array['MP 컬렉션', '엠피 컬렉션']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Hublot' and m.model_name = 'MP Collection';
+
+update public.watch_catalog_models m
+set search_aliases = array['엘레강트']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Hublot' and m.model_name = 'Elegant';
+
+update public.watch_catalog_models m
+set search_aliases = array['엘유씨']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Chopard' and m.model_name = 'L.U.C';
+
+update public.watch_catalog_models m
+set search_aliases = array['클래식 레이싱']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Chopard' and m.model_name = 'Classic Racing';
+
+update public.watch_catalog_models m
+set search_aliases = array['뢰르 뒤 디아망']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Chopard' and m.model_name = 'L''Heure du Diamant';
+
 -- Reference-specific nicknames and Korean forms.
 update public.watch_catalog_references r
 set search_aliases = array['슈마허', '슈마허 레드', '스피드마스터 슈마허', '레드 다이얼']
@@ -1629,9 +1676,16 @@ as $$
            and regexp_replace(r.reference_number, '[^0-9]', '', 'g') = regexp_replace(q.token, '[^0-9]', '', 'g')
        ) then 0
       when lower(coalesce(r.reference_number, '')) = lower(trim(p_query)) then 0
-      when lower(m.model_name) = lower(trim(p_query)) then 1
-      when exists (select 1 from unnest(m.search_aliases) a where lower(a) = lower(trim(p_query))) then 2
-      when exists (select 1 from unnest(r.search_aliases) a where lower(a) = lower(trim(p_query))) then 2
+      when exists (select 1 from query_tokens q where lower(m.model_name) = q.token) then 1
+      when exists (
+        select 1 from query_tokens q
+        where exists (select 1 from unnest(m.search_aliases) a where lower(a) = q.token)
+      ) then 2
+      when exists (
+        select 1 from query_tokens q
+        where exists (select 1 from unnest(r.search_aliases) a where lower(a) = q.token)
+      ) then 2
+      when lower(m.model_name) = lower(trim(p_query)) then 2
       when lower(b.name) = lower(trim(p_query)) then 3
       else 4
     end,
