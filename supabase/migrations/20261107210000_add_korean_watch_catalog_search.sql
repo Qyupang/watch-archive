@@ -1676,18 +1676,18 @@ as $$
        and regexp_replace(r.reference_number, '[^0-9]', '', 'g') <> ''
        and exists (
          select 1 from query_tokens q
-         where length(regexp_replace(q.token, '[^0-9]', '', 'g')) >= 4
+         where length(regexp_replace(q.token, '[^0-9]', '', 'g')) >= 3
            and regexp_replace(r.reference_number, '[^0-9]', '', 'g') = regexp_replace(q.token, '[^0-9]', '', 'g')
        ) then 0
       when lower(coalesce(r.reference_number, '')) = lower(trim(p_query)) then 0
       when exists (select 1 from query_tokens q where lower(m.model_name) = q.token) then 1
       when exists (
         select 1 from query_tokens q
-        where exists (select 1 from unnest(m.search_aliases) a where lower(a) = q.token)
+        where exists (select 1 from unnest(m.search_aliases) a where lower(a) like '%' || q.token || '%')
       ) then 2
       when exists (
         select 1 from query_tokens q
-        where exists (select 1 from unnest(r.search_aliases) a where lower(a) = q.token)
+        where exists (select 1 from unnest(r.search_aliases) a where lower(a) like '%' || q.token || '%')
       ) then 2
       when lower(m.model_name) = lower(trim(p_query)) then 2
       when lower(b.name) = lower(trim(p_query)) then 3
