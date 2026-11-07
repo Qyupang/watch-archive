@@ -5,6 +5,10 @@
 alter table public.watch_catalog_references
   alter column reference_number drop not null;
 
+alter table public.watch_catalog_models
+  add column if not exists verification_status text not null default 'unverified'
+  check (verification_status in ('unverified', 'community', 'verified'));
+
 drop index if exists public.watch_catalog_references_identity_idx;
 create unique index if not exists watch_catalog_references_identity_idx
   on public.watch_catalog_references (model_id, lower(coalesce(reference_number, '')), lower(coalesce(variant_name, '')));
@@ -53,7 +57,7 @@ as $$
     coalesce(r.production_start, m.production_start),
     coalesce(r.production_end, m.production_end),
     r.image_url,
-    r.verification_status
+    coalesce(r.verification_status, m.verification_status)
   from public.watch_catalog_models m
   join public.watch_catalog_brands b on b.id = m.brand_id
   left join public.watch_catalog_references r on r.model_id = m.id
