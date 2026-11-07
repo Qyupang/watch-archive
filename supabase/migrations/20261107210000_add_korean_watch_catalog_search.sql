@@ -1658,6 +1658,10 @@ as $$
         or m.model_name ilike '%' || q.token || '%'
         or coalesce(m.collection_name, '') ilike '%' || q.token || '%'
         or coalesce(r.reference_number, '') ilike '%' || q.token || '%'
+        or (
+          length(regexp_replace(q.token, '[^0-9]', '', 'g')) >= 4
+          and regexp_replace(coalesce(r.reference_number, ''), '[^0-9]', '', 'g') like '%' || regexp_replace(q.token, '[^0-9]', '', 'g') || '%'
+        )
         or coalesce(r.variant_name, '') ilike '%' || q.token || '%'
         or coalesce(r.dial_variant, '') ilike '%' || q.token || '%'
         or coalesce(r.caliber, '') ilike '%' || q.token || '%'
