@@ -937,7 +937,7 @@ function selectWatchCatalogReference(index){
  const referenceInput=document.getElementById('reference');if(referenceInput)referenceInput.value=item.reference_number||'';
  const sizeInput=document.getElementById('size');if(sizeInput&&item.case_diameter_mm!=null)sizeInput.value=String(item.case_diameter_mm);
  if(item.movement&&['Manual','Automatic','Quartz'].includes(item.movement))setFormSelect('movement',item.movement,item.movement);
- const box=document.getElementById('watchCatalogResults');if(box)box.innerHTML='<div class="catalog-selected">✓ '+esc(item.brand_name)+' '+esc(item.model_name)+' · Ref. '+esc(item.reference_number)+' 기본 정보 적용됨</div>';
+ const box=document.getElementById('watchCatalogResults');if(box)box.innerHTML='<div class="catalog-selected">✓ '+esc(item.brand_name)+' '+esc(item.model_name)+(item.reference_number?' · Ref. '+esc(item.reference_number):' · 레퍼런스 미등록')+' 기본 정보 적용됨</div>';
  const search=document.getElementById('watchCatalogSearch');if(search)search.value=[item.brand_name,item.model_name,item.reference_number].filter(Boolean).join(' ');
  editorDraftFields={...(editorDraftFields||{}),catalogReferenceId:item.id};
  scheduleDraftSave();
