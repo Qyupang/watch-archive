@@ -9,13 +9,23 @@ alter table public.watch_catalog_models
   add column if not exists verification_status text not null default 'unverified'
   check (verification_status in ('unverified', 'community', 'verified'));
 
+alter table public.watches
+  add column if not exists catalog_model_id uuid
+  references public.watch_catalog_models(id) on delete set null;
+
+create index if not exists watches_catalog_model_idx
+  on public.watches (catalog_model_id);
+
 drop index if exists public.watch_catalog_references_identity_idx;
 create unique index if not exists watch_catalog_references_identity_idx
   on public.watch_catalog_references (model_id, lower(coalesce(reference_number, '')), lower(coalesce(variant_name, '')));
 
-create or replace function public.search_watch_catalog(p_query text, p_limit integer default 20)
+drop function if exists public.search_watch_catalog(text, integer);
+
+create function public.search_watch_catalog(p_query text, p_limit integer default 20)
 returns table (
   id uuid,
+  model_id uuid,
   brand_name text,
   collection_name text,
   model_name text,
@@ -41,6 +51,7 @@ set search_path = public
 as $$
   select
     r.id,
+    m.id,
     b.name,
     m.collection_name,
     m.model_name,
