@@ -137,7 +137,7 @@ from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Oyster Perpetual';
 
 update public.watch_catalog_models m
-set search_aliases = array['데이트저스트', '데이트저스트']
+set search_aliases = array['데이트저스트', '데이저스트']
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Datejust';
 
@@ -147,7 +147,7 @@ from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Submariner';
 
 update public.watch_catalog_models m
-set search_aliases = array['데이저스트']
+set search_aliases = array['데이데이트', '데이 데이트']
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Day-Date';
 
@@ -197,7 +197,7 @@ from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'TAG Heuer' and m.model_name = 'Aquaracer';
 
 update public.watch_catalog_models m
-set search_aliases = array['오토매틱', '오타비아']
+set search_aliases = array['오타비아']
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'TAG Heuer' and m.model_name = 'Autavia';
 
