@@ -35,6 +35,16 @@ h1{font:clamp(42px,8vw,88px)/.98 Georgia,serif;letter-spacing:-.045em;margin:0 0
 @media(min-width:760px){.watch-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:46px 26px}.hero{min-height:780px}}
 @media(max-width:560px){.hero{height:82svh;min-height:590px}.content{width:calc(100% - 36px);padding:48px 0 60px}.intro{margin-bottom:42px}.watch-list{gap:28px 12px}.watch-model{font-size:19px}.watch-brand{font-size:8px}.watch-meta{font-size:10px}.collection-heading h2{font-size:28px}.footer{font-size:8px}}
 @media(prefers-color-scheme:dark){html,body{background:#171614;color:#f1eee7}.description,.watch-role{color:#b9b3a8}.collection-heading,.footer{border-color:#3b3833}.section-kicker,.collection-count,.watch-brand,.watch-meta,.footer{color:#aaa59b}.watch-image{background:#302d29}}
+/* Keep the public collection readable at small sizes and in high-contrast modes. */
+:root{--muted:#6b675f}
+@media(prefers-color-scheme:dark){:root{--muted:#aaa59b}}
+.edition,.kicker,.hero-meta,.section-kicker,.collection-count,.watch-brand,.watch-meta,.footer{font-size:max(11px,.6875em)}
+.hero-top,.hero-copy{ text-shadow:0 1px 8px #0009 }
+.description,.watch-role{color:#625e56}
+@media(prefers-color-scheme:dark){.description,.watch-role{color:#b9b3a8}}
+@media(prefers-contrast:more){:root{--muted:#57534d;--line:#817c73}}
+@media(prefers-contrast:more) and (prefers-color-scheme:dark){:root{--muted:#d0c9be;--line:#827b70}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style></head><body>
 <main class="page" id="app"><div class="state"><strong>WATCH ARCHIVE</strong>컬렉션을 불러오고 있어요.</div></main>
 <script>
@@ -56,8 +66,8 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt
  '<div class="hero-copy"><div class="kicker">A COLLECTION OF TIME</div><h1>'+esc(share.title||'My Collection')+'</h1><div class="hero-meta">'+(share.show_collector_name!==false&&share.collector_name?'CURATED BY '+esc(share.collector_name).toUpperCase()+'　·　':'')+String(items.length).padStart(2,'0')+' TIMEPIECES</div></div></section>'+
  '<section class="content">'+
  (share.description?'<div class="intro"><div class="section-kicker">COLLECTOR’S NOTE</div><p class="description">'+esc(share.description)+'</p></div>':'')+
- '<div class="collection-heading"><h2>The Collection</h2><span class="collection-count">'+String(items.length).padStart(2,'0')+' PIECES</span></div>'+
- '<section class="watch-list">'+items.map(w=>'<article class="watch">'+(w.image_url?'<img class="watch-image" src="'+esc(w.image_url)+'" alt="'+esc((w.brand||'')+' '+(w.model||''))+'" loading="lazy">':'<div class="watch-image"></div>')+
+ '<div class="collection-heading"><h2 id="collectionTitle">The Collection</h2><span class="collection-count">'+String(items.length).padStart(2,'0')+' PIECES</span></div>'+
+ '<section class="watch-list" aria-labelledby="collectionTitle">'+items.map(w=>'<article class="watch">'+(w.image_url?'<img class="watch-image" src="'+esc(w.image_url)+'" alt="'+esc((w.brand||'')+' '+(w.model||''))+'" loading="lazy">':'<div class="watch-image"></div>')+
  '<div class="watch-brand">'+esc(w.brand||'')+'</div><div class="watch-model">'+esc(w.model||'Untitled')+'</div><div class="watch-meta">'+esc([w.movement].filter(Boolean).join(' · '))+'</div>'+(w.role_note?'<div class="watch-role">'+esc(w.role_note)+'</div>':'')+'</article>').join('')+'</section>'+
  '<footer class="footer"><span>WATCH ARCHIVE</span><span>A PERSONAL ARCHIVE OF TIMEPIECES</span></footer></section>';
 })().catch(error=>{console.error(error);document.getElementById('app').innerHTML='<div class="state"><strong>Something went wrong</strong>컬렉션을 불러오지 못했어요.</div>'});
