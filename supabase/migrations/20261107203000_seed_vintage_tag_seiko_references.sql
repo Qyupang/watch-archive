@@ -31,7 +31,7 @@ with seed(
       42, 'Automatic', 'FE 4611A', 'Stainless steel', 'Acrylic',
       1979, 1990, 'https://www.tagheuer.com/int/en/vintage-collection/tag-heuer-1000-series.html', 'community'),
     ('TAG Heuer', '1000 Series', '980.013N', 'Professional 1000 quartz date',
-      36, 'Quartz', 'ETA 955.112', 'Stainless steel', 'Mineral',
+      36, 'Quartz', 'ETA 955.112', 'Stainless steel', null,
       1985, null, 'https://www.dawsonsauctions.co.uk/auction/lot/lot-256---tag-heuer-professional-1000-reference/?lot=96257&sd=1', 'community'),
     ('TAG Heuer', 'Autavia', '1163', 'Chronomatic automatic chronograph',
       42.5, 'Automatic chronograph', 'Calibre 11 / 12', 'Stainless steel', 'Acrylic',
