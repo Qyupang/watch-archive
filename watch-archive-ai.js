@@ -25,7 +25,7 @@
   .wa-ai-message.assistant{align-self:flex-start}
   .wa-ai-message .wa-ai-message-meta{display:block;margin-top:8px;font-size:9px;letter-spacing:.08em;opacity:.58}
   .wa-ai-composer{position:sticky;bottom:calc(78px + env(safe-area-inset-bottom,0px));z-index:4;padding:10px;border:1px solid var(--line);background:var(--paper);box-shadow:0 8px 28px #0000000d}
-  .wa-ai-composer textarea{display:block;width:100%;min-height:58px;max-height:140px;resize:vertical;border:0;outline:0;background:transparent;color:var(--ink);font:13px/1.6 inherit;padding:5px}
+  .wa-ai-composer textarea{display:block;width:100%;min-height:58px;max-height:140px;resize:vertical;border:0;outline:0;background:transparent;color:var(--ink);font:inherit;font-size:13px;line-height:1.6;padding:5px}
   .wa-ai-composer-row{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--line);padding-top:9px}
   .wa-ai-send{border:1px solid var(--ink);background:var(--ink);color:var(--bg);padding:10px 17px;font-size:12px;font-weight:650}
   .wa-ai-send:disabled{opacity:.45}
@@ -84,8 +84,9 @@
         writeJson(key, rows);
         if (typeof wearLogs !== 'undefined') wearLogs = rows;
         return { rows, source:'cloud' };
-      } catch (error) { console.warn('AI wear cloud query failed; using local cache', error); }
+      } catch (error) { if (mode==='cloud') throw error; console.warn('AI wear cloud query failed; using local cache', error); }
     }
+    if (mode==='cloud') throw new Error('클라우드 착용 기록을 불러오지 못했어요.');
     const cached = readJson(key);
     if (Array.isArray(cached)) return { rows:cached, source:'device' };
     if (typeof wearLogs !== 'undefined' && Array.isArray(wearLogs) && wearLogs.length) return { rows:wearLogs, source:'device' };
@@ -99,8 +100,9 @@
         const rows = await readCloudRows('watch_history','id,watch_id,event_type,event_date,cost,previous_value,new_value,note,created_at','event_date');
         writeJson(key, rows);
         return { rows, source:'cloud' };
-      } catch (error) { console.warn('AI history cloud query failed; using local cache', error); }
+      } catch (error) { if (mode==='cloud') throw error; console.warn('AI history cloud query failed; using local cache', error); }
     }
+    if (mode==='cloud') throw new Error('클라우드 시계 이력을 불러오지 못했어요.');
     const cached = readJson(key);
     if (Array.isArray(cached)) return { rows:cached, source:'device' };
     const mapped = [];
@@ -121,8 +123,9 @@
         const result = { boxes, items };
         writeJson(key, result);
         return { ...result, source:'cloud' };
-      } catch (error) { console.warn('AI collection cloud query failed; using local cache', error); }
+      } catch (error) { if (mode==='cloud') throw error; console.warn('AI collection cloud query failed; using local cache', error); }
     }
+    if (mode==='cloud') throw new Error('클라우드 컬렉션을 불러오지 못했어요.');
     const cached = readJson(key) || {};
     return { boxes:Array.isArray(cached.boxes)?cached.boxes:[], items:Array.isArray(cached.items)?cached.items:[], source:'device' };
   }
@@ -151,12 +154,13 @@
   }
 
   async function buildContext(question, mode) {
+    if (mode==='cloud' && !navigator.onLine) throw new Error('클라우드 최신 데이터는 인터넷 연결이 필요해요.');
     const watchRows = mode === 'local' || !navigator.onLine
       ? localWatches()
       : await (async()=>{ try {
           const rows = await readCloudRows('watches','id,brand,model,reference,size,movement,status,possession_status,purchase_date,purchase_price,purchase_source,customs_duty,current_value,valuation_date,sale_date,sale_price,overhaul_date,repair_history,tags,note,purchase_reason','created_at');
           return rows;
-        } catch (error) { console.warn('AI watches cloud query failed; using local state', error); return localWatches(); } })();
+        } catch (error) { if (mode==='cloud') throw error; console.warn('AI watches cloud query failed; using local state', error); return localWatches(); } })();
 
     const q = String(question).toLowerCase();
     const needsWear = /착용|wear|빈도|미착용|cost per wear|자주/.test(q);
@@ -205,6 +209,12 @@
     const text = String(question || '').trim();
     if (!text || sending) return;
     if (!currentUser) return toast('로그인 후 AI를 사용할 수 있어요.');
+    const consentKey='watchArchiveAiOpenAiConsent_v1:'+currentUser.id;
+    if(localStorage.getItem(consentKey)!=='accepted'){
+      const accepted=confirm('질문에 답하기 위해 선택된 시계 정보와 관련 기록이 Watch Archive 서버를 거쳐 OpenAI API로 전달됩니다. 사진 원본과 로그인 정보는 전송하지 않습니다. 계속할까요?');
+      if(!accepted)return;
+      localStorage.setItem(consentKey,'accepted');
+    }
     sending = true;
     const send = document.getElementById('waAiSend');
     if (send) { send.disabled=true; send.textContent='생각 중…'; }
