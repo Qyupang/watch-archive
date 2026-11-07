@@ -880,7 +880,12 @@ textarea{overflow-wrap:anywhere;word-break:normal}
 .catalog-result-main{display:grid;gap:4px;min-width:0}
 .catalog-result-main strong{font-size:13px;font-weight:700}
 .catalog-result-main span,.catalog-result-meta,.catalog-search-state{font-size:11px;color:var(--muted);line-height:1.5}
-.catalog-result-meta{text-align:right;white-space:nowrap}
+.catalog-result-meta{text-align:right;white-space:normal;max-width:45%;overflow-wrap:anywhere}
+@media(max-width:600px){
+ .catalog-result{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:start}
+ .catalog-result-main,.catalog-result-meta{width:100%;min-width:0;max-width:100%}
+ .catalog-result-meta{text-align:left;white-space:normal;overflow-wrap:anywhere}
+}
 .catalog-search-state,.catalog-selected{padding:10px 12px;border:1px solid var(--line);border-radius:9px;font-size:11px;color:var(--muted);line-height:1.55}
 .catalog-selected{color:var(--ink);border-color:color-mix(in srgb,var(--line) 60%,#9b8058 40%)}
 </style></head>
