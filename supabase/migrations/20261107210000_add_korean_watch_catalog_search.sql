@@ -291,7 +291,7 @@ set search_path = public
 as $$
   with query_tokens as (
     select token
-    from unnest(regexp_split_to_array(lower(trim(p_query)), '\\s+')) as token
+    from unnest(regexp_split_to_array(lower(trim(p_query)), '[[:space:]]+') as tokens(token)
     where token <> ''
   )
   select
