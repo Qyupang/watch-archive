@@ -231,6 +231,122 @@ set search_aliases = array['skx', '에스케이엑스', '세이코 에스케이�
 from public.watch_catalog_brands b
 where m.brand_id = b.id and b.name = 'Seiko' and m.model_name = 'SKX Diver';
 
+-- Additional Korean aliases across frequently searched model families.
+update public.watch_catalog_models m
+set search_aliases = array['익스플로러']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Explorer';
+
+update public.watch_catalog_models m
+set search_aliases = array['익스플로러 2', '익스플로러 투']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Explorer II';
+
+update public.watch_catalog_models m
+set search_aliases = array['데이데이트', '데이 데이트']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Day-Date';
+
+update public.watch_catalog_models m
+set search_aliases = array['씨드웰러', '씨 드웰러']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Sea-Dweller';
+
+update public.watch_catalog_models m
+set search_aliases = array['데이토나']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Rolex' and m.model_name = 'Cosmograph Daytona';
+
+update public.watch_catalog_models m
+set search_aliases = array['아쿠아테라', '아쿠아 테라']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Omega' and m.model_name = 'Seamaster Aqua Terra';
+
+update public.watch_catalog_models m
+set search_aliases = array['플래닛오션', '플래닛 오션']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Omega' and m.model_name = 'Seamaster Planet Ocean';
+
+update public.watch_catalog_models m
+set search_aliases = array['드빌', '드 빌']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Omega' and m.model_name = 'De Ville';
+
+update public.watch_catalog_models m
+set search_aliases = array['링크']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'TAG Heuer' and m.model_name = 'Link';
+
+update public.watch_catalog_models m
+set search_aliases = array['프로페셔널']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'TAG Heuer' and m.model_name = 'Professional';
+
+update public.watch_catalog_models m
+set search_aliases = array['호이어 다이버', '844 다이버']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'TAG Heuer' and m.model_name = 'Heuer Diver 844';
+
+update public.watch_catalog_models m
+set search_aliases = array['천 시리즈', '천번대', '1000 시리즈']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'TAG Heuer' and m.model_name = '1000 Series';
+
+update public.watch_catalog_models m
+set search_aliases = array['프로스펙스']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Seiko' and m.model_name = 'Prospex';
+
+update public.watch_catalog_models m
+set search_aliases = array['프레사지']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Seiko' and m.model_name = 'Presage';
+
+update public.watch_catalog_models m
+set search_aliases = array['알피니스트']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Seiko' and m.model_name = 'Alpinist';
+
+update public.watch_catalog_models m
+set search_aliases = array['내비타이머', '네비타이머']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Breitling' and m.model_name = 'Navitimer';
+
+update public.watch_catalog_models m
+set search_aliases = array['크로노맷']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Breitling' and m.model_name = 'Chronomat';
+
+update public.watch_catalog_models m
+set search_aliases = array['슈퍼오션']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Breitling' and m.model_name = 'Superocean';
+
+update public.watch_catalog_models m
+set search_aliases = array['블랙베이', '블랙 베이']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Tudor' and m.model_name = 'Black Bay';
+
+update public.watch_catalog_models m
+set search_aliases = array['펠라고스']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Tudor' and m.model_name = 'Pelagos';
+
+update public.watch_catalog_models m
+set search_aliases = array['탱크']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Cartier' and m.model_name = 'Tank';
+
+update public.watch_catalog_models m
+set search_aliases = array['산토스']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Cartier' and m.model_name = 'Santos';
+
+update public.watch_catalog_models m
+set search_aliases = array['리베르소']
+from public.watch_catalog_brands b
+where m.brand_id = b.id and b.name = 'Jaeger-LeCoultre' and m.model_name = 'Reverso';
+
 -- Reference-specific nicknames and Korean forms.
 update public.watch_catalog_references r
 set search_aliases = array['슈마허', '슈마허 레드', '스피드마스터 슈마허', '레드 다이얼']
