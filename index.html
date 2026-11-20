@@ -1208,7 +1208,7 @@ function portfolioPage(){
  }).join('');
  const summary='<section class="portfolio-hero"><div class="portfolio-hero-label"><span class="portfolio-live-dot"></span> COLLECTION OVERVIEW</div><div class="portfolio-hero-title">A collection,<br>carefully kept.</div><p class="portfolio-hero-caption">나의 시계 컬렉션을 한눈에 기록하고 살펴보세요.</p><div class="portfolio-hero-total-label">COLLECTION VALUE</div><div class="portfolio-hero-total">'+formatWon(value)+'</div><div class="portfolio-hero-foot"><span>'+held.length+' PIECES</span><span>평가 입력 '+priced.length+' / '+held.length+'개</span></div></section><div class="portfolio-metric-grid"><div class="portfolio-metric-card"><span class="portfolio-metric-label">취득금액</span><strong>'+formatWon(heldAcquisition)+'</strong><span class="portfolio-metric-note">구매금액 + 관세</span></div><div class="portfolio-metric-card"><span class="portfolio-metric-label">미실현 평가손익</span><strong style="color:'+pnlColor(unrealizedProfit)+'">'+(comparable.length?fmtSigned(unrealizedProfit):'—')+'</strong><span class="portfolio-metric-note">'+(unrealizedBase?(unrealizedPct>0?'+':'')+unrealizedPct.toFixed(1)+'% · 평가 입력 시계 기준':'평가 가능한 시계 없음')+'</span></div></div>';
  const costHtml='<details class="portfolio-cost-details"><summary><span><span class="portfolio-section-kicker">OWNERSHIP</span><strong>소유 비용 분석</strong></span><span class="portfolio-cost-summary">'+formatWon(heldOwnership)+' <span aria-hidden="true">＋</span></span></summary><div class="portfolio-cost-grid"><div><span>보유 시계 취득금액</span><strong>'+formatWon(heldAcquisition)+'</strong><small>구매금액 + 관세</small></div><div><span>누적 수리·오버홀 비용</span><strong>'+formatWon(totalRepairHeld)+'</strong><small>등록된 수리 이력 기준</small></div><div><span>총 소유 비용</span><strong>'+formatWon(heldOwnership)+'</strong><small>취득금액 + 등록된 수리비</small></div><div><span>판매 실현손익</span><strong style="color:'+pnlColor(realizedProfit)+'">'+(sold.length?fmtSigned(realizedProfit):'—')+'</strong><small>판매 '+sold.length+'개 · 판매금액 '+formatWon(soldSales)+' · 취득금액 '+formatWon(soldAcquisition)+' · 수리비 '+formatWon(totalRepairSold)+'</small></div></div></details>';
- $('#app').innerHTML='<main class="app portfolio-page"><div class="top portfolio-page-top"><div><div class="eyebrow">WATCH ARCHIVE / COLLECTION</div><div class="brand">Portfolio</div></div><span class="portfolio-piece-count">'+String(held.length).padStart(2,'0')+' PIECES</span></div>'+summary+costHtml+'<section class="portfolio-section"><div class="portfolio-section-head"><div><div class="portfolio-section-kicker">YOUR COLLECTION</div><h2>컬렉션 구성</h2></div><span class="small">평가금액 우선</span></div><div class="portfolio-ranking">'+(topRows||'<div class="empty">My Watches에 보유 중인 시계가 없습니다.</div>')+'</div></section>'+brandAnalysisHtml(held)+'<section class="portfolio-section portfolio-gallery-section"><div class="portfolio-section-head"><div><div class="portfolio-section-kicker">THE ARCHIVE</div><h2>보유 시계</h2></div><span class="small">'+held.length+' PIECES · 눌러서 평가 정보 관리</span></div><div class="portfolio-gallery">'+(cards||'<div class="empty">My Watches에 보유 중인 시계가 없습니다.</div>')+'</div></section></main>'+nav('portfolio');
+ $('#app').innerHTML='<main class="app portfolio-page"><div class="top portfolio-page-top"><div><div class="eyebrow">WATCH ARCHIVE / COLLECTION</div><div class="brand">Portfolio</div></div><span class="portfolio-piece-count">'+String(held.length).padStart(2,'0')+' PIECES</span></div>'+summary+costHtml+'<section class="portfolio-section"><div class="portfolio-section-head"><div><div class="portfolio-section-kicker">YOUR COLLECTION</div><h2>컬렉션 구성</h2></div><span class="small">평가금액 우선</span></div><div class="portfolio-ranking">'+(topRows||'<div class="empty">My Watches에 보유 중인 시계가 없습니다.</div>')+'</div></section>'+brandAnalysisHtml(held)+'<section class="portfolio-section portfolio-gallery-section"><div class="portfolio-section-head"><div><div class="portfolio-section-kicker">THE ARCHIVE</div><h2>보유 시계</h2></div><span class="small">'+held.length+' PIECES · 눌러서 평가 정보를 관리하려면 선택하세요</span></div><div class="portfolio-gallery">'+(cards||'<div class="empty">My Watches에 보유 중인 시계가 없습니다.</div>')+'</div></section></main>'+nav('portfolio');
 }
 function openValuation(id){
  const w=watches.find(x=>x.id===id);if(!w||!currentUser)return;
@@ -1307,10 +1307,10 @@ function boxImage(box){
 }
 function boxesPage(){
  activeBoxId=null;
- $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL COLLECTIONS</div><div class="brand">My Collections</div></div><button class="icon" aria-label="새 보관함 만들기" onclick="openBoxEditor()">＋</button></div><p class="box-intro">내 시계를 취향과 계절에 따라 자유롭게 구성해보세요.</p><div id="boxesContent"><div class="box-empty">보관함을 불러오는 중…</div></div></main>'+nav('boxes');
+ $('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL COLLECTIONS</div><div class="brand">My Collections</div></div><button class="icon" aria-label="새 보관함 만들기" onclick="openBoxEditor()">＋</button></div><p class="box-intro">내 시계를 취향과 계절에 따라 자유롭게 구성해 보세요.</p><div id="boxesContent"><div class="box-empty">보관함을 불러오는 중…</div></div></main>'+nav('boxes');
  loadCollectionBoxes().then(renderBoxesPage).catch(error=>{
   console.error('Collection boxes load failed',error);
-  const root=document.getElementById('boxesContent');if(root)root.innerHTML='<div class="box-empty">보관함을 불러오지 못했어요.<br><button class="box-action" style="margin-top:12px" onclick="boxesPage()">다시 시도</button><div class="box-modal-note">'+esc(error?.message||String(error))+'</div></div>';
+  const root=document.getElementById('boxesContent');if(root)root.innerHTML='<div class="box-empty">보관함을 불러오지 못했습니다.<br><button class="box-action" style="margin-top:12px" onclick="boxesPage()">다시 시도</button><div class="box-modal-note">'+esc(error?.message||String(error))+'</div></div>';
  });
 }
 function renderBoxesPage(){
@@ -1355,7 +1355,7 @@ async function saveBoxEditor(event){
   if(boxId)result=await supabaseClient.from('collection_boxes').update({name,description,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id).select().single();
   else result=await supabaseClient.from('collection_boxes').insert({user_id:currentUser.id,name,description,sort_order:collectionBoxes.length}).select().single();
   if(result.error)throw result.error;
-  const savedId=result.data.id;closeBoxOverlay();await loadCollectionBoxes();activeBoxId=savedId;renderCollectionBoxDetail();toast(boxId?'보관함을 수정했어요':'새 보관함을 만들었어요');
+  const savedId=result.data.id;closeBoxOverlay();await loadCollectionBoxes();activeBoxId=savedId;renderCollectionBoxDetail();toast(boxId?'보관함을 수정했습니다':'새 보관함을 만들었습니다');
  }catch(error){console.error('Save collection box failed',error);toast('보관함 저장 실패: '+(error?.message||String(error)))}
 }
 function openBoxWatchPicker(boxId){
@@ -1440,17 +1440,17 @@ async function moveBoxWatch(itemId,direction){
  }catch(error){console.error('Reorder box watches failed',error);toast('순서를 변경하지 못했어요: '+(error?.message||String(error)))}
 }
 async function setBoxCover(boxId,watchId){
- try{const {error}=await supabaseClient.from('collection_boxes').update({cover_watch_id:watchId,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id);if(error)throw error;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('대표 이미지를 변경했어요')}
+ try{const {error}=await supabaseClient.from('collection_boxes').update({cover_watch_id:watchId,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id);if(error)throw error;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('대표 이미지를 변경했습니다')}
  catch(error){console.error('Set box cover failed',error);toast('대표 이미지 변경 실패: '+(error?.message||String(error)))}
 }
 
 async function uploadBoxCoverImage(input,boxId){
  const file=input.files?.[0];input.value='';if(!file)return;
  if(!currentUser)return toast('로그인 후 이용해 주세요');
- if(!file.type.startsWith('image/'))return toast('이미지 파일을 선택해줘');
+ if(!file.type.startsWith('image/'))return toast('이미지 파일을 선택해 주세요');
  const box=collectionBoxes.find(x=>x.id===boxId);if(!box)return;
  try{
-  toast('보관함 사진을 업로드하고 있어요…');
+  toast('보관함 사진을 업로드하고 있습니다…');
   const compressed=await compressWatchPhoto(file,{maxDimension:1600,quality:.82});
   const mime=compressed.type||file.type||'image/jpeg',ext=mime==='image/png'?'png':mime==='image/webp'?'webp':mime==='image/gif'?'gif':'jpg',path=currentUser.id+'/boxes/'+boxId+'/'+uid()+'.'+ext;
   const {error:uploadError}=await supabaseClient.storage.from('watch-photos').upload(path,compressed,{contentType:mime,cacheControl:'3600',upsert:false});
@@ -1458,7 +1458,7 @@ async function uploadBoxCoverImage(input,boxId){
   const {error:updateError}=await supabaseClient.from('collection_boxes').update({cover_image_path:path,updated_at:new Date().toISOString()}).eq('id',boxId).eq('user_id',currentUser.id);
   if(updateError){await supabaseClient.storage.from('watch-photos').remove([path]);throw updateError}
   if(box.cover_image_path&&box.cover_image_path!==path){const {error:removeError}=await supabaseClient.storage.from('watch-photos').remove([box.cover_image_path]);if(removeError)console.warn('Old box cover cleanup failed',removeError)}
-  await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('보관함 대표 사진을 변경했어요');
+  await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail();toast('보관함 대표 사진을 변경했습니다');
  }catch(error){console.error('Upload box cover failed',error);toast('대표 사진 업로드 실패: '+(error?.message||String(error)))}
 }
 async function clearBoxCoverImage(boxId){
@@ -1488,7 +1488,7 @@ async function saveBoxWatchRole(itemId){
  try{
   const {error}=await supabaseClient.from('collection_box_items').update({role_note}).eq('id',itemId).eq('user_id',currentUser.id);
   if(error)throw error;
-  item.role_note=role_note;closeBoxRoleEditor();activeBoxId=item.box_id;renderCollectionBoxDetail();toast('시계의 역할을 저장했어요');
+  item.role_note=role_note;closeBoxRoleEditor();activeBoxId=item.box_id;renderCollectionBoxDetail();toast('시계의 역할을 저장했습니다');
  }catch(error){console.error('Save box watch role failed',error);toast('역할 저장 실패: '+(error?.message||String(error)));if(button){button.disabled=false;button.textContent='역할 저장'}}
 }
 function attachBoxDragHandlers(){
@@ -1505,8 +1505,8 @@ function attachBoxDragHandlers(){
     if(error)throw error;
     item.sort_order=i;
    }
-   toast('보관함 순서를 저장했어요');
-  }catch(error){console.error('Persist box order failed',error);toast('순서를 저장하지 못했어요: '+(error?.message||String(error)));const boxId=list.dataset.boxId;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail()}
+   toast('보관함 순서를 저장했습니다');
+  }catch(error){console.error('Persist box order failed',error);toast('순서를 저장하지 못했습니다: '+(error?.message||String(error)));const boxId=list.dataset.boxId;await loadCollectionBoxes();activeBoxId=boxId;renderCollectionBoxDetail()}
  };
  let dragged=null;
  list.querySelectorAll('[data-box-drag]').forEach(handle=>{
@@ -1536,7 +1536,7 @@ function attachBoxDragHandlers(){
 async function deleteCollectionBox(boxId){
  const box=collectionBoxes.find(x=>x.id===boxId);if(!box)return;
  if(!confirm('"'+box.name+'" 보관함을 삭제할까요?\\n보관함 안의 연결 정보만 삭제되며 실제 시계는 삭제되지 않습니다.'))return;
- try{const {error}=await supabaseClient.from('collection_boxes').delete().eq('id',boxId).eq('user_id',currentUser.id);if(error)throw error;activeBoxId=null;await loadCollectionBoxes();renderBoxesPage();toast('보관함을 삭제했어요')}
+ try{const {error}=await supabaseClient.from('collection_boxes').delete().eq('id',boxId).eq('user_id',currentUser.id);if(error)throw error;activeBoxId=null;await loadCollectionBoxes();renderBoxesPage();toast('보관함을 삭제했습니다')}
  catch(error){console.error('Delete collection box failed',error);toast('보관함 삭제 실패: '+(error?.message||String(error)))}
 }
 
@@ -1579,7 +1579,7 @@ function saveBudgetSettings(){
  const income=Math.max(0,Number(document.getElementById('budgetIncome')?.value)||0);
  const carry=Math.max(0,Number(document.getElementById('budgetCarry')?.value)||0);
  saveBudgetConfig({otherAssets:assets,liabilities:liabilities,['income_'+year]:income,['carry_'+year]:carry});
- toast('예산 설정을 저장했어');budgetPage();
+ toast('예산 설정을 저장했습니다');budgetPage();
 }
 
 function dailyInspiration(){let pool=watches.flatMap(w=>(w.status==='archive'?(w.photos||[]).filter(p=>p?.src).map((p,i)=>({w,p,i})):[]));if(!pool.length)return "";let today=new Date();let key=`${today.getFullYear()}-${today.getMonth()+1}-${today.getDate()}`;let hash=0;for(let i=0;i<key.length;i++)hash=(hash*31+key.charCodeAt(i))>>>0;let item=pool[hash%pool.length],ps=orderedPhotos(item.w),idx=ps.findIndex(p=>p.id===item.p.id);if(idx<0)idx=0;let day=today.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'});return`<section class="inspiration"><div class="inspirationhead"><span class="inspirationeyebrow">DAILY INSPIRATION</span><span class="inspirationdate">${day}</span></div><img class="inspirationimg" role="button" tabindex="0" aria-label="오늘의 영감 사진 크게 보기" ${photoAttrs(item.p,'fetchpriority="high"')} alt="${esc(item.w.brand||'')} ${esc(item.w.model||'Watch')}" onclick="event.stopPropagation();openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationmeta" role="button" tabindex="0" aria-label="영감 사진 크게 보기" onclick="openLightbox('${esc(item.w.id)}',${idx})"><div class="inspirationbrand">${esc(item.w.brand||'BRAND')}</div><div class="inspirationmodel">${esc(item.w.model||'Untitled')}</div><div class="inspirationhint">Archive · 사진을 눌러 크게 보기</div></div></section>`}
@@ -1746,7 +1746,7 @@ async function loadWatchHistory(watchId){
 async function loadWatchHistoryEditor(watchId){
  const section=document.getElementById('watchHistoryEditorSection');if(!section||!currentUser)return;
  const {data,error}=await supabaseClient.from('watch_history').select('*').eq('user_id',currentUser.id).eq('watch_id',watchId).order('event_date',{ascending:false}).order('created_at',{ascending:false});
- if(error){console.error('Watch history editor load failed',error);if(section.isConnected)section.innerHTML='<div class="small">히스토리를 불러오지 못했어요. 다시 열어 확인해줘.</div>';return}
+ if(error){console.error('Watch history editor load failed',error);if(section.isConnected)section.innerHTML='<div class="small">히스토리를 불러오지 못했어요. 다시 열어 확인해 주세요.</div>';return}
  watchHistoryCache.set(watchId,data||[]);if(!section.isConnected||String(editing)!==String(watchId))return;
  const w=watches.find(x=>String(x.id)===String(watchId));section.innerHTML=renderUnifiedWatchHistory(w,data||[],watchId,true);
  section.onclick=(event)=>{const button=event.target.closest('[data-watch-history-add]');if(button)openWatchHistory(button.dataset.watchId||watchId);};
@@ -1769,8 +1769,8 @@ async function saveWatchHistory(watchId){
  if(!date)return toast('기록 날짜를 선택해 주세요');
  const btn=document.getElementById('history-save');if(btn){btn.disabled=true;btn.textContent='저장 중…'}
  const {error}=await supabaseClient.from('watch_history').insert({user_id:currentUser.id,watch_id:watchId,event_type:type,event_date:date,cost,note});
- if(error){console.error(error);toast('기록 저장에 실패했어');if(btn){btn.disabled=false;btn.textContent='기록 저장'}return}
- closeWatchHistory();await loadWatchHistoryEditor(watchId);toast('시계 기록을 저장했어');
+ if(error){console.error(error);toast('기록 저장에 실패했습니다');if(btn){btn.disabled=false;btn.textContent='기록 저장'}return}
+ closeWatchHistory();await loadWatchHistoryEditor(watchId);toast('시계 기록을 저장했습니다');
 }
 async function deleteWatchHistory(id,watchId){
  if(!confirm('이 기록을 삭제하시겠습니까?'))return;
@@ -1839,7 +1839,7 @@ function setupNewEntryWizard(){
  
 }
 function openEditor(w=null){newEntryStep=0;editorDraftFields=null;selectedCatalogReferenceId=w?.catalog_reference_id||null;selectedCatalogModelId=w?.catalog_model_id||null;editorRepairs=JSON.parse(JSON.stringify(w?.repair_history||[]));editing=w?.id||null;editPhotos=w?JSON.parse(JSON.stringify(w.photos||[])):[];editStatus=w?.status||filter;renderEditor();scheduleDraftSave()}
-function renderRepairEditor(){return editorRepairs.map((r,i)=>`<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="font-size:13px">수리 ${i+1}</strong><button type="button" class="action" style="padding:6px 9px;font-size:12px" onclick="removeRepair(${i})">삭제</button></div><div class="formgrid"><div class="field"><label>수리 날짜</label><input type="date" value="${esc(r.date||'')}" onchange="updateRepair(${i},'date',this.value)"></div><div class="field"><label>수리 비용 (원)</label><input type="text" inputmode="numeric" value="${esc(r.cost?Number(r.cost).toLocaleString('ko-KR'):'')}" placeholder="150,000" oninput="formatRepairCostInput(this,${i})"></div><div class="field full"><label>수리 내용 (선택)</label><input value="${esc(r.note||'')}" placeholder="예: 용두 교체, 폴리싱" oninput="updateRepair(${i},'note',this.value)"></div></div></div>`).join('')||'<div class="small" style="padding:8px 0">등록된 수리 이력이 없어.</div>'}
+function renderRepairEditor(){return editorRepairs.map((r,i)=>`<div style="border:1px solid var(--line);border-radius:12px;padding:12px;margin:10px 0"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><strong style="font-size:13px">수리 ${i+1}</strong><button type="button" class="action" style="padding:6px 9px;font-size:12px" onclick="removeRepair(${i})">삭제</button></div><div class="formgrid"><div class="field"><label>수리 날짜</label><input type="date" value="${esc(r.date||'')}" onchange="updateRepair(${i},'date',this.value)"></div><div class="field"><label>수리 비용 (원)</label><input type="text" inputmode="numeric" value="${esc(r.cost?Number(r.cost).toLocaleString('ko-KR'):'')}" placeholder="150,000" oninput="formatRepairCostInput(this,${i})"></div><div class="field full"><label>수리 내용 (선택)</label><input value="${esc(r.note||'')}" placeholder="예: 용두 교체, 폴리싱" oninput="updateRepair(${i},'note',this.value)"></div></div></div>`).join('')||'<div class="small" style="padding:8px 0">등록된 수리 이력이 없습니다.</div>'}
 function addRepair(){editorRepairs.push({id:uid(),date:'',cost:'',note:''});editorDraftFields=captureEditorDraft()?.fields||editorDraftFields;renderEditor();scheduleDraftSave()}
 function removeRepair(i){editorRepairs.splice(i,1);editorDraftFields=captureEditorDraft()?.fields||editorDraftFields;renderEditor();scheduleDraftSave()}
 function formatRepairCostInput(el,index){if(!el||!editorRepairs[index])return;const digits=String(el.value||'').replace(/[^0-9]/g,'');editorRepairs[index].cost=digits;el.value=digits?Number(digits).toLocaleString('ko-KR'):'';scheduleDraftSave()}
@@ -1865,7 +1865,7 @@ function cancelReasonRecord(id){
  const field=document.getElementById(id);if(!field)return;
  field.value=field.dataset.reasonOriginal??field.value;finishReasonRecord(id);
 }
-function renderEditor(){if(document.querySelector('.overlay')){const current=captureEditorDraft();if(current)editorDraftFields=current.fields}let w=editing?watches.find(x=>x.id===editing):null;let d=editorDraftFields||{};$('#app').innerHTML=`<div class="overlay"><section class="sheet${w?'':' new-watch-sheet'}"><div class="sheet-drag-handle" aria-label="아래로 밀어 닫기" role="button" tabindex="0" title="아래로 밀어 닫기"></div><div class="sheettop">${w?'<h1 class="title">Edit Watch</h1>':'<div class="new-watch-heading"><div class="new-watch-eyebrow">WATCH ARCHIVE  /  NEW ENTRY</div><h1 class="title">Add to Archive</h1><p>새로운 시계를 당신의 아카이브에 기록해 보세요.</p></div>'}<button class="close" onclick="renderHome()">×</button></div><div class="field${w?'':' new-watch-photo-section'}">${w?'<label>Photos</label>':'<div class="new-watch-section-kicker">01 <span>THE OBJECT</span></div><div class="new-watch-photo-title">먼저, 시계의 모습을 담아주세요.</div><div class="new-watch-photo-caption">대표 사진을 가장 앞에 배치하면 보관함의 커버 이미지로 사용돼요.</div>'}<div class="photoactions"><button class="action ${w?'':'new-watch-add-photo'}" onclick="$('#gallery').click()">${w?'＋ 사진 보관함에서 추가':'＋ 사진 선택하기'}</button></div><input id="gallery" class="hidden" type="file" accept="image/*" multiple onchange="addFiles(this)"><div class="photos">${editPhotos.map((p,i)=>`<div class="photo"><img src="${p.src}"><button class="photo-remove" aria-label="사진 삭제" onclick="editPhotos.splice(${i},1);if(!editPhotos.some(x=>x.cover)&&editPhotos.length)editPhotos[0].cover=true;renderEditor();scheduleDraftSave()">×</button><button type="button" class="coverpick ${p.cover?'selected':''}" aria-label="대표사진 ${i+1}${p.cover?' 선택됨':'으로 지정'}" aria-pressed="${p.cover?'true':'false'}" onclick="setCoverPhoto(${i})"><span class="coverpick-check">${p.cover?'✓':''}</span></button></div>`).join('')}</div></div><div class="field${w?'':' new-watch-collection'}"><label>${w?'Collection':'COLLECTION'}</label><div class="status"><button class="${editStatus==='owned'?'active':''}" onclick="setStatus('owned')">My Watch</button><button class="${editStatus==='archive'?'active':''}" onclick="setStatus('archive')">Archive</button></div></div><div class="formgrid"><div class="field full catalog-search-field"><label>WATCH CATALOG SEARCH</label><input id="watchCatalogSearch" type="search" autocomplete="off" placeholder="브랜드·모델·레퍼런스 검색 (예: 롤렉스 1500, 오메가 슈마허)" oninput="searchWatchCatalog(this.value)"><div id="watchCatalogResults" class="catalog-results" aria-live="polite"></div><div class="small">카탈로그에서 선택하면 기본 사양이 자동 입력돼요. 검색 결과가 없다면 아래에서 직접 입력할 수 있어요.</div></div><div class="editor-section-title">시계 기본 정보 <span>브랜드 · 모델 · 사이즈</span></div><div class="field"><label>Brand</label>${brandSelect(d.brand??(w?.brand||''))}</div><div class="field"><label>Model</label><input id="model" value="${esc(d.model??(w?.model))}" placeholder="Oyster Perpetual Date"></div><div class="field"><label>Reference</label><input id="reference" value="${esc(d.reference??(w?.reference))}" placeholder="1500"></div><div class="field"><label>Size</label><input id="size" type="text" inputmode="decimal" autocomplete="off" value="${esc(d.size??sizeNumber(w?.size||''))}" placeholder="34 or 34.5"></div><div class="field"><label>Movement</label>${formSelectHtml("movement",[["Manual","Manual"],["Automatic","Automatic"],["Quartz","Quartz"]],d.movement??(w?.movement||""))}</div>${editStatus==='owned'?`<div class="editor-section-title">구매 및 판매 기록 <span>보유 상태 · 거래 정보</span></div><div class="field"><label>보유 여부</label>${formSelectHtml("possessionStatus",[["held","보유 중"],["selling","판매중"],["sold","판매함"]],d.possessionStatus??w?.possession_status??"held")}</div><div class="field"><label>구매 일자</label><input id="purchaseDate" type="date" value="${esc(d.purchaseDate??w?.purchase_date??'')}"></div>${(d.possessionStatus??w?.possession_status??'held')==='sold'?`<div class="field"><label>판매 일자</label><input id="saleDate" type="date" value="${esc(d.saleDate??w?.sale_date??'')}"></div>`:``}${editStatus==='owned'?`<div class="editor-section-title">시계 히스토리 <span>오버홀 · 수리 · 스트랩 · 변경</span></div><div class="field full"><section id="watchHistoryEditorSection" class="maintenance-summary" style="margin:0 0 14px;padding:14px"><div class="small">${w?'히스토리를 불러오는 중…':'시계를 먼저 저장하면 히스토리를 추가할 수 있어요.'}</div></section></div>`:''}<div class="field full"><label>구매 사유</label>${renderReasonRecord('purchaseReason',d.purchaseReason??w?.purchase_reason??'','이 시계를 구매하게 된 이유를 기록해보세요')}</div><div class="field"><label>구매 경로</label>${formSelectHtml('purchaseSource',[['domestic','국내 구매'],['overseas','해외 구매']],d.purchaseSource??w?.purchase_source??'domestic')}</div>${(d.purchaseSource??w?.purchase_source??'domestic')==='overseas'?'<div class="field"><label>관세 (원)</label><input id="customsDuty" type="text" inputmode="numeric" autocomplete="off" value="'+esc((d.customsDuty??(Number(w?.customs_duty)||0)).toLocaleString('ko-KR'))+'" placeholder="0" oninput="formatPurchasePriceInput(this)"></div>':''}<div class="field"><label>시계 구입금액 (관세 제외, 원)</label><input id="purchasePrice" type="text" inputmode="numeric" autocomplete="off" value="${esc((d.purchasePrice??(w?.purchase_price!=null?Math.max(0,Number(w.purchase_price)-(Number(w.customs_duty)||0)).toLocaleString('ko-KR'): '')))}" placeholder="1,500,000" oninput="formatPurchasePriceInput(this)"></div><div class="small">총 취득금액은 구입금액과 관세를 합산해 계산해.</div>${(d.possessionStatus??w?.possession_status??'held')==='sold'?`<div class="field"><label>판매가격</label><input id="salePrice" type="text" inputmode="numeric" autocomplete="off" value="${esc((d.salePrice??(w?.sale_price!=null?Number(w.sale_price).toLocaleString('ko-KR'): '')))}" placeholder="2,000,000" oninput="formatPurchasePriceInput(this)"></div><div class="field full"><label>판매 사유</label>${renderReasonRecord('saleReason',d.saleReason??w?.sale_reason??'','이 시계를 판매하게 된 이유를 기록해보세요')}</div>`:''}`:''}<div class="editor-section-title">개인 기록 <span>태그 · 메모</span></div><div class="field full"><label>Tags</label><input id="tags" value="${esc(d.tags??(w?.tags?.join(', ')))}" placeholder="vintage, silver dial, 34mm"></div><div class="field full"><label>My Note</label><textarea id="note">${esc(d.note??w?.note)}</textarea></div></div>${w?'':'<section class="new-watch-preview"><div class="new-watch-section-kicker">04 <span>ARCHIVE PREVIEW</span></div><div class="new-watch-preview-layout"><div class="new-watch-preview-image"></div><div class="new-watch-preview-copy"><div class="new-watch-preview-brand">YOUR COLLECTION</div><div class="new-watch-preview-model">Untitled Watch</div><div class="new-watch-preview-meta">REFERENCE · SIZE · MOVEMENT</div></div></div></section>'}<button class="action primary save-watch-button" style="margin-top:16px" onclick="save()">Save Watch</button><div id="saveProgress" class="save-progress" role="status" aria-live="polite" aria-hidden="true" hidden><div class="save-progress-track"><div class="save-progress-bar"></div></div><div class="save-progress-label"><span class="save-spinner" aria-hidden="true"></span><span>시계와 사진을 저장하고 있어요. 잠시만 기다려주세요.</span></div></div></section></div>`;
+function renderEditor(){if(document.querySelector('.overlay')){const current=captureEditorDraft();if(current)editorDraftFields=current.fields}let w=editing?watches.find(x=>x.id===editing):null;let d=editorDraftFields||{};$('#app').innerHTML=`<div class="overlay"><section class="sheet${w?'':' new-watch-sheet'}"><div class="sheet-drag-handle" aria-label="아래로 밀어 닫기" role="button" tabindex="0" title="아래로 밀어 닫기"></div><div class="sheettop">${w?'<h1 class="title">Edit Watch</h1>':'<div class="new-watch-heading"><div class="new-watch-eyebrow">WATCH ARCHIVE  /  NEW ENTRY</div><h1 class="title">Add to Archive</h1><p>새로운 시계를 당신의 아카이브에 기록해 보세요.</p></div>'}<button class="close" onclick="renderHome()">×</button></div><div class="field${w?'':' new-watch-photo-section'}">${w?'<label>Photos</label>':'<div class="new-watch-section-kicker">01 <span>THE OBJECT</span></div><div class="new-watch-photo-title">먼저, 시계의 모습을 담아주세요.</div><div class="new-watch-photo-caption">대표 사진을 가장 앞에 배치하면 보관함의 커버 이미지로 사용됩니다.</div>'}<div class="photoactions"><button class="action ${w?'':'new-watch-add-photo'}" onclick="$('#gallery').click()">${w?'＋ 사진 보관함에서 추가':'＋ 사진 선택하기'}</button></div><input id="gallery" class="hidden" type="file" accept="image/*" multiple onchange="addFiles(this)"><div class="photos">${editPhotos.map((p,i)=>`<div class="photo"><img src="${p.src}"><button class="photo-remove" aria-label="사진 삭제" onclick="editPhotos.splice(${i},1);if(!editPhotos.some(x=>x.cover)&&editPhotos.length)editPhotos[0].cover=true;renderEditor();scheduleDraftSave()">×</button><button type="button" class="coverpick ${p.cover?'selected':''}" aria-label="대표사진 ${i+1}${p.cover?' 선택됨':'으로 지정'}" aria-pressed="${p.cover?'true':'false'}" onclick="setCoverPhoto(${i})"><span class="coverpick-check">${p.cover?'✓':''}</span></button></div>`).join('')}</div></div><div class="field${w?'':' new-watch-collection'}"><label>${w?'Collection':'COLLECTION'}</label><div class="status"><button class="${editStatus==='owned'?'active':''}" onclick="setStatus('owned')">My Watch</button><button class="${editStatus==='archive'?'active':''}" onclick="setStatus('archive')">Archive</button></div></div><div class="formgrid"><div class="field full catalog-search-field"><label>WATCH CATALOG SEARCH</label><input id="watchCatalogSearch" type="search" autocomplete="off" placeholder="브랜드·모델·레퍼런스 검색 (예: 롤렉스 1500, 오메가 슈마허)" oninput="searchWatchCatalog(this.value)"><div id="watchCatalogResults" class="catalog-results" aria-live="polite"></div><div class="small">카탈로그에서 선택하면 기본 사양이 자동 입력돼요. 검색 결과가 없다면 아래에서 직접 입력할 수 있어요.</div></div><div class="editor-section-title">시계 기본 정보 <span>브랜드 · 모델 · 사이즈</span></div><div class="field"><label>Brand</label>${brandSelect(d.brand??(w?.brand||''))}</div><div class="field"><label>Model</label><input id="model" value="${esc(d.model??(w?.model))}" placeholder="Oyster Perpetual Date"></div><div class="field"><label>Reference</label><input id="reference" value="${esc(d.reference??(w?.reference))}" placeholder="1500"></div><div class="field"><label>Size</label><input id="size" type="text" inputmode="decimal" autocomplete="off" value="${esc(d.size??sizeNumber(w?.size||''))}" placeholder="34 or 34.5"></div><div class="field"><label>Movement</label>${formSelectHtml("movement",[["Manual","Manual"],["Automatic","Automatic"],["Quartz","Quartz"]],d.movement??(w?.movement||""))}</div>${editStatus==='owned'?`<div class="editor-section-title">구매 및 판매 기록 <span>보유 상태 · 거래 정보</span></div><div class="field"><label>보유 여부</label>${formSelectHtml("possessionStatus",[["held","보유 중"],["selling","판매중"],["sold","판매함"]],d.possessionStatus??w?.possession_status??"held")}</div><div class="field"><label>구매 일자</label><input id="purchaseDate" type="date" value="${esc(d.purchaseDate??w?.purchase_date??'')}"></div>${(d.possessionStatus??w?.possession_status??'held')==='sold'?`<div class="field"><label>판매 일자</label><input id="saleDate" type="date" value="${esc(d.saleDate??w?.sale_date??'')}"></div>`:``}${editStatus==='owned'?`<div class="editor-section-title">시계 히스토리 <span>오버홀 · 수리 · 스트랩 · 변경</span></div><div class="field full"><section id="watchHistoryEditorSection" class="maintenance-summary" style="margin:0 0 14px;padding:14px"><div class="small">${w?'히스토리를 불러오는 중…':'시계를 먼저 저장하면 히스토리를 추가할 수 있어요.'}</div></section></div>`:''}<div class="field full"><label>구매 사유</label>${renderReasonRecord('purchaseReason',d.purchaseReason??w?.purchase_reason??'','이 시계를 구매하게 된 이유를 기록해보세요')}</div><div class="field"><label>구매 경로</label>${formSelectHtml('purchaseSource',[['domestic','국내 구매'],['overseas','해외 구매']],d.purchaseSource??w?.purchase_source??'domestic')}</div>${(d.purchaseSource??w?.purchase_source??'domestic')==='overseas'?'<div class="field"><label>관세 (원)</label><input id="customsDuty" type="text" inputmode="numeric" autocomplete="off" value="'+esc((d.customsDuty??(Number(w?.customs_duty)||0)).toLocaleString('ko-KR'))+'" placeholder="0" oninput="formatPurchasePriceInput(this)"></div>':''}<div class="field"><label>시계 구입금액 (관세 제외, 원)</label><input id="purchasePrice" type="text" inputmode="numeric" autocomplete="off" value="${esc((d.purchasePrice??(w?.purchase_price!=null?Math.max(0,Number(w.purchase_price)-(Number(w.customs_duty)||0)).toLocaleString('ko-KR'): '')))}" placeholder="1,500,000" oninput="formatPurchasePriceInput(this)"></div><div class="small">총 취득금액은 구입금액과 관세를 합산해 계산해.</div>${(d.possessionStatus??w?.possession_status??'held')==='sold'?`<div class="field"><label>판매가격</label><input id="salePrice" type="text" inputmode="numeric" autocomplete="off" value="${esc((d.salePrice??(w?.sale_price!=null?Number(w.sale_price).toLocaleString('ko-KR'): '')))}" placeholder="2,000,000" oninput="formatPurchasePriceInput(this)"></div><div class="field full"><label>판매 사유</label>${renderReasonRecord('saleReason',d.saleReason??w?.sale_reason??'','이 시계를 판매하게 된 이유를 기록해보세요')}</div>`:''}`:''}<div class="editor-section-title">개인 기록 <span>태그 · 메모</span></div><div class="field full"><label>Tags</label><input id="tags" value="${esc(d.tags??(w?.tags?.join(', ')))}" placeholder="vintage, silver dial, 34mm"></div><div class="field full"><label>My Note</label><textarea id="note">${esc(d.note??w?.note)}</textarea></div></div>${w?'':'<section class="new-watch-preview"><div class="new-watch-section-kicker">04 <span>ARCHIVE PREVIEW</span></div><div class="new-watch-preview-layout"><div class="new-watch-preview-image"></div><div class="new-watch-preview-copy"><div class="new-watch-preview-brand">YOUR COLLECTION</div><div class="new-watch-preview-model">Untitled Watch</div><div class="new-watch-preview-meta">REFERENCE · SIZE · MOVEMENT</div></div></div></section>'}<button class="action primary save-watch-button" style="margin-top:16px" onclick="save()">Save Watch</button><div id="saveProgress" class="save-progress" role="status" aria-live="polite" aria-hidden="true" hidden><div class="save-progress-track"><div class="save-progress-bar"></div></div><div class="save-progress-label"><span class="save-spinner" aria-hidden="true"></span><span>시계와 사진을 저장하고 있어요. 잠시만 기다려주세요.</span></div></div></section></div>`;
 
  if(!w){
    setupNewEntryWizard();
@@ -2169,7 +2169,7 @@ async function exportFullBackup(){
  }catch(e){
   console.error('Archive backup failed',e);
   setArchiveBackupProgress({status:'error',message:'백업 실패: '+(e?.message||String(e)),finishedAt:Date.now()});
-  alert('백업에 실패했어요.\n'+(e?.message||String(e)));
+  alert('백업에 실패했습니다.\n'+(e?.message||String(e)));
  }finally{
   window.__archiveBackupRunning=false;
   if(archiveBackupTimer){clearInterval(archiveBackupTimer);archiveBackupTimer=null}
@@ -2236,7 +2236,7 @@ function renderBackupValidation(result,fileName,fileSize){
  if(result.summary){const q=result.summary;html+='<div class="small" style="line-height:1.8;margin-top:8px">시계 '+q.watches+'개 · 사진 '+q.photos+'개 · 사진 원본 '+q.photoFiles+'개<br>착용 기록 '+q.wearLogs+'개 · 브랜드 '+q.brands+'개 · 시계 이력 '+q.history+'개 · 보관함 '+(q.boxes||0)+'개'+(q.boxItems?' · 보관함 내 시계 '+q.boxItems+'개':'')+(q.createdAt?'<br>백업 생성: '+esc(new Date(q.createdAt).toLocaleString('ko-KR')):'')+'</div>'}
  if(result.errors.length)html+='<div style="margin-top:10px;color:var(--danger,#b42318)"><strong>문제</strong><ul style="padding-left:20px;margin:5px 0">'+result.errors.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
  if(result.warnings.length)html+='<div style="margin-top:10px"><strong>확인 사항</strong><ul style="padding-left:20px;margin:5px 0">'+result.warnings.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul></div>';
- html+='<div class="small" style="margin-top:8px">'+(ok?'기본 구조와 사진 데이터 형식을 확인했어요. 실제 복원까지 보장하는 검사는 아니에요.':'문제를 해결하거나 정상 백업 파일을 다시 만든 뒤 복원해 주세요.')+'</div></div>';
+ html+='<div class="small" style="margin-top:8px">'+(ok?'기본 구조와 사진 데이터 형식을 확인했습니다. 실제 복원까지 보장하는 검사는 아닙니다.':'문제를 해결하거나 정상 백업 파일을 다시 만든 뒤 복원해 주세요.')+'</div></div>';
  el.innerHTML=html;
 }
 async function validateBackupFile(input){
@@ -2271,7 +2271,7 @@ async function optimizeExistingPhotos(){
    show('처리 중 '+(i+1)+' / '+photos.length+' · 최적화 '+report.optimized+'장 · 건너뜀 '+report.skipped+'장 · 실패 '+report.failed+'장');
    try{
     const {data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrl(oldPath,300);
-    if(signedError||!signed?.signedUrl)throw signedError||new Error('사진 다운로드 주소를 만들지 못했어요.');
+    if(signedError||!signed?.signedUrl)throw signedError||new Error('사진 다운로드 주소를 만들지 못했습니다.');
     const response=await fetch(signed.signedUrl,{cache:'no-store'});
     if(!response.ok)throw new Error('원본 다운로드 실패 ('+response.status+')');
     const original=await response.blob();report.originalBytes+=original.size;
@@ -2304,7 +2304,7 @@ async function optimizeExistingPhotos(){
   if(report.optimized)toast('기존 사진 '+report.optimized+'장을 최적화했어요');
  }catch(error){
   console.error('Existing photo optimization failed',error);
-  show('최적화 중 오류가 발생했어요: '+(error?.message||String(error))+' · 이미 처리된 사진은 앱에서 연결 정보를 확인해 주세요.');
+  show('최적화 중 오류가 발생했습니다: '+(error?.message||String(error))+' · 이미 처리된 사진은 앱에서 연결 정보를 확인해 주세요.');
   alert('기존 사진 최적화를 완료하지 못했어요.\n'+(error?.message||String(error))+'\n\n진행 상황을 확인하고, 이미 처리된 사진은 앱에서 확인해 주세요.');
  }finally{
   button.disabled=false;button.textContent='기존 사진 최적화 시작';
@@ -2336,7 +2336,7 @@ async function restoreFullBackup(input){
   if(Array.isArray(d.brands)){for(const b of d.brands){if(!b.name)continue;const {data:existing,error:findError}=await supabaseClient.from('brands').select('id').eq('user_id',currentUser.id).eq('name',b.name).limit(1);if(findError)throw new Error('브랜드 확인 실패: '+findError.message);if(!existing?.length){const {error}=await supabaseClient.from('brands').insert({...b,user_id:currentUser.id});if(error)throw new Error('브랜드 복원 실패: '+error.message)}}}
   if(d.local?.brands!=null)localStorage.setItem(BRANDS_KEY,d.local.brands);if(d.local?.budget!=null)localStorage.setItem(BUDGET_KEY,d.local.budget);if(d.local?.showVersion!=null)localStorage.setItem(VERSION_VISIBLE_KEY,d.local.showVersion);
   await loadBrands();await load();toast('복원 완료 · 시계 '+watchCount+'개, 사진 '+restoredPhotos+'개');alert('복원이 완료됐어요.\n시계 '+watchCount+'개\n사진 '+restoredPhotos+'개\n\n백업에 없는 기존 항목은 삭제하지 않았어요.');
- }catch(e){console.error('Archive restore failed',e);alert('복원 도중 오류가 발생했어요.\n'+(e?.message||String(e))+'\n\n일부 데이터가 복원됐을 수 있으니 현재 상태를 확인해 주세요.')}finally{if(button){button.disabled=false;button.textContent='백업 파일에서 복원하기'}}
+ }catch(e){console.error('Archive restore failed',e);alert('복원 도중 오류가 발생했습니다.\n'+(e?.message||String(e))+'\n\n일부 데이터가 복원됐을 수 있으니 현재 상태를 확인해 주세요.')}finally{if(button){button.disabled=false;button.textContent='백업 파일에서 복원하기'}}
 }
 
 const WEAR_PUSH_VAPID_PUBLIC_KEY='BNzcCgm9fx3JvIc7lEXCi6KUO7-VUxOELFNCDWOYBEb-CVQkIynR695HCl_d-nvK2iZG4YBoII7n1ivp_hvE8u0';
@@ -2363,7 +2363,7 @@ async function setWearReminderPush(enable){
    toast('착용 기록 알림을 해제했어요');
   }
   settings();
- }catch(e){console.error('Wear reminder push setup failed',e);alert('알림 설정을 완료하지 못했어요. '+(e?.message||String(e)))}
+ }catch(e){console.error('Wear reminder push setup failed',e);alert('알림 설정을 완료하지 못했습니다. '+(e?.message||String(e)))}
  finally{const b=document.getElementById('wearPushToggle');if(b)b.disabled=false}
 }
 let collectorProfileDraft=null;
@@ -2379,7 +2379,7 @@ async function profilePage(){
  }catch(error){
   console.error('Profile load failed',error);
   const loading=document.querySelector('.profile-loading');
-  if(loading)loading.textContent='프로필을 불러오지 못했어요. '+(error.message||error);
+  if(loading)loading.textContent='프로필을 불러오지 못했습니다. '+(error.message||error);
  }
 }
 function renderCollectorProfilePage(){
@@ -2421,7 +2421,7 @@ async function saveCollectorProfile(){
   collectorProfileDraft=data;window.watchArchiveProfile=data;
   const {error:shareError}=await supabaseClient.from('collection_shares').update({collector_name:name,show_collector_name:show,updated_at:new Date().toISOString()}).eq('user_id',currentUser.id);
   renderCollectorProfilePage();
-  toast(shareError?'프로필은 저장했지만 기존 공유 정보 일부를 갱신하지 못했어요.':'프로필을 저장했어요');
+  toast(shareError?'프로필은 저장했지만 기존 공유 정보 일부를 갱신하지 못했습니다.':'프로필을 저장했어요');
  }catch(error){
   console.error('Profile save failed',error);toast('프로필 저장 실패: '+(error.message||error));
   if(button){button.disabled=false;button.textContent='다시 시도'}
@@ -2481,7 +2481,7 @@ async function boot(){
   restoreAppViewState();
  }catch(error){
   console.error('[Watch Archive] App startup failed',error);
-  authScreen('앱을 불러오지 못했어요. 네트워크 연결을 확인한 뒤 다시 로그인해주세요. ('+(error?.message||'초기화 오류')+')');
+  authScreen('앱을 불러오지 못했습니다. 네트워크 연결을 확인한 뒤 다시 로그인해 주세요. ('+(error?.message||'초기화 오류')+')');
  }finally{clearTimeout(watchdog)}
 }
 let lastAuthUserId=currentUser?.id||null;
@@ -2499,7 +2499,7 @@ supabaseClient.auth.onAuthStateChange((event,session)=>{
   if(nextUser&&previousUserId!==nextUser.id){
    loadBrands().then(load).catch(error=>{
     console.error('[Watch Archive] Auth refresh failed',error);
-    authScreen('데이터를 불러오지 못했어요. 페이지를 새로고침해주세요.')
+    authScreen('데이터를 불러오지 못했습니다. 페이지를 새로고침해 주세요.')
    });
   }
   return;
@@ -2514,7 +2514,7 @@ function bindAccessibleFieldLabels(){
  root.querySelectorAll(".tabs button,.status button,.sort-option").forEach(button=>button.setAttribute("aria-pressed",String(button.classList.contains("active")||button.classList.contains("selected"))));
 }
 const fieldLabelObserver=new MutationObserver(bindAccessibleFieldLabels);fieldLabelObserver.observe(document.getElementById("app"),{childList:true,subtree:true});bindAccessibleFieldLabels();
-boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해주세요.')});
+boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해 주세요.')});
 
 (function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,1500),{once:true});setTimeout(hide,2200)})();
 </script><script src="collection-sharing.js"></script>
