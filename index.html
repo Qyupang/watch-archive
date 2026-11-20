@@ -912,7 +912,7 @@ const SUPABASE_URL="https://brtwmzobcukyifzjnkpb.supabase.co", SUPABASE_KEY="sb_
 const supabaseClient=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 const DB='watch-archive-v2',STORE='watches',BRANDS_KEY='watch-archive-brands-v1';
 const DEFAULT_BRANDS=['Rolex','Omega','TAG Heuer','Tudor','Cartier','Jaeger-LeCoultre','Patek Philippe','Audemars Piguet','Vacheron Constantin','Breguet','Breitling','IWC','Zenith','Hublot','Longines','Grand Seiko','Seiko','Citizen','Casio','Timex','Bulgari','Piaget','Panerai','Hamilton','Oris','Nomos','Sinn','Tissot','Rado','Heuer'];
-let watches=[],filter='archive',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
+let watches=[],filter='owned',query='',brandFilter='',possessionFilter='all',detail=null,editing=null,editPhotos=[],editStatus='owned',brands=[],currentUser=null;
 let sortMode='random',watchRandomRank=new Map(),sortMenuOpen=false;
 const $=s=>document.querySelector(s),uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1687,17 +1687,8 @@ function renderHome(){
 if(detail){renderDetail();return}
 let o=watches.filter(w=>w.status==='owned').length,a=watches.filter(w=>w.status==='archive').length;
 
-// Keep the Daily Inspiration DOM node alive when switching My Watches / Archive.
-// Re-rendering the whole home screen used to destroy and recreate the image element,
-// which caused a visible reload/flicker even though the same photo was already loaded.
-const preservedInspiration=document.querySelector('.inspiration');
+$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><div class="brand">Watch Archive</div></div></div><div class="tabs"><button class="tab '+(filter==='owned'?'active':'')+'" onclick="switchCollection(\'owned\')">My Watches</button><button class="tab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button></div><input id="homeSearch" class="search" aria-label="시계 컬렉션 검색" placeholder="브랜드, 모델, 레퍼런스, 태그 검색" value="'+esc(query)+'" oninput="query=this.value;updateHomeResults()">'+(filter==='owned'?'<div id="possessionFilterRoot">'+possessionFilterHtml()+'</div>':'')+'<div id="brandFilterRoot">'+brandFilterHtml()+'</div><div id="homeResults"></div></main><button class="fab" onclick="openEditor()">＋</button>'+nav();
 
-$('#app').innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">PERSONAL WATCH ARCHIVE</div><div class="brand">Watch Archive</div></div></div>'+dailyInspiration()+'<div class="tabs"><button class="tab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="tab '+(filter==='owned'?'active':'')+'" onclick="switchCollection(\'owned\')">My Watches</button></div><input id="homeSearch" class="search" aria-label="시계 컬렉션 검색" placeholder="브랜드, 모델, 레퍼런스, 태그 검색" value="'+esc(query)+'" oninput="query=this.value;updateHomeResults()">'+(filter==='owned'?'<div id="possessionFilterRoot">'+possessionFilterHtml()+'</div>':'')+'<div id="brandFilterRoot">'+brandFilterHtml()+'</div><div id="homeResults"></div></main><button class="fab" onclick="openEditor()">＋</button>'+nav();
-
-const renderedInspiration=document.querySelector('.inspiration');
-if(preservedInspiration&&renderedInspiration){
-  renderedInspiration.replaceWith(preservedInspiration);
-}
 
 updateHomeResults();const vi=document.createElement('div');vi.innerHTML=versionIndicator();const main=document.querySelector('#app main.app');if(main&&vi.firstElementChild)main.appendChild(vi.firstElementChild)
 }
@@ -2461,7 +2452,9 @@ function restoreAppViewState(){
  const s=readAppViewState();
  const requestedTab=new URLSearchParams(location.search).get('tab');
  const target=requestedTab==='wear'?'wear':(s?.tab||'watches');
- if(s){filter=s.filter||filter;query=s.query||'';brandFilter=s.brandFilter||'';possessionFilter=s.possessionFilter||'all';sortMode=s.sortMode||sortMode;if(s.wearSelectedDate)wearSelectedDate=s.wearSelectedDate;mainTabScrollPositions={...mainTabScrollPositions,...(s.mainTabScrollPositions||{})}}
+ if(s){query=s.query||'';brandFilter=s.brandFilter||'';possessionFilter=s.possessionFilter||'all';sortMode=s.sortMode||sortMode;if(s.wearSelectedDate)wearSelectedDate=s.wearSelectedDate;mainTabScrollPositions={...mainTabScrollPositions,...(s.mainTabScrollPositions||{})}}
+ // Always open the Watches screen on My Watches; Archive remains one tap away.
+ filter='owned';
  if(target!=='watches')navigateMainTab(target);else renderHome();
  if(s&&target===(s.tab||'watches'))restoreMainTabScroll(s.scrollY||0);
 }
