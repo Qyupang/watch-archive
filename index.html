@@ -1688,8 +1688,8 @@ function switchCollection(next){
  restorePageScrollY(restoreY===null?0:restoreY);
 }
 function collectionOverviewHtml(){const owned=watches.filter(w=>w.status==='owned'),brands=new Set(owned.map(w=>String(w.brand||'').trim()).filter(Boolean)).size;return '<div class="collection-overview" aria-label="내 컬렉션 요약"><div class="collection-overview-item"><strong>'+owned.length+'</strong><span>WATCHES</span></div><div class="collection-overview-item"><strong>'+brands+'</strong><span>BRANDS</span></div><div class="collection-overview-item"><strong>'+(wearLogs||[]).length+'</strong><span>WEAR LOGS</span></div></div>'}
-let wearLogsLoaded=false,wearLogsLoading=null;
-async function ensureWearLogsLoaded(){if(wearLogsLoaded||!currentUser)return;if(wearLogsLoading)return wearLogsLoading;const userId=currentUser.id;wearLogsLoading=(async()=>{try{const{data,error}=await supabaseClient.from('wear_logs').select('id,watch_id,wear_date,created_at').eq('user_id',userId).order('wear_date',{ascending:false});if(error)throw error;if(currentUser?.id===userId){wearLogs=data||[];wearLogsLoaded=true;const summary=document.getElementById('collectionOverview');if(summary)summary.innerHTML=collectionOverviewHtml()}}catch(error){console.warn('Wear summary unavailable',error)}finally{wearLogsLoading=null}})();return wearLogsLoading}
+let wearLogsLoaded=false,wearLogsLoading=null,wearLogsUserId=null;
+async function ensureWearLogsLoaded(){if(!currentUser)return;if(wearLogsLoaded&&wearLogsUserId===currentUser.id)return;if(wearLogsLoading)return wearLogsLoading;const userId=currentUser.id;wearLogs=[];wearLogsLoaded=false;wearLogsLoading=(async()=>{try{const{data,error}=await supabaseClient.from('wear_logs').select('id,watch_id,wear_date,created_at').eq('user_id',userId).order('wear_date',{ascending:false});if(error)throw error;if(currentUser?.id===userId){wearLogs=data||[];wearLogsLoaded=true;wearLogsUserId=userId;const summary=document.getElementById('collectionOverview');if(summary)summary.innerHTML=collectionOverviewHtml()}}catch(error){console.warn('Wear summary unavailable',error)}finally{wearLogsLoading=null}})();return wearLogsLoading}
 function renderHome(){
 if(detail){renderDetail();return}
 
@@ -2020,7 +2020,7 @@ async function wearPage(){
  try{
   const {data,error}=await supabaseClient.from('wear_logs').select('id,watch_id,wear_date,created_at').eq('user_id',currentUser.id).order('wear_date',{ascending:false});
   if(error)throw error;
-  wearLogs=data||[];wearLogsLoaded=true;
+  wearLogs=data||[];wearLogsLoaded=true;wearLogsUserId=currentUser.id;
   renderWearContent();
  }catch(e){console.error('Wear log load failed',e);const el=$('#wearContent');if(el)el.innerHTML='<div class="empty">착용 기록을 불러오지 못했어. Supabase 설정을 확인해줘.</div>'}
 }
