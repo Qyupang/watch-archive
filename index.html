@@ -2045,7 +2045,7 @@ function renderWearCalendar(){
  for(let i=0;i<offset;i++)cells.push('<span></span>');
  for(let day=1;day<=days;day++){
   const date=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'),has=logged.has(date),selected=date===wearSelectedDate,isToday=date===todayStr,future=date>todayStr;
-  cells.push('<button type="button" class="wear-day'+(has?' has-log':'')+(selected?' selected':'')+(isToday?' today':'')+'" '+(future?'disabled':'')+' onclick="selectWearDate(\\''+date+'\\')" aria-label="'+date+(has?', 착용 기록 있음':'')+'">'+day+(has?'<span class="wear-dot"></span>':'')+'</button>');
+  cells.push('<button type="button" class="wear-day'+(has?' has-log':'')+(selected?' selected':'')+(isToday?' today':'')+'" '+(future?'disabled':'')+' onclick="selectWearDate(\''+date+'\')" aria-label="'+date+(has?', 착용 기록 있음':'')+'">'+day+(has?'<span class="wear-dot"></span>':'')+'</button>');
  }
  return '<section class="wear-calendar"><div class="wear-calendar-top"><div><div class="eyebrow">WEAR CALENDAR</div><div class="wear-month-label">'+year+'년 '+month+'월</div></div><div class="wear-month-nav"><button type="button" onclick="shiftWearMonth(-1)" aria-label="이전 달">‹</button><button type="button" onclick="shiftWearMonth(1)" '+(wearCalendarMonth>=todayStr.slice(0,7)?'disabled':'')+' aria-label="다음 달">›</button></div></div><div class="wear-weekdays">'+['월','화','수','목','금','토','일'].map(d=>'<div class="wear-weekday">'+d+'</div>').join('')+'</div><div class="wear-calendar-grid">'+cells.join('')+'</div><div class="wear-calendar-legend"><span class="wear-dot"></span> 착용 기록이 있는 날</div></section>';
 }
