@@ -2048,7 +2048,7 @@ function resetWearDraft(date){
 function wearDraftPhotoHtml(){
  const existing=wearDraftPhotoPaths.map((path,i)=>{const url=photoUrlCache.get(path)?.url||'';return '<div class="wear-photo-item">'+(url?'<img src="'+esc(url)+'" alt="착용 사진 '+(i+1)+'">':'<div class="wear-photo-placeholder">사진 불러오는 중</div>')+'<button type="button" aria-label="사진 삭제" onclick="removeWearDraftPhoto('+i+',false)">×</button></div>'}).join('');
  const added=wearDraftFiles.map((item,i)=>'<div class="wear-photo-item"><img src="'+esc(item.url)+'" alt="추가할 착용 사진 '+(i+1)+'"><button type="button" aria-label="사진 삭제" onclick="removeWearDraftPhoto('+i+',true)">×</button></div>').join('');
- return '<div class="wear-photo-grid">'+existing+added+'</div><label class="wear-photo-add" for="wearPhotoInput"><span>＋</span><span>사진 추가</span><small>'+(wearDraftPhotoPaths.length+wearDraftFiles.length)+' / 3</small></label><input id="wearPhotoInput" type="file" accept="image/*" multiple hidden onchange="selectWearPhotos(this)"><div class="small" style="margin-top:7px">착용 사진은 최대 3장까지 등록할 수 있어요.</div>';
+ return '<div class="eyebrow" style="margin-top:18px">TODAY&#39;S WRIST SHOT</div><div class="wear-photo-grid">'+existing+added+'</div><label class="wear-photo-add" for="wearPhotoInput"><span>＋</span><span>사진 추가</span><small>'+(wearDraftPhotoPaths.length+wearDraftFiles.length)+' / 3</small></label><input id="wearPhotoInput" type="file" accept="image/*" multiple hidden onchange="selectWearPhotos(this)"><div class="small" style="margin-top:7px">착용 사진은 최대 3장까지 등록할 수 있어요.</div>';
 }
 function selectWearPhotos(input){
  const files=[...(input.files||[])];input.value='';
