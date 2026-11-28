@@ -1367,7 +1367,14 @@ function restoreMainTabScroll(y){
 function navigateMainTab(next){
  const allowed=['watches','boxes','timeline','portfolio','wear','photos','settings','profile','more'];
  const target=allowed.includes(next)?next:'watches';
- if(target===activeMainTab)return;
+ if(target===activeMainTab){
+  // Re-tapping the active bottom tab returns the current page to its top.
+  // Keep the saved per-tab position in sync so a later tab switch cannot restore the old offset.
+  mainTabScrollPositions[target]=0;
+  const behavior=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'auto':'smooth';
+  window.scrollTo({top:0,left:0,behavior});
+  return;
+ }
  mainTabScrollPositions[activeMainTab]=mainPageScrollY();
  activeMainTab=target;
  const restoreY=mainTabScrollPositions[target];
