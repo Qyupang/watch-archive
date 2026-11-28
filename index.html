@@ -992,20 +992,6 @@ button:not(.wear-day),[role="button"]:not(.wear-day){min-inline-size:44px;min-bl
 .wear-day .wear-calendar-marker{width:5px;height:5px;flex-basis:5px;border:0}
 .wear-day-empty{aspect-ratio:1;min-width:0}
 .wear-day:active:not(:disabled){transform:scale(.94)}
-/* Editorial numerals: extend the collection overview type to key numeric highlights. */
-.stat b,
-.collection-count strong,
-.portfolio-hero-total,
-.portfolio-metric-card strong,
-.timeline-year-total strong,
-.monthly-recap-stat strong,
-.monthly-recap-watch-count,
-.monthly-recap-rank-num,
-.monthly-recap-rank-count,
-.wear-activity-summary strong,
-.wear-day-number {
-  font-family: "Cormorant Garamond", Georgia, serif !important;
-}
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
