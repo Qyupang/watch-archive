@@ -5,6 +5,7 @@ const css=[
 '.archive-subtabs{display:flex;gap:8px;margin:-4px 0 18px;padding:4px;background:var(--soft);border-radius:13px}',
 '.archive-subtab{flex:1;border:0;border-radius:10px;padding:10px;background:transparent;color:var(--muted);font-size:13px;font-weight:650}',
 '.archive-subtab.active{background:var(--paper);color:var(--ink)}',
+'.overlay .status{grid-template-columns:repeat(3,minmax(0,1fr))}.overlay .status button{padding:11px 5px;font-size:12px}',
 '.to-buy-badge{display:inline-flex;width:max-content;margin-bottom:7px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:9px;letter-spacing:.12em;font-weight:750}',
 '.market-section{margin:26px 0;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}',
 '.market-section-title{font:24px Georgia,serif;margin:4px 0 15px}',
