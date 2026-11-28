@@ -975,7 +975,23 @@ button:not(.wear-day),[role="button"]:not(.wear-day){min-inline-size:44px;min-bl
 .wear-calendar-event-mark{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#c5a66b}
 .wear-calendar-event-mark.released{background:#bd8175}
 .wear-calendar-event-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
-.wear-calendar-event-copy strong{font-size:12px}.wear-calendar-event-copy small{font-size:10px;color:var(--muted)}</style></head>
+.wear-calendar-event-copy strong{font-size:12px}.wear-calendar-event-copy small{font-size:10px;color:var(--muted)}.wear-activity-summary{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 17px}
+.wear-activity-summary>div{padding:13px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);display:flex;flex-direction:column;gap:4px}
+.wear-activity-summary strong{font:25px Georgia,serif;color:var(--ink)}
+.wear-activity-summary span{font-size:10px;color:var(--muted)}
+.wear-calendar-grid{row-gap:7px}
+.wear-day{aspect-ratio:1;border-radius:50%;display:flex;flex-direction:column;gap:1px;justify-content:center;align-items:center;overflow:visible;transition:background .16s ease,border-color .16s ease,transform .16s ease}
+.wear-day-number{font-size:13px;line-height:1.1}
+.wear-day.has-log{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bg) 14%,transparent)}
+.wear-day.has-log .wear-day-number{font-weight:750}
+.wear-day-check{font-size:8px;line-height:8px;font-weight:800;opacity:.85}
+.wear-day.selected{outline:2px solid var(--ink);outline-offset:2px}
+.wear-day.today:not(.selected){border-color:var(--ink);border-style:dashed}
+.wear-day.selected.has-log{background:var(--ink);color:var(--bg)}
+.wear-day .wear-calendar-markers{bottom:-5px;gap:2px}
+.wear-day .wear-calendar-marker{width:4px;height:4px;flex-basis:4px;border:1px solid var(--paper)}
+.wear-day-empty{aspect-ratio:1;min-width:0}
+.wear-day:active:not(:disabled){transform:scale(.94)}</style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2162,15 +2178,16 @@ function renderWearCalendarEvents(date){
  }).join('')+'</div>';
 }
 function renderWearCalendar(){
- const parts=wearCalendarMonth.split('-').map(Number),year=parts[0],month=parts[1],first=new Date(year,month-1,1),days=new Date(year,month,0).getDate(),offset=first.getDay(),today=new Date(),todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'),logged=new Set(wearLogs.map(x=>x.wear_date)),cells=[];
- for(let i=0;i<offset;i++)cells.push('<span></span>');
+ const parts=wearCalendarMonth.split('-').map(Number),year=parts[0],month=parts[1],first=new Date(year,month-1,1),days=new Date(year,month,0).getDate(),offset=first.getDay(),today=new Date(),todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'),logged=new Set(wearLogs.map(x=>x.wear_date)),monthWearDays=new Set([...logged].filter(date=>date.slice(0,7)===wearCalendarMonth)).size,cells=[];
+ const streakAnchor=logged.has(todayStr)?todayStr:(()=>{const d=new Date(today.getFullYear(),today.getMonth(),today.getDate()-1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();let currentStreak=0,streakDate=new Date(streakAnchor+'T12:00:00');while(true){const key=streakDate.getFullYear()+'-'+String(streakDate.getMonth()+1).padStart(2,'0')+'-'+String(streakDate.getDate()).padStart(2,'0');if(!logged.has(key))break;currentStreak++;streakDate.setDate(streakDate.getDate()-1)}
+ for(let i=0;i<offset;i++)cells.push('<span class="wear-day-empty"></span>');
  for(let day=1;day<=days;day++){
   const date=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'),has=logged.has(date),events=wearCalendarEvents(date),selected=date===wearSelectedDate,isToday=date===todayStr,future=date>todayStr;
   const eventLabel=events.map(event=>(event.type==='acquired'?'기추: ':'방출: ')+event.watch.brand+' '+event.watch.model).join(', ');
   const markers=(has?'<i class="wear-calendar-marker wear-calendar-marker-wear"></i>':'')+events.map(event=>'<i class="wear-calendar-marker '+(event.type==='acquired'?'wear-calendar-marker-acquired':'wear-calendar-marker-released')+'"></i>').join('');
-  cells.push('<button type="button" class="wear-day'+(has?' has-log':'')+(events.length?' has-event':'')+(selected?' selected':'')+(isToday?' today':'')+'" '+(future?'disabled':'')+' onclick="selectWearDate(\''+date+'\')" aria-label="'+date+(has?', 착용 기록 있음':'')+(eventLabel?', '+esc(eventLabel):'')+'">'+day+(markers?'<span class="wear-calendar-markers">'+markers+'</span>':'')+'</button>');
+  cells.push('<button type="button" class="wear-day'+(has?' has-log':'')+(events.length?' has-event':'')+(selected?' selected':'')+(isToday?' today':'')+'" '+(future?'disabled':'')+' onclick="selectWearDate(\''+date+'\')" aria-label="'+date+(has?', 착용 기록 있음':'')+(eventLabel?', '+esc(eventLabel):'')+'"><span class="wear-day-number">'+day+'</span>'+(has?'<span class="wear-day-check" aria-hidden="true">✓</span>':'')+(markers?'<span class="wear-calendar-markers">'+markers+'</span>':'')+'</button>');
  }
- return '<section class="wear-calendar"><div class="wear-calendar-top"><div><div class="eyebrow">WEAR CALENDAR</div><div class="wear-month-label">'+year+'년 '+month+'월</div></div><div class="wear-month-nav"><button type="button" onclick="shiftWearMonth(-1)" aria-label="이전 달">‹</button><button type="button" onclick="shiftWearMonth(1)" '+(wearCalendarMonth>=todayStr.slice(0,7)?'disabled':'')+' aria-label="다음 달">›</button></div></div><div class="wear-weekdays">'+['일','월','화','수','목','금','토'].map(d=>'<div class="wear-weekday">'+d+'</div>').join('')+'</div><div class="wear-calendar-grid">'+cells.join('')+'</div><div class="wear-calendar-legend"><span><i class="wear-calendar-marker wear-calendar-marker-wear"></i> 착용</span><span><i class="wear-calendar-marker wear-calendar-marker-acquired"></i> 기추</span><span><i class="wear-calendar-marker wear-calendar-marker-released"></i> 방출</span></div>'+renderWearCalendarEvents(wearSelectedDate)+'</section>';
+ return '<section class="wear-calendar"><div class="wear-calendar-top"><div><div class="eyebrow">WEAR ACTIVITY</div><div class="wear-month-label">'+year+'년 '+month+'월</div></div><div class="wear-month-nav"><button type="button" onclick="shiftWearMonth(-1)" aria-label="이전 달">‹</button><button type="button" onclick="shiftWearMonth(1)" '+(wearCalendarMonth>=todayStr.slice(0,7)?'disabled':'')+' aria-label="다음 달">›</button></div></div><div class="wear-activity-summary"><div><strong>'+monthWearDays+'일</strong><span>이번 달 착용 기록</span></div><div><strong>'+currentStreak+'일</strong><span>현재 연속 기록</span></div></div><div class="wear-weekdays">'+['일','월','화','수','목','금','토'].map(d=>'<div class="wear-weekday">'+d+'</div>').join('')+'</div><div class="wear-calendar-grid">'+cells.join('')+'</div><div class="wear-calendar-legend"><span><i class="wear-calendar-marker wear-calendar-marker-wear"></i> 착용</span><span><i class="wear-calendar-marker wear-calendar-marker-acquired"></i> 기추</span><span><i class="wear-calendar-marker wear-calendar-marker-released"></i> 방출</span></div>'+renderWearCalendarEvents(wearSelectedDate)+'</section>';
 }
 function renderWearContent(){
  const root=$('#wearContent');if(!root)return;
