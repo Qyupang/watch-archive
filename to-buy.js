@@ -31,19 +31,19 @@ function subtabs(){
  let el=document.getElementById('archiveSubtabs');
  if(!el){el=document.createElement('div');el.id='archiveSubtabs';el.className='archive-subtabs';tabs.insertAdjacentElement('afterend',el)}
  const count=watches.filter(w=>w.status==='to_buy').length;
- el.innerHTML='<button class="archive-subtab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="archive-subtab '+(filter==='to_buy'?'active':'')+'" onclick="switchCollection(\'to_buy\')">To Buy'+(count?' · '+count:'')+'</button>';
+ el.innerHTML='<button class="archive-subtab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="archive-subtab '+(filter==='to_buy'?'active':'')+'" onclick="switchCollection(\'to_buy\')">Watchlist'+(count?' · '+count:'')+'</button>';
 }
 window.renderHome=function(){oldHome();subtabs()};
 window.switchCollection=function(next){if(next!=='to_buy')return oldSwitch(next);if(filter==='to_buy')return;filter='to_buy';query='';brandFilter='';sortMenuOpen=false;renderHome();window.scrollTo(0,0)};
-window.updateHomeResults=function(){oldResults();if(filter==='to_buy'){const h=document.querySelector('#homeResults .head h2');if(h)h.textContent='To Buy';const e=document.querySelector('#homeResults .empty');if(e)e.textContent='구매 희망 시계를 추가해 보세요.'}};
-window.card=function(w){const html=oldCard(w);return w.status==='to_buy'?html.replace('<div class="cardbody">','<div class="cardbody"><span class="to-buy-badge">TO BUY</span>'):html};
+window.updateHomeResults=function(){oldResults();if(filter==='to_buy'){const h=document.querySelector('#homeResults .head h2');if(h)h.textContent='Watchlist';const e=document.querySelector('#homeResults .empty');if(e)e.textContent='관심 시계를 추가해 보세요.'}};
+window.card=function(w){const html=oldCard(w);return w.status==='to_buy'?html.replace('<div class="cardbody">','<div class="cardbody"><span class="to-buy-badge">WATCHLIST</span>'):html};
 window.renderEditor=function(){
  oldEditor();const root=document.querySelector('.overlay .status');
  if(root&&!root.querySelector('[data-status="to_buy"]')){
   root.querySelectorAll('button').forEach(b=>b.dataset.status=b.textContent.trim()==='My Watch'?'owned':'archive');
-  const b=document.createElement('button');b.type='button';b.dataset.status='to_buy';b.className=editStatus==='to_buy'?'active':'';b.textContent='To Buy';b.onclick=()=>setStatus('to_buy');root.appendChild(b);
+  const b=document.createElement('button');b.type='button';b.dataset.status='to_buy';b.className=editStatus==='to_buy'?'active':'';b.textContent='Watchlist';b.onclick=()=>setStatus('to_buy');root.appendChild(b);
  }
- if(editStatus==='to_buy'){const h=document.querySelector('.new-watch-heading h1');if(h)h.textContent='Add to To Buy';const p=document.querySelector('.new-watch-heading p');if(p)p.textContent='구매를 희망하는 시계를 목록에 기록해 보세요.'}
+ if(editStatus==='to_buy'){const h=document.querySelector('.new-watch-heading h1');if(h)h.textContent='Add to Watchlist';const p=document.querySelector('.new-watch-heading p');if(p)p.textContent='관심 있는 시계를 목록에 기록해 보세요.'}
 };
 window.renderDetail=function(){
  oldDetail();const w=watches.find(x=>x.id===detail);if(!w||w.status!=='to_buy')return;
