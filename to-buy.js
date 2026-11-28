@@ -56,7 +56,7 @@ function sectionHtml(w){
  '<div class="eyebrow">COMPLETED TRANSACTIONS</div><div id="marketChart" class="market-chart-empty">실거래 기록을 추가하면 가격 흐름을 확인할 수 있어요.</div>'+
  '<div class="eyebrow">MARKET HISTORY</div><div id="marketList"><div class="market-chart-empty">거래 기록을 불러오는 중입니다.</div></div>'+
  '<form class="market-form" id="marketForm" onsubmit="saveMarketEntry(event,\''+w.id+'\')"><div class="full"><strong id="marketFormTitle">거래 기록 추가</strong></div>'+
- '<div><label>확인 날짜</label><input id="marketDate" type="date" value="'+today()+'" required></div><div><label>가격 (원)</label><input id="marketPrice" inputmode="numeric" placeholder="8,500,000" required></div>'+
+ '<div><label>확인 날짜</label><input id="marketDate" type="date" value="'+today()+'" required></div><div><label>가격 (원)</label><input id="marketPrice" type="text" inputmode="numeric" autocomplete="off" placeholder="8,500,000" oninput="formatPurchasePriceInput(this)" required></div>'+
  '<div><label>거래 상태</label><select id="marketStatus"><option value="listed">판매 중 · 호가</option><option value="sold">판매 완료 · 실거래</option><option value="withdrawn">판매 종료</option></select></div>'+
  '<div><label>거래 플랫폼</label><input id="marketPlatform" placeholder="번개장터, 중고나라 등"></div>'+
  '<div><label>시계 상태</label><select id="marketCondition"><option value="">선택 안 함</option><option>미사용</option><option>민트급</option><option>양호</option><option>사용감 있음</option><option>부품용</option></select></div>'+
