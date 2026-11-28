@@ -54,7 +54,6 @@ function sectionHtml(w){
  return '<section class="market-section" id="marketSection"><div class="eyebrow">SECONDHAND MARKET</div><div class="market-section-title">Market Watch</div>'+
  '<div class="market-metrics"><div class="market-metric"><span>최근 등록 호가</span><strong id="marketListing">—</strong></div><div class="market-metric"><span>최근 실거래가</span><strong id="marketSold">—</strong></div></div>'+
  '<div class="eyebrow">COMPLETED TRANSACTIONS</div><div id="marketChart" class="market-chart-empty">실거래 기록을 추가하면 가격 흐름을 확인할 수 있어요.</div>'+
- '<div class="market-target-row"><label>희망 구매가</label><input class="market-target-input" id="marketTarget" inputmode="numeric" placeholder="희망 가격" value="'+(w.target_price?Number(w.target_price).toLocaleString('ko-KR'):'')+'"><button onclick="saveMarketTarget(\''+w.id+'\')">저장</button></div>'+
  '<div class="eyebrow">MARKET HISTORY</div><div id="marketList"><div class="market-chart-empty">거래 기록을 불러오는 중입니다.</div></div>'+
  '<form class="market-form" id="marketForm" onsubmit="saveMarketEntry(event,\''+w.id+'\')"><div class="full"><strong id="marketFormTitle">거래 기록 추가</strong></div>'+
  '<div><label>확인 날짜</label><input id="marketDate" type="date" value="'+today()+'" required></div><div><label>가격 (원)</label><input id="marketPrice" inputmode="numeric" placeholder="8,500,000" required></div>'+
@@ -86,11 +85,6 @@ function renderHistory(id){
  renderChart();
  el.innerHTML=rows.length?rows.map(r=>'<div class="market-record"><div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><strong class="market-record-price">'+won(r.price)+'</strong><span class="market-status">'+(r.status==='sold'?'실거래':r.status==='listed'?'판매 중':'판매 종료')+'</span></div><div class="market-record-meta">'+escM(r.observed_date)+' · '+escM(r.platform||'플랫폼 미기재')+(r.condition?' · '+escM(r.condition):'')+(r.accessories?' · '+escM(r.accessories):'')+(r.note?'<br>'+escM(r.note):'')+(r.source_url?'<br><a href="'+escM(r.source_url)+'" target="_blank" rel="noopener noreferrer">매물 링크 열기 ↗</a>':'')+'</div></div><div class="market-record-actions"><button onclick="editMarketEntry(\''+r.id+'\')">수정</button><button onclick="deleteMarketEntry(\''+r.id+'\',\''+id+'\')">삭제</button></div></div>').join(''):'<div class="market-chart-empty">아직 등록된 거래 기록이 없습니다.</div>';
 }
-window.saveMarketTarget=async function(id){
- const raw=String(document.getElementById('marketTarget')?.value||'').replace(/[^0-9]/g,''),target=raw?Number(raw):null;
- const {error}=await supabaseClient.from('watches').update({target_price:target}).eq('id',id).eq('user_id',currentUser.id).eq('status','to_buy');
- if(error)return toast('희망 가격 저장에 실패했습니다.');const w=watches.find(x=>x.id===id);if(w)w.target_price=target;toast('희망 구매가를 저장했습니다.');
-};
 window.saveMarketEntry=async function(e,id){
  e.preventDefault();const price=Number(String(document.getElementById('marketPrice')?.value||'').replace(/[^0-9]/g,'')),date=document.getElementById('marketDate')?.value;
  if(!price||!date)return toast('날짜와 가격을 입력해 주세요.');
