@@ -960,7 +960,22 @@ button:not(.wear-day),[role="button"]:not(.wear-day){min-inline-size:44px;min-bl
 .wear-recap-trigger{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:9px 12px;font:10px Georgia,serif;letter-spacing:.08em;white-space:nowrap}
 @media(max-width:420px){.monthly-recap-overlay{padding:0}.monthly-recap-modal{width:100%;height:100dvh;min-height:0;border:0;border-radius:0}.monthly-recap-slide{padding-left:22px;padding-right:22px}.monthly-recap-hero-image{height:210px}}
 
-</style></head>
+.wear-day.has-event{font-weight:700}
+.wear-calendar-markers{position:absolute;bottom:5px;left:0;right:0;display:flex;justify-content:center;align-items:center;gap:3px;min-height:5px}
+.wear-calendar-marker{display:inline-block;width:5px;height:5px;flex:0 0 5px;border-radius:50%;background:var(--muted)}
+.wear-calendar-marker-acquired{background:#c5a66b}.wear-calendar-marker-released{background:#bd8175}
+.wear-day.selected .wear-calendar-marker{box-shadow:0 0 0 1px var(--bg)}
+.wear-calendar-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:16px;color:var(--muted);font-size:11px}
+.wear-calendar-legend>span{display:inline-flex;align-items:center;gap:6px}
+.wear-calendar-events{margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.wear-calendar-events-title{margin-bottom:8px;color:var(--muted);font:9px Georgia,serif;letter-spacing:.12em}
+.wear-calendar-event{display:flex;align-items:center;gap:10px;padding:9px 0}
+.wear-calendar-event+.wear-calendar-event{border-top:1px solid var(--line)}
+.wear-calendar-event>img{width:42px;height:42px;object-fit:cover;border-radius:8px;background:var(--soft)}
+.wear-calendar-event-mark{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#c5a66b}
+.wear-calendar-event-mark.released{background:#bd8175}
+.wear-calendar-event-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+.wear-calendar-event-copy strong{font-size:12px}.wear-calendar-event-copy small{font-size:10px;color:var(--muted)}</style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -2134,14 +2149,28 @@ async function wearPage(){
 }
 function shiftWearMonth(delta){const d=new Date(wearCalendarMonth+'-15T12:00:00');d.setMonth(d.getMonth()+delta);wearCalendarMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderWearContent()}
 function selectWearDate(date){wearSelectedDate=date;wearCalendarMonth=date.slice(0,7);renderWearContent()}
+function wearCalendarEvents(date){
+ const events=[];
+ watches.forEach(w=>{if(w.purchase_date===date)events.push({type:'acquired',watch:w});if(w.sale_date===date)events.push({type:'released',watch:w})});
+ return events;
+}
+function renderWearCalendarEvents(date){
+ const events=wearCalendarEvents(date);if(!events.length)return '';
+ return '<div class="wear-calendar-events"><div class="wear-calendar-events-title">COLLECTION TIMELINE · '+date+'</div>'+events.map(event=>{
+  const w=event.watch,photo=w.photos?.find(p=>p.cover)||w.photos?.[0],label=event.type==='acquired'?'기추':'방출';
+  return '<div class="wear-calendar-event"><span class="wear-calendar-event-mark '+(event.type==='acquired'?'acquired':'released')+'"></span>'+(photo?.src?'<img src="'+esc(photo.src)+'" alt="">':'')+'<span class="wear-calendar-event-copy"><strong>'+esc(w.brand+' '+w.model)+'</strong><small>'+label+'한 시계</small></span></div>';
+ }).join('')+'</div>';
+}
 function renderWearCalendar(){
- const parts=wearCalendarMonth.split('-').map(Number),year=parts[0],month=parts[1],first=new Date(year,month-1,1),days=new Date(year,month,0).getDate(),offset=(first.getDay()+6)%7,today=new Date(),todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'),logged=new Set(wearLogs.map(x=>x.wear_date)),cells=[];
+ const parts=wearCalendarMonth.split('-').map(Number),year=parts[0],month=parts[1],first=new Date(year,month-1,1),days=new Date(year,month,0).getDate(),offset=first.getDay(),today=new Date(),todayStr=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0'),logged=new Set(wearLogs.map(x=>x.wear_date)),cells=[];
  for(let i=0;i<offset;i++)cells.push('<span></span>');
  for(let day=1;day<=days;day++){
-  const date=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'),has=logged.has(date),selected=date===wearSelectedDate,isToday=date===todayStr,future=date>todayStr;
-  cells.push('<button type="button" class="wear-day'+(has?' has-log':'')+(selected?' selected':'')+(isToday?' today':'')+'" '+(future?'disabled':'')+' onclick="selectWearDate(\''+date+'\')" aria-label="'+date+(has?', 착용 기록 있음':'')+'">'+day+(has?'<span class="wear-dot"></span>':'')+'</button>');
+  const date=year+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0'),has=logged.has(date),events=wearCalendarEvents(date),selected=date===wearSelectedDate,isToday=date===todayStr,future=date>todayStr;
+  const eventLabel=events.map(event=>(event.type==='acquired'?'기추: ':'방출: ')+event.watch.brand+' '+event.watch.model).join(', ');
+  const markers=(has?'<i class="wear-calendar-marker wear-calendar-marker-wear"></i>':'')+events.map(event=>'<i class="wear-calendar-marker '+(event.type==='acquired'?'wear-calendar-marker-acquired':'wear-calendar-marker-released')+'"></i>').join('');
+  cells.push('<button type="button" class="wear-day'+(has?' has-log':'')+(events.length?' has-event':'')+(selected?' selected':'')+(isToday?' today':'')+'" '+(future?'disabled':'')+' onclick="selectWearDate(\''+date+'\')" aria-label="'+date+(has?', 착용 기록 있음':'')+(eventLabel?', '+esc(eventLabel):'')+'">'+day+(markers?'<span class="wear-calendar-markers">'+markers+'</span>':'')+'</button>');
  }
- return '<section class="wear-calendar"><div class="wear-calendar-top"><div><div class="eyebrow">WEAR CALENDAR</div><div class="wear-month-label">'+year+'년 '+month+'월</div></div><div class="wear-month-nav"><button type="button" onclick="shiftWearMonth(-1)" aria-label="이전 달">‹</button><button type="button" onclick="shiftWearMonth(1)" '+(wearCalendarMonth>=todayStr.slice(0,7)?'disabled':'')+' aria-label="다음 달">›</button></div></div><div class="wear-weekdays">'+['월','화','수','목','금','토','일'].map(d=>'<div class="wear-weekday">'+d+'</div>').join('')+'</div><div class="wear-calendar-grid">'+cells.join('')+'</div><div class="wear-calendar-legend"><span class="wear-dot"></span> 착용 기록이 있는 날</div></section>';
+ return '<section class="wear-calendar"><div class="wear-calendar-top"><div><div class="eyebrow">WEAR CALENDAR</div><div class="wear-month-label">'+year+'년 '+month+'월</div></div><div class="wear-month-nav"><button type="button" onclick="shiftWearMonth(-1)" aria-label="이전 달">‹</button><button type="button" onclick="shiftWearMonth(1)" '+(wearCalendarMonth>=todayStr.slice(0,7)?'disabled':'')+' aria-label="다음 달">›</button></div></div><div class="wear-weekdays">'+['일','월','화','수','목','금','토'].map(d=>'<div class="wear-weekday">'+d+'</div>').join('')+'</div><div class="wear-calendar-grid">'+cells.join('')+'</div><div class="wear-calendar-legend"><span><i class="wear-calendar-marker wear-calendar-marker-wear"></i> 착용</span><span><i class="wear-calendar-marker wear-calendar-marker-acquired"></i> 기추</span><span><i class="wear-calendar-marker wear-calendar-marker-released"></i> 방출</span></div>'+renderWearCalendarEvents(wearSelectedDate)+'</section>';
 }
 function renderWearContent(){
  const root=$('#wearContent');if(!root)return;
