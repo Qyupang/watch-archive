@@ -4,6 +4,14 @@
 <meta name="theme-color" content="#f7f4ec"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Watch Archive">
 <link rel="apple-touch-icon" href="icon.svg"><link rel="manifest" href="manifest.webmanifest"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet"><title>Watch Archive</title>
 <style>
+/* Cormorant numerals only where the value stands alone; mixed Korean/number strings keep the UI font. */
+.collection-count strong,
+.monthly-recap-stat strong,
+.monthly-recap-rank-num,
+.monthly-recap-rank-count,
+.wear-day-number {
+  font-family: "Cormorant Garamond", Georgia, serif !important;
+}
 /* Watch Archive 02 Light identity + startup splash */
 #startupSplash{position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:28px;background:#f7f4ec;color:#171717;opacity:1;visibility:visible;transition:opacity .55s ease,visibility .55s ease;animation:splashFailsafe 0s linear 3.2s forwards}
 @keyframes splashFailsafe{to{opacity:0;visibility:hidden;pointer-events:none}}
