@@ -22,7 +22,7 @@ const css=[
 ].join('');
 const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
 const oldHome=window.renderHome,oldResults=window.updateHomeResults,oldSwitch=window.switchCollection,oldCard=window.card,oldEditor=window.renderEditor,oldDetail=window.renderDetail;
-const won=n=>Number(n||0).toLocaleString('ko-KR')+'원',today=()=>new Date().toISOString().slice(0,10);
+const won=n=>Number(n||0).toLocaleString('ko-KR')+'원',today=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
 const escM=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let rows=[],watchId=null,editingId=null;
 function subtabs(){
@@ -93,7 +93,7 @@ window.saveMarketTarget=async function(id){
 window.saveMarketEntry=async function(e,id){
  e.preventDefault();const price=Number(String(document.getElementById('marketPrice')?.value||'').replace(/[^0-9]/g,'')),date=document.getElementById('marketDate')?.value;
  if(!price||!date)return toast('날짜와 가격을 입력해 주세요.');
- const payload={user_id:currentUser.id,watch_id:id,observed_date:date,price,status:document.getElementById('marketStatus').value,platform:document.getElementById('marketPlatform').value.trim()||null,condition:document.getElementById('marketCondition').value||null,accessories:document.getElementById('marketAccessories').value||null,source_url:document.getElementById('marketUrl').value.trim()||null,note:document.getElementById('marketNote').value.trim()||null,updated_at:new Date().toISOString()};
+ const rawUrl=document.getElementById('marketUrl').value.trim();if(rawUrl&&!/^https?:\/\//i.test(rawUrl))return toast('매물 URL은 http 또는 https 주소를 입력해 주세요.');const payload={user_id:currentUser.id,watch_id:id,observed_date:date,price,status:document.getElementById('marketStatus').value,platform:document.getElementById('marketPlatform').value.trim()||null,condition:document.getElementById('marketCondition').value||null,accessories:document.getElementById('marketAccessories').value||null,source_url:rawUrl||null,note:document.getElementById('marketNote').value.trim()||null,updated_at:new Date().toISOString()};
  const b=document.getElementById('marketSave');if(b){b.disabled=true;b.textContent='저장 중…'}
  const res=editingId?await supabaseClient.from('watch_market_history').update(payload).eq('id',editingId).eq('user_id',currentUser.id):await supabaseClient.from('watch_market_history').insert(payload);
  if(res.error){console.error(res.error);toast('거래 기록 저장에 실패했습니다.');if(b){b.disabled=false;b.textContent='다시 시도'}return}
