@@ -1080,7 +1080,7 @@ function applyWatchRows(rows,photoRows){
  const paths=[...new Set(photoRows.map(p=>p.storage_path).filter(Boolean))];
  watches=rows.map(w=>{
   let ps=photoRows.filter(p=>p.watch_id===w.id).map(p=>({id:p.id,src:photoUrlCache.get(p.storage_path)?.url||'',path:p.storage_path,cover:p.is_cover,sortOrder:p.sort_order,type:p.photo_type||'watch',note:p.note||''}));
-  return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',current_value:w.current_value??null,valuation_date:w.valuation_date||'',valuation_source:w.valuation_source||'',purchase_price:w.purchase_price??null,purchase_source:w.purchase_source||'domestic',customs_duty:Number(w.customs_duty)||0,sale_price:w.sale_price??null,sale_date:w.sale_date||'',sale_reason:w.sale_reason||'',possession_status:w.possession_status||'held',purchase_date:w.purchase_date||'',purchase_reason:w.purchase_reason||'',overhaul_date:w.overhaul_date||'',repair_history:Array.isArray(w.repair_history)?w.repair_history:[],tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at};
+  return{id:w.id,status:w.status,brand:w.brand,model:w.model,reference:w.reference||'',size:w.size||'',movement:w.movement||'',current_value:w.current_value??null,target_price:w.target_price??null,valuation_date:w.valuation_date||'',valuation_source:w.valuation_source||'',purchase_price:w.purchase_price??null,purchase_source:w.purchase_source||'domestic',customs_duty:Number(w.customs_duty)||0,sale_price:w.sale_price??null,sale_date:w.sale_date||'',sale_reason:w.sale_reason||'',possession_status:w.possession_status||'held',purchase_date:w.purchase_date||'',purchase_reason:w.purchase_reason||'',overhaul_date:w.overhaul_date||'',repair_history:Array.isArray(w.repair_history)?w.repair_history:[],tags:w.tags||[],note:w.note||'',photos:ps,favorite:w.favorite,createdAt:w.created_at,updatedAt:w.updated_at};
  });
  watchRandomRank=new Map(watches.map(w=>[w.id,Math.random()]));
  return paths;
@@ -2244,7 +2244,7 @@ async function exportFullBackup(){
  setArchiveBackupProgress({status:'running',percent:2,message:'데이터 목록을 불러오는 중…',startedAt,finishedAt:null,donePhotos:0,totalPhotos:0});
  startArchiveBackupTimer();
  try{
-  const [watchRows,photoRows,wearRows,brandRows,historyRows,boxRows,boxItemRows]=await Promise.all([archiveRows('watches'),archiveRows('watch_photos'),archiveRows('wear_logs'),archiveRows('brands'),archiveRows('watch_history'),archiveRows('collection_boxes'),archiveRows('collection_box_items')]);
+  const [watchRows,photoRows,wearRows,brandRows,historyRows,marketHistoryRows,boxRows,boxItemRows]=await Promise.all([archiveRows('watches'),archiveRows('watch_photos'),archiveRows('wear_logs'),archiveRows('brands'),archiveRows('watch_history'),archiveRows('watch_market_history'),archiveRows('collection_boxes'),archiveRows('collection_box_items')]);
   const photoPaths=[...new Set([...photoRows.map(p=>p.storage_path),...boxRows.map(b=>b.cover_image_path)].filter(Boolean))],photoFiles={};
   setArchiveBackupProgress({percent:10,message:'시계와 기록을 불러왔어요. 사진 목록을 확인 중…',totalPhotos:photoPaths.length,donePhotos:0});
   if(photoPaths.length){
@@ -2259,7 +2259,7 @@ async function exportFullBackup(){
    }
   }else setArchiveBackupProgress({percent:85,message:'사진이 없어 기록 데이터를 정리하고 있습니다…',donePhotos:0,totalPhotos:0});
   setArchiveBackupProgress({percent:88,message:'백업 JSON 파일을 구성하는 중…'});
-  const backup={format:'watch-archive-backup',schemaVersion:1,createdAt:new Date().toISOString(),accountEmail:currentUser.email||null,data:{watches:watchRows,watch_photos:photoRows,wear_logs:wearRows,brands:brandRows,watch_history:historyRows,collection_boxes:boxRows,collection_box_items:boxItemRows,photoFiles,local:{brands:localStorage.getItem(BRANDS_KEY),budget:localStorage.getItem(BUDGET_KEY),showVersion:localStorage.getItem(VERSION_VISIBLE_KEY)}}};
+  const backup={format:'watch-archive-backup',schemaVersion:1,createdAt:new Date().toISOString(),accountEmail:currentUser.email||null,data:{watches:watchRows,watch_photos:photoRows,wear_logs:wearRows,brands:brandRows,watch_history:historyRows,watch_market_history:marketHistoryRows,collection_boxes:boxRows,collection_box_items:boxItemRows,photoFiles,local:{brands:localStorage.getItem(BRANDS_KEY),budget:localStorage.getItem(BUDGET_KEY),showVersion:localStorage.getItem(VERSION_VISIBLE_KEY)}}};
   setArchiveBackupProgress({percent:95,message:'백업 파일을 생성하고 있어요…'});
   downloadArchiveFile('watch-archive-backup-'+archiveDateStamp()+'.json',JSON.stringify(backup),'application/json;charset=utf-8');
   setArchiveBackupProgress({status:'complete',percent:100,message:'백업 파일 생성이 완료됐어요.',finishedAt:Date.now(),donePhotos:photoPaths.length,totalPhotos:photoPaths.length});
@@ -2429,6 +2429,7 @@ async function restoreFullBackup(input){
   }
   if(Array.isArray(d.wear_logs)&&d.wear_logs.length){const {error}=await supabaseClient.from('wear_logs').upsert(d.wear_logs.map(x=>({...x,user_id:currentUser.id})),{onConflict:'user_id,wear_date'});if(error)throw new Error('착용 기록 복원 실패: '+error.message)}
   if(Array.isArray(d.watch_history)&&d.watch_history.length){const {error}=await supabaseClient.from('watch_history').upsert(d.watch_history.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('시계 이력 복원 실패: '+error.message)}
+  if(Array.isArray(d.watch_market_history)&&d.watch_market_history.length){const {error}=await supabaseClient.from('watch_market_history').upsert(d.watch_market_history.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('중고 거래 이력 복원 실패: '+error.message)}
   if(Array.isArray(d.collection_boxes)&&d.collection_boxes.length){const restoredBoxes=[];for(const row of d.collection_boxes){let cover_image_path=row.cover_image_path||null;if(cover_image_path){const embedded=d.photoFiles?.[cover_image_path];if(!embedded?.data)throw new Error('보관함 대표 사진이 백업에 없습니다: '+cover_image_path);const blob=await(await fetch(embedded.data)).blob(),newPath=currentUser.id+'/boxes/'+row.id+'/'+uid()+'.jpg';const {error:uploadError}=await supabaseClient.storage.from('watch-photos').upload(newPath,blob,{contentType:embedded.contentType||blob.type||'image/jpeg',cacheControl:'3600',upsert:true});if(uploadError)throw new Error('보관함 대표 사진 복원 실패: '+uploadError.message);cover_image_path=newPath}restoredBoxes.push({...row,user_id:currentUser.id,cover_image_path})}const {error}=await supabaseClient.from('collection_boxes').upsert(restoredBoxes,{onConflict:'id'});if(error)throw new Error('보관함 복원 실패: '+error.message)}
   if(Array.isArray(d.collection_box_items)&&d.collection_box_items.length){const {error}=await supabaseClient.from('collection_box_items').upsert(d.collection_box_items.map(x=>({...x,user_id:currentUser.id})),{onConflict:'id'});if(error)throw new Error('보관함 시계 복원 실패: '+error.message)}
   if(Array.isArray(d.brands)){for(const b of d.brands){if(!b.name)continue;const {data:existing,error:findError}=await supabaseClient.from('brands').select('id').eq('user_id',currentUser.id).eq('name',b.name).limit(1);if(findError)throw new Error('브랜드 확인 실패: '+findError.message);if(!existing?.length){const {error}=await supabaseClient.from('brands').insert({...b,user_id:currentUser.id});if(error)throw new Error('브랜드 복원 실패: '+error.message)}}}
@@ -2615,5 +2616,5 @@ const fieldLabelObserver=new MutationObserver(bindAccessibleFieldLabels);fieldLa
 boot().catch(error=>{console.error('[Watch Archive] Unhandled startup error',error);authScreen('앱 초기화 중 오류가 발생했어요. 페이지를 새로고침해 주세요.')});
 
 (function(){const splash=document.getElementById('startupSplash');if(!splash)return;const hide=()=>splash.classList.add('is-hidden');window.addEventListener('load',()=>setTimeout(hide,1500),{once:true});setTimeout(hide,2200)})();
-</script><script src="collection-sharing.js"></script>
+</script><script src="collection-sharing.js"></script><script src="to-buy.js"></script>
 </body></html>
