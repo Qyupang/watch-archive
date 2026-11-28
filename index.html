@@ -919,6 +919,47 @@ button:not(.wear-day),[role="button"]:not(.wear-day){min-inline-size:44px;min-bl
 .wear-memory-placeholder{display:grid;place-items:center;font:10px Georgia,serif;color:var(--muted)}
 .wear-memory-copy{display:flex;flex-direction:column;gap:4px;min-width:0}
 .wear-memory-copy strong{font:22px Georgia,serif}.wear-memory-copy>span{font-size:11px;line-height:1.4}.wear-memory-copy small{font-size:10px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+.monthly-recap-overlay{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,15,14,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overscroll-behavior:contain}
+.monthly-recap-modal{position:relative;width:min(100%,480px);height:min(820px,92dvh);min-height:560px;overflow:hidden;border:1px solid rgba(255,255,255,.14);border-radius:22px;background:#171715;color:#f7f4ec;box-shadow:0 24px 80px #0008;display:flex;flex-direction:column}
+.monthly-recap-progress{display:flex;gap:5px;padding:16px 16px 0}
+.monthly-recap-progress span{height:3px;flex:1;border-radius:5px;background:#ffffff35;overflow:hidden}
+.monthly-recap-progress span.active{background:#f2eee4}
+.monthly-recap-top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 4px;color:#c7c1b5;font:10px Georgia,serif;letter-spacing:.14em}
+.monthly-recap-close{width:34px;height:34px;border:1px solid #ffffff35;border-radius:50%;background:transparent;color:#f7f4ec;font-size:21px;line-height:1}
+.monthly-recap-slide{flex:1;min-height:0;overflow:auto;padding:16px 24px 20px;display:flex;flex-direction:column;justify-content:center;animation:recapFade .24s ease}
+@keyframes recapFade{from{opacity:.35;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.monthly-recap-kicker{font:10px Georgia,serif;letter-spacing:.18em;color:#b9ad94}
+.monthly-recap-title{font:clamp(34px,9vw,54px)/1.04 Georgia,serif;letter-spacing:-.045em;margin:14px 0 12px;font-weight:400}
+.monthly-recap-subtitle{font-size:14px;line-height:1.7;color:#d0cabf}
+.monthly-recap-hero-image{width:100%;height:230px;object-fit:cover;border-radius:13px;margin:22px 0 12px;background:#292823}
+.monthly-recap-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:22px}
+.monthly-recap-stat{padding:17px 15px;border:1px solid #ffffff20;border-radius:13px;background:#ffffff08}
+.monthly-recap-stat strong{display:block;font:36px Georgia,serif;color:#f7f4ec}
+.monthly-recap-stat span{display:block;margin-top:6px;font-size:11px;color:#bcb6aa}
+.monthly-recap-watch{display:flex;align-items:center;gap:16px;margin-top:24px;padding:14px;border:1px solid #ffffff20;border-radius:15px;background:#ffffff08}
+.monthly-recap-watch img{width:104px;height:104px;flex:0 0 104px;object-fit:cover;border-radius:10px;background:#292823}
+.monthly-recap-watch-name{font-size:19px;line-height:1.35;font-weight:650}
+.monthly-recap-watch-count{margin-top:7px;color:#c4bba9;font:24px Georgia,serif}
+.monthly-recap-rank{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #ffffff20}
+.monthly-recap-rank-num{font:18px Georgia,serif;color:#b9ad94;width:22px}
+.monthly-recap-rank-name{flex:1;min-width:0;font-size:13px;line-height:1.4}
+.monthly-recap-rank-count{font:18px Georgia,serif}
+.monthly-recap-moment{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #ffffff20}
+.monthly-recap-moment img,.monthly-recap-moment-placeholder{width:76px;height:76px;flex:0 0 76px;object-fit:cover;border-radius:9px;background:#292823}
+.monthly-recap-moment-placeholder{display:grid;place-items:center;font:9px Georgia,serif;color:#aaa18f}
+.monthly-recap-moment-copy{min-width:0;display:flex;flex-direction:column;gap:5px;justify-content:center}
+.monthly-recap-moment-copy strong{font:17px Georgia,serif}
+.monthly-recap-moment-copy span{font-size:12px}
+.monthly-recap-moment-copy small{font-size:11px;line-height:1.45;color:#bcb6aa;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.monthly-recap-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px max(16px,env(safe-area-inset-bottom));border-top:1px solid #ffffff20}
+.monthly-recap-bottom button{min-width:90px;padding:11px 16px;border:1px solid #ffffff40;border-radius:999px;background:transparent;color:#f7f4ec;font:inherit;font-size:12px}
+.monthly-recap-bottom button.primary{background:#f2eee4;color:#171715;border-color:#f2eee4;font-weight:700}
+.monthly-recap-bottom button:disabled{opacity:.25}
+.monthly-recap-counter{font:11px Georgia,serif;color:#bcb6aa}
+.wear-recap-trigger{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:9px 12px;font:10px Georgia,serif;letter-spacing:.08em;white-space:nowrap}
+@media(max-width:420px){.monthly-recap-overlay{padding:0}.monthly-recap-modal{width:100%;height:100dvh;min-height:0;border:0;border-radius:0}.monthly-recap-slide{padding-left:22px;padding-right:22px}.monthly-recap-hero-image{height:210px}}
+
 </style></head>
 <body><div id="startupSplash" role="status" aria-label="Watch Archive 로딩 중"><img class="splash-light" src="logo-wordmark.svg" alt="WATCH ARCHIVE"><img class="splash-dark" src="logo-wordmark-dark.svg" alt="WATCH ARCHIVE"></div><div id="app"></div><div id="toast" class="toast hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 <script>/* Keep splash dismissal independent from app initialization. */(function(){var splash=document.getElementById("startupSplash");if(!splash)return;var hide=function(){splash.classList.add("is-hidden")};window.addEventListener("load",function(){setTimeout(hide,1500)},{once:true});setTimeout(hide,2200)})();</script>
@@ -2080,7 +2121,7 @@ function wearUnusedHtml(owned,monthLogs){
 }
 function dateLabel(date){const d=new Date(date+'T12:00:00');return d.toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'})}
 async function wearPage(){
- const app=$('#app');app.innerHTML='<main class="app"><div class="top"><div><div class="eyebrow">WRIST TIME</div><div class="brand">Wear Log</div></div></div><div id="wearContent"><div class="empty">착용 기록을 불러오는 중…</div></div></main>'+nav('wear');
+ const app=$('#app');app.innerHTML='<main class="app"><div class="top" style="display:flex;align-items:center;justify-content:space-between;gap:12px"><div><div class="eyebrow">WRIST TIME</div><div class="brand">Wear Log</div></div><button type="button" class="wear-recap-trigger" onclick="openMonthlyRecap()">MONTHLY RECAP ↗</button></div><div id="wearContent"><div class="empty">착용 기록을 불러오는 중…</div></div></main>'+nav('wear');
  try{
   const {data,error}=await supabaseClient.from('wear_logs').select('id,watch_id,wear_date,created_at,photo_paths,note').eq('user_id',currentUser.id).order('wear_date',{ascending:false});
   if(error)throw error;
@@ -2088,6 +2129,7 @@ async function wearPage(){
   const wearPaths=[...new Set(wearLogs.flatMap(log=>Array.isArray(log.photo_paths)?log.photo_paths:[]).filter(Boolean))];
   if(wearPaths.length){const {data:signed,error:signedError}=await supabaseClient.storage.from('watch-photos').createSignedUrls(wearPaths,86400);if(!signedError)(signed||[]).forEach((item,i)=>{if(item?.signedUrl)photoUrlCache.set(wearPaths[i],{url:item.signedUrl,expiresAt:Date.now()+23*60*60*1000})})}
   renderWearContent();
+  maybeOpenMonthlyRecap();
  }catch(e){console.error('Wear log load failed',e);const el=$('#wearContent');if(el)el.innerHTML='<div class="empty">착용 기록을 불러오지 못했습니다. Supabase 설정을 확인해 주세요.</div>'}
 }
 function shiftWearMonth(delta){const d=new Date(wearCalendarMonth+'-15T12:00:00');d.setMonth(d.getMonth()+delta);wearCalendarMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderWearContent()}
@@ -2117,6 +2159,86 @@ function renderWearContent(){
  const recentDays=new Set(wearLogs.filter(x=>x.wear_date>=new Date(now.getTime()-29*86400000).toISOString().slice(0,10)&&x.wear_date<=wearSelectedDate).map(x=>x.wear_date)).size;
  root.innerHTML=renderWearCalendar()+wearOnThisDayHtml()+`<section class="wear-panel"><div class="eyebrow">DAILY CHECK-IN</div><h2 style="margin:8px 0 14px;font-size:23px">${dateLabel(wearSelectedDate)}</h2><div class="field" style="margin:0 0 14px"><label for="wearDate">기록 날짜</label><input id="wearDate" type="date" value="${wearSelectedDate}" max="${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}" onchange="wearSelectedDate=this.value;renderWearContent()" style="width:100%;border:1px solid var(--line);background:var(--paper);color:var(--ink);padding:12px;border-radius:10px"></div>${selectedWatch?`<div style="display:flex;align-items:center;gap:12px;margin:8px 0 14px">${selectedWatch.photos?.length?`<img src="${esc((selectedWatch.photos.find(p=>p.cover)||selectedWatch.photos[0]).src||'')}" alt="" style="width:76px;height:76px;object-fit:cover;border-radius:10px;background:var(--soft)">`:''}<div><div class="small">오늘의 대표 시계</div><strong>${esc(selectedWatch.brand)} ${esc(selectedWatch.model)}</strong></div></div><button class="action" onclick="clearWearLog()">기록 삭제</button>`:`<p class="small" style="margin:0 0 12px">이 날짜에 가장 대표적으로 착용한 시계를 선택해 주세요.</p>`}${wearDraftPhotoHtml()}<div class="field" style="margin-top:16px"><label for="wearNote">오늘의 메모</label><textarea id="wearNote" maxlength="280" rows="3" placeholder="오늘 이 시계를 선택한 이유나 기억하고 싶은 순간을 남겨보세요." style="width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);font:inherit;resize:vertical">${esc(todayLog?.note||'')}</textarea></div>${owned.length?`<div class="field" style="margin-top:16px"><label for="wearWatch">대표 시계</label>${formSelectHtml("wearWatch",[["","시계를 선택해 주세요"],...owned.map(w=>[w.id,w.brand+" · "+w.model])],todayLog?.watch_id||"")}</div><button class="action primary" style="margin-top:10px" onclick="saveWearLog()">${todayLog?'기록 수정':'착용 기록 저장'}</button>`:'<p class="small">My Watches에 보유 시계를 먼저 등록해 주세요.</p>'}</section><div class="head"><h2>${month} 통계</h2><span class="small">${new Set(monthLogs.map(x=>x.wear_date)).size}일 기록</span></div><div class="grid" style="grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px"><div class="wear-stat"><div class="small">착용한 날짜</div><div class="wear-stat-value">${new Set(monthLogs.map(x=>x.wear_date)).size}<span class="small"> 일</span></div><div class="small" style="margin-top:5px">이번 달</div></div><button type="button" class="wear-stat" onclick="toggleWearUnused()" aria-expanded="${wearUnusedExpanded}" style="width:100%;text-align:left;cursor:pointer;position:relative"><div class="small">착용한 시계</div><div class="wear-stat-value">${new Set(monthLogs.filter(x=>owned.some(w=>w.id===x.watch_id)).map(x=>x.watch_id)).size}<span class="small"> / ${owned.length}</span></div><div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:5px"><div class="small">컬렉션 활용도 · 미착용 시계 보기</div><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex:0 0 20px;color:var(--muted);font-size:0;line-height:1"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;transform:rotate(${wearUnusedExpanded?180:0}deg);transition:transform .18s ease"><path d="m4 6 4 4 4-4"/></svg></span></div></button></div>${wearUnusedHtml(owned,monthLogs)}</div><div class="wear-stat" style="margin-bottom:22px"><div class="eyebrow">WATCH OF THE MONTH</div>${ranked.length?(()=>{const w=watches.find(x=>x.id===ranked[0][0]);return w?`<div style="display:flex;align-items:center;gap:12px;margin-top:10px">${w.photos?.length?`<img src="${esc((w.photos.find(p=>p.cover)||w.photos[0]).src||'')}" alt="" class="wear-thumb" style="width:76px;height:76px;flex-basis:76px">`:'<div class="wear-thumb" style="display:grid;place-items:center;width:76px;height:76px;flex-basis:76px">⌚</div>'}<div style="flex:1;min-width:0"><strong style="font-size:16px">${esc(w.brand)} ${esc(w.model)}</strong><div class="wear-stat-value">${ranked[0][1]}<span class="small"> 회 착용</span></div><div class="small">이번 달 가장 자주 선택한 시계</div></div></div>`:'<div class="empty">이번 달 착용 기록이 아직 없어.</div>'})():'<div class="empty">이번 달 착용 기록이 아직 없어.</div>'}</div><div class="head"><h2>시계별 착용 횟수</h2><span class="small">이번 달</span></div>${ranked.length?ranked.map(([id,count],i)=>{const w=watches.find(x=>x.id===id);if(!w)return '';const pct=Math.round(count/Math.max(1,monthLogs.length)*100);return `<div class="wear-rank-row">${w.photos?.length?`<img src="${esc((w.photos.find(p=>p.cover)||w.photos[0]).src||'')}" alt="" class="wear-thumb">`:'<div class="wear-thumb" style="display:grid;place-items:center">⌚</div>'}<div style="flex:1;min-width:0"><div style="font-size:11px;color:var(--muted)">#${i+1}</div><strong>${esc(w.brand)} ${esc(w.model)}</strong><div class="wear-rank-track"><div class="wear-rank-fill" style="width:${pct}%"></div></div></div><strong>${count}회</strong></div>`}).join('') :'<div class="empty">이번 달 착용 기록이 아직 없어.</div>'}<div class="head" style="margin-top:26px"><h2>Cost Per Wear</h2><span class="small">구매가 ÷ 누적 착용일</span></div>${cpwRows.length?cpwRows.map(({w,count,cpw})=>`<div class="wear-rank-row">${w.photos?.length?`<img src="${esc((w.photos.find(p=>p.cover)||w.photos[0]).src||'')}" alt="" class="wear-thumb">`:'<div class="wear-thumb" style="display:grid;place-items:center">⌚</div>'}<div style="flex:1;min-width:0"><strong>${esc(w.brand)} ${esc(w.model)}</strong><div class="small" style="margin-top:4px">구매가 ${Number(w.purchase_price).toLocaleString('ko-KR')}원 · ${count}일 착용</div></div><strong style="white-space:nowrap">${Math.round(cpw).toLocaleString('ko-KR')}원/회</strong></div>`).join(''):'<div class="empty">구매가와 착용 기록이 있는 시계부터 계산할 수 있어.</div>'}<div class="small" style="margin:8px 0 22px">착용 기록은 하루 대표 시계 1개 기준이야. 구매가가 없는 시계는 계산에서 제외돼.</div><div class="head" style="margin-top:26px"><h2>최근 기록</h2><span class="small">최근 10건</span></div>${wearLogs.slice(0,10).length?wearLogs.slice(0,10).map(log=>{const w=watches.find(x=>x.id===log.watch_id);return `<button class="action" style="display:flex;align-items:center;justify-content:space-between;gap:12px;text-align:left;margin-bottom:7px;border-radius:10px" onclick="wearSelectedDate='${log.wear_date}';renderWearContent()"><span><strong>${dateLabel(log.wear_date)}</strong><br><span class="small">${w?esc(w.brand+' '+w.model):'삭제된 시계'}</span></span><span>›</span></button>`}).join(''):'<div class="empty">기록이 쌓이면 여기에 표시돼.</div>'}`;
 }
+
+let monthlyRecapMonth='',monthlyRecapIndex=0,monthlyRecapSlides=[];
+function previousMonthKey(){
+ const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-1);
+ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function monthlyRecapSeenKey(month){
+ return 'watchArchiveMonthlyRecapSeen:'+String(currentUser?.id||'guest')+':'+month;
+}
+function maybeOpenMonthlyRecap(){
+ if(!currentUser)return;
+ const month=previousMonthKey();
+ try{if(localStorage.getItem(monthlyRecapSeenKey(month))==='1')return}catch(e){}
+ if(!wearLogs.some(log=>log.wear_date?.slice(0,7)===month))return;
+ openMonthlyRecap(month,true);
+}
+function openMonthlyRecap(month,autoOpen=false){
+ if(!currentUser)return;
+ const targetMonth=month||previousMonthKey();
+ const logs=wearLogs.filter(log=>log.wear_date?.slice(0,7)===targetMonth).sort((a,b)=>a.wear_date.localeCompare(b.wear_date));
+ const watchCounts={};
+ logs.forEach(log=>{watchCounts[log.watch_id]=(watchCounts[log.watch_id]||0)+1});
+ const ranked=Object.entries(watchCounts).sort((a,b)=>b[1]-a[1]);
+ const days=new Set(logs.map(log=>log.wear_date)).size;
+ const watchIds=new Set(logs.map(log=>log.watch_id));
+ const photoCount=logs.reduce((sum,log)=>sum+(Array.isArray(log.photo_paths)?log.photo_paths.length:0),0);
+ const noteCount=logs.filter(log=>String(log.note||'').trim()).length;
+ const monthDate=new Date(targetMonth+'-01T12:00:00');
+ const monthLabel=monthDate.toLocaleDateString('en-US',{month:'long',year:'numeric'}).toUpperCase();
+ const topWatch=ranked.length?watches.find(w=>w.id===ranked[0][0]):null;
+ const topPhoto=topWatch?(topWatch.photos?.find(p=>p.cover)||topWatch.photos?.[0])?.src||'':'';
+ const moments=logs.filter(log=>(log.photo_paths?.length||String(log.note||'').trim())).sort((a,b)=>b.wear_date.localeCompare(a.wear_date)).slice(0,3);
+ const memoryHtml=moments.map(log=>{
+  const w=watches.find(item=>item.id===log.watch_id),path=log.photo_paths?.[0],url=path?photoUrlCache.get(path)?.url||'':'';
+  const date=new Date(log.wear_date+'T12:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
+  return '<div class="monthly-recap-moment">'+(url?'<img src="'+esc(url)+'" alt="착용 기록 사진">':'<div class="monthly-recap-moment-placeholder">WATCH ARCHIVE</div>')+'<div class="monthly-recap-moment-copy"><strong>'+date+'</strong><span>'+esc(w?w.brand+' '+w.model:'기록된 시계')+'</span>'+(log.note?'<small>'+esc(log.note)+'</small>':'')+'</div></div>';
+ }).join('');
+ const rankHtml=ranked.slice(0,5).map((entry,index)=>{
+  const w=watches.find(item=>item.id===entry[0]);
+  return '<div class="monthly-recap-rank"><span class="monthly-recap-rank-num">'+String(index+1).padStart(2,'0')+'</span><span class="monthly-recap-rank-name">'+esc(w?w.brand+' '+w.model:'삭제된 시계')+'</span><strong class="monthly-recap-rank-count">'+entry[1]+'일</strong></div>';
+ }).join('');
+ const topWatchImage=topPhoto?'<img src="'+esc(topPhoto)+'" alt="">':'<div class="monthly-recap-moment-placeholder" style="width:104px;height:104px;flex-basis:104px">WATCH ARCHIVE</div>';
+ const firstMemory=moments[0],firstPath=firstMemory?.photo_paths?.[0],firstMemoryUrl=firstPath?photoUrlCache.get(firstPath)?.url||'':'';
+ const cover=firstMemoryUrl||topPhoto;
+ monthlyRecapMonth=targetMonth;
+ monthlyRecapIndex=0;
+ monthlyRecapSlides=[
+  '<div class="monthly-recap-kicker">WATCH ARCHIVE / MONTHLY RECAP</div><h2 class="monthly-recap-title">'+monthLabel+'</h2><p class="monthly-recap-subtitle">당신의 손목에 머물렀던 시간들을<br>다시 꺼내봅니다.</p>'+(cover?'<img class="monthly-recap-hero-image" src="'+esc(cover)+'" alt="지난달의 시계 기록">':'<div class="monthly-recap-hero-image" style="display:grid;place-items:center;color:#b9ad94;font:14px Georgia,serif;letter-spacing:.16em">A MONTH IN TIME</div>')+'<div class="monthly-recap-kicker">A MONTH, CAREFULLY KEPT.</div>',
+  '<div class="monthly-recap-kicker">01 / YOUR MONTH IN NUMBERS</div><h2 class="monthly-recap-title">한 달의 기록</h2><p class="monthly-recap-subtitle">숫자로 돌아보는 '+monthLabel+'의 손목 기록.</p><div class="monthly-recap-stats"><div class="monthly-recap-stat"><strong>'+days+'</strong><span>착용한 날짜</span></div><div class="monthly-recap-stat"><strong>'+watchIds.size+'</strong><span>함께한 시계</span></div><div class="monthly-recap-stat"><strong>'+photoCount+'</strong><span>남긴 사진</span></div><div class="monthly-recap-stat"><strong>'+noteCount+'</strong><span>기억을 남긴 메모</span></div></div>',
+  '<div class="monthly-recap-kicker">02 / WATCH OF THE MONTH</div><h2 class="monthly-recap-title">가장 자주<br>손이 간 시계</h2>'+(topWatch?'<div class="monthly-recap-watch">'+topWatchImage+'<div><div class="monthly-recap-watch-name">'+esc(topWatch.brand+' '+topWatch.model)+'</div><div class="monthly-recap-watch-count">'+ranked[0][1]+'일 착용</div><div class="monthly-recap-subtitle">이번 달 가장 많은 시간을 함께했습니다.</div></div></div>':'<p class="monthly-recap-subtitle">지난달에 기록된 착용 시계가 없습니다.</p>'),
+  '<div class="monthly-recap-kicker">03 / YOUR ROTATION</div><h2 class="monthly-recap-title">이번 달의<br>컬렉션</h2><p class="monthly-recap-subtitle">자주 선택한 순서대로 정리했습니다.</p>'+(rankHtml||'<p class="monthly-recap-subtitle">아직 기록이 없습니다.</p>'),
+  '<div class="monthly-recap-kicker">04 / MOMENTS TO KEEP</div><h2 class="monthly-recap-title">기억하고 싶은<br>순간들</h2>'+(memoryHtml||'<p class="monthly-recap-subtitle">사진과 메모가 쌓이면 이곳에서 다시 만날 수 있어요.</p>'),
+  '<div class="monthly-recap-kicker">WATCH ARCHIVE / END OF RECAP</div><h2 class="monthly-recap-title">시간은 지나도,<br>기록은 남습니다.</h2><p class="monthly-recap-subtitle">'+monthLabel+'의 기록을 남겨주셔서 감사합니다.<br>다음 달에는 어떤 시계와 시간을 보내게 될까요?</p><div class="monthly-recap-kicker" style="margin-top:30px">KEEP YOUR TIME.</div>'
+ ];
+ let root=document.getElementById('monthlyRecapRoot');
+ if(!root){root=document.createElement('div');root.id='monthlyRecapRoot';document.body.appendChild(root)}
+ root.innerHTML='<div class="monthly-recap-overlay" role="presentation" onclick="if(event.target===this)closeMonthlyRecap()"><section class="monthly-recap-modal" role="dialog" aria-modal="true" aria-label="월간 착용 기록 회고"><div class="monthly-recap-progress" id="monthlyRecapProgress"></div><div class="monthly-recap-top"><span>WATCH ARCHIVE</span><button type="button" class="monthly-recap-close" onclick="closeMonthlyRecap()" aria-label="닫기">×</button></div><div class="monthly-recap-slide" id="monthlyRecapSlide"></div><div class="monthly-recap-bottom"><button type="button" id="monthlyRecapPrev" onclick="moveMonthlyRecap(-1)">이전</button><span class="monthly-recap-counter" id="monthlyRecapCounter"></span><button type="button" class="primary" id="monthlyRecapNext" onclick="moveMonthlyRecap(1)">다음</button></div></section></div>';
+ renderMonthlyRecapSlide();
+}
+function renderMonthlyRecapSlide(){
+ const slide=document.getElementById('monthlyRecapSlide');if(!slide)return;
+ slide.innerHTML=monthlyRecapSlides[monthlyRecapIndex]||'';
+ const progress=document.getElementById('monthlyRecapProgress');
+ if(progress)progress.innerHTML=monthlyRecapSlides.map((item,index)=>'<span class="'+(index<=monthlyRecapIndex?'active':'')+'"></span>').join('');
+ const prev=document.getElementById('monthlyRecapPrev'),next=document.getElementById('monthlyRecapNext'),counter=document.getElementById('monthlyRecapCounter');
+ if(prev)prev.disabled=monthlyRecapIndex===0;
+ if(next)next.textContent=monthlyRecapIndex===monthlyRecapSlides.length-1?'닫기':'다음';
+ if(counter)counter.textContent=(monthlyRecapIndex+1)+' / '+monthlyRecapSlides.length;
+}
+function moveMonthlyRecap(delta){
+ const next=monthlyRecapIndex+delta;
+ if(next<0)return;
+ if(next>=monthlyRecapSlides.length){closeMonthlyRecap();return}
+ monthlyRecapIndex=next;renderMonthlyRecapSlide();
+}
+function closeMonthlyRecap(){
+ try{if(monthlyRecapMonth&&currentUser)localStorage.setItem(monthlyRecapSeenKey(monthlyRecapMonth),'1')}catch(e){}
+ document.getElementById('monthlyRecapRoot')?.remove();
+}
+
 async function saveWearLog(){
  const watchId=$('#wearWatch')?.value;if(!watchId)return toast('대표 시계를 선택해 주세요');
  const existing=wearLogs.find(x=>x.wear_date===wearSelectedDate),oldPaths=existing?.photo_paths||[],uploadedPaths=[];
