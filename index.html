@@ -989,12 +989,12 @@ button:not(.wear-day),[role="button"]:not(.wear-day){min-inline-size:44px;min-bl
 .wear-calendar-grid{row-gap:7px}
 .wear-day{aspect-ratio:1;border-radius:10px;display:flex;flex-direction:column;gap:1px;justify-content:center;align-items:center;overflow:visible;transition:background .16s ease,border-color .16s ease,transform .16s ease}
 .wear-day-number{font-size:13px;line-height:1.1}
-.wear-day.has-log{background:var(--ink);color:var(--bg);border-color:var(--ink);font-weight:700;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--bg) 14%,transparent)}
-.wear-day.has-log .wear-day-number{font-weight:750}
-.wear-day-check{font-size:8px;line-height:8px;font-weight:800;opacity:.85}
+.wear-day.has-log{background:var(--soft);color:var(--ink);border-color:var(--line);font-weight:700;box-shadow:none}
+.wear-day.has-log .wear-day-number{font-weight:700}
+.wear-day-check{font-size:8px;line-height:8px;font-weight:800;opacity:.7}
 .wear-day.selected{outline:2px solid var(--ink);outline-offset:2px}
 .wear-day.today:not(.selected){border-color:var(--ink);border-style:dashed}
-.wear-day.selected.has-log{background:var(--ink);color:var(--bg)}
+.wear-day.selected.has-log{background:var(--soft);color:var(--ink)}
 .wear-day .wear-calendar-markers{bottom:-5px;gap:3px}
 .wear-day .wear-calendar-marker{width:5px;height:5px;flex-basis:5px;border:0}
 .wear-day-empty{aspect-ratio:1;min-width:0}
