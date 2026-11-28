@@ -4,7 +4,7 @@
 const css=[
 '.archive-subtabs{display:flex;gap:8px;margin:-4px 0 18px;padding:4px;background:var(--soft);border-radius:13px}',
 '.archive-subtab{flex:1;border:0;border-radius:10px;padding:10px;background:transparent;color:var(--muted);font-size:13px;font-weight:650}',
-'.archive-subtab.active{background:var(--paper);color:var(--ink)}',
+'.archive-subtab.active{background:var(--paper);color:var(--ink)}','.archive-subtab-description{margin:-7px 2px 22px;color:var(--muted);font-size:11px;line-height:1.6;letter-spacing:.01em}',
 '.overlay .status{grid-template-columns:repeat(3,minmax(0,1fr))}.overlay .status button{padding:11px 5px;font-size:12px}',
 '.to-buy-badge{display:inline-flex;width:max-content;margin-bottom:7px;padding:4px 7px;border:1px solid var(--line);border-radius:999px;color:var(--muted);font-size:9px;letter-spacing:.12em;font-weight:750}',
 '.market-section{margin:26px 0;padding:18px;border:1px solid var(--line);border-radius:16px;background:var(--paper)}',
@@ -32,6 +32,8 @@ function subtabs(){
  if(!el){el=document.createElement('div');el.id='archiveSubtabs';el.className='archive-subtabs';tabs.insertAdjacentElement('afterend',el)}
  const count=watches.filter(w=>w.status==='to_buy').length;
  el.innerHTML='<button class="archive-subtab '+(filter==='archive'?'active':'')+'" onclick="switchCollection(\'archive\')">Archive</button><button class="archive-subtab '+(filter==='to_buy'?'active':'')+'" onclick="switchCollection(\'to_buy\')">Watchlist'+(count?' · '+count:'')+'</button>';
+ let desc=document.getElementById('archiveSubtabDescription');if(!desc){desc=document.createElement('p');desc.id='archiveSubtabDescription';desc.className='archive-subtab-description';el.insertAdjacentElement('afterend',desc)}
+ desc.textContent=filter==='to_buy'?'구매를 고려하는 시계와 중고 시세를 추적하는 공간':'시계의 정보와 사진을 기록하고 보관하는 공간';
 }
 window.renderHome=function(){oldHome();subtabs()};
 window.switchCollection=function(next){if(next!=='to_buy')return oldSwitch(next);if(filter==='to_buy')return;filter='to_buy';query='';brandFilter='';sortMenuOpen=false;renderHome();window.scrollTo(0,0)};
